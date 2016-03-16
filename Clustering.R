@@ -1,0 +1,168 @@
+oldwd <- getwd()
+
+# set your own directory 
+setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
+
+# control for grouping different values of hyper parameters to a one value  
+simplify = TRUE      
+
+# create images for Pareto Front 
+showParetoFront <- TRUE 
+
+# results of algorithms
+evaluations <- read.csv("data/openml_evaluations_all.csv")
+separate_evaluations <- split(evaluations, evaluations$task_id) 
+
+allMeasures <- nrow(clusters) 
+
+selectedAlgorithms <- data.frame() 
+
+# script contains values for time and AUC that are not normalized, need to rewrite if use to create plots 
+for (i in 1: max(clusters[, 1])) {
+    combinedParetoFrontsinCluster <- data.frame() 
+    
+    combinedAllResultsinCluster <- data.frame() 
+    
+    setCount <- 0
+    
+    for (j in 1: allMeasures) {
+        if (clusters[j, 1] == i) {
+            
+            setCount <- setCount + 1 
+            
+            # make a copy of set
+            x <- as.data.frame(separate_evaluations[j])
+            x <-
+                setNames(
+                    x, c(
+                        "task_id", "dataset", "algo", "error_message", "accuracy", "auroc", "training_millis", "testing_millis", "confusion_matrix"
+                    )
+                )
+            
+            # receive name
+            xName <- as.character(x$dataset[1]) 
+            
+            # change type from factor to numeric and remove NA values 
+            x$auroc <- as.numeric(as.character(x$auroc))
+            x <- x[!is.na(x$auroc),] 
+            
+            # convert time variable to numbers 
+            x$training_millis <-
+                as.numeric(as.character(x$training_millis))
+            x$testing_millis <-
+                as.numeric(as.character(x$testing_millis))
+            
+            # check if training time in milliseconds and change to seconds
+            x <- x[!is.na(x$training_millis),]
+#             if (max(x$training_millis > 1000000)) {
+#                 x$training_millis <- x$training_millis / 1000
+#             }
+#             x <- x[x$training_millis < 100000,] 
+            
+            # check if testing time in milliseconds and change for seconds
+            x <- x[!is.na(x$testing_millis),] 
+#             if (max(x$testing_millis > 1000000)) {
+#                 x$testing_millis <- x$testing_millis / 1000
+#             }
+#             x <- x[x$testing_millis < 100000,] 
+            
+            # caclulate and log combined time for each algorithm
+            x$combineTime <- log(x$training_millis + x$testing_millis + 1)
+            
+            # filter columns and save AUC, training time and name of algorithm
+            x <- data.frame(x$auroc, x$combineTime, x$algo)
+            smallX <- setNames(x, c("AUC", "CombineTime", "Algorithm"))
+            smallX <-
+                smallX[order(smallX$AUC,smallX$CombineTime,decreasing = TRUE),]
+            smallX$AUC <- smallX$AUC * -1
+            
+            combinedAllResultsinCluster <- rbind(combinedAllResultsinCluster, smallX) 
+        }
+    }
+    
+    # change variable from Pareto front to all values   
+    combinedParetoFrontsinCluster <- combinedAllResultsinCluster
+
+    # remove NaN values    
+    combinedParetoFrontsinCluster <- combinedParetoFrontsinCluster[!is.na(combinedParetoFrontsinCluster$AUC), ] 
+
+    # change type of the column with algorithms to character 
+    combinedParetoFrontsinCluster$Algorithm <- as.character(combinedParetoFrontsinCluster$Algorithm) 
+
+    # compute how many times an algorithm appeared on Pareto front in a cluster 
+    frequencies <- data.frame(table(as.character(combinedParetoFrontsinCluster$Algorithm)))  
+
+    # calculate average values for each algorithm 
+    aggregatedAUC <- data.frame(tapply(combinedParetoFrontsinCluster$AUC, combinedParetoFrontsinCluster$Algorithm, mean)) 
+    aggregatedTime <- data.frame(tapply(combinedParetoFrontsinCluster$CombineTime, combinedParetoFrontsinCluster$Algorithm, mean)) 
+    
+    aggregatedValues <- cbind(aggregatedAUC, aggregatedTime)
+    aggregatedValues <- setNames(aggregatedValues, c("AUC", "CombineTime")) 
+    aggregatedValues$Algorithm <- rownames(aggregatedValues)  
+    
+    # additional check for empty values    
+    aggregatedValues <- aggregatedValues[!is.na(aggregatedValues$AUC), ] 
+
+    for (j in 1: nrow(aggregatedValues)) {
+        if (unlist(gregexpr(pattern ='--', aggregatedValues[j, 3], fixed = TRUE)) != -1)
+        {
+            aggregatedValues[j, 4] <- substr(aggregatedValues[j, 3], unlist(gregexpr(pattern ='.', aggregatedValues[j, 3], fixed = TRUE))[3] + 1, unlist(gregexpr(pattern ='--', aggregatedValues[j, 3], fixed = TRUE))[1] - 2) 
+        } else {
+            aggregatedValues[j, 4] <- substr(aggregatedValues[j, 3], unlist(gregexpr(pattern ='.', aggregatedValues[j, 3], fixed = TRUE))[3] + 1, nchar(aggregatedValues[j, 3])) 
+        }
+        aggregatedValues[j, 5] <- substr(aggregatedValues[j, 3], 0, 4) 
+    } 
+    
+    # combine results and friquencies for algorithms 
+    aggregatedValues$Frequency <- as.numeric(frequencies$Freq) 
+
+    if (simplify == TRUE) { 
+        aggregatedAUC <- data.frame(tapply(aggregatedValues$AUC, aggregatedValues$V4, mean)) 
+        aggregatedTime <- data.frame(tapply(aggregatedValues$CombineTime, aggregatedValues$V4, mean)) 
+        aggregatedFrequency <- data.frame(tapply(aggregatedValues$Frequency, aggregatedValues$V4, sum)) 
+        
+        aggregatedValues <- cbind(aggregatedAUC, aggregatedTime, aggregatedFrequency) 
+        aggregatedValues <- setNames(aggregatedValues, c("AUC", "CombineTime", "Frequency")) 
+        aggregatedValues$Algorithm <- rownames(aggregatedValues)  
+        
+        aggregatedValues <- aggregatedValues[!is.na(aggregatedValues$AUC), ] 
+    }
+    
+    # calculate Pareto front
+    paretoFront = aggregatedValues[which(!duplicated(cummin(aggregatedValues$CombineTime))),] 
+    
+    selectedAlgorithms <- rbind(selectedAlgorithms, cbind(i, paretoFront)) 
+    
+    if (showParetoFront == TRUE) { 
+        numOfAlgs <- nrow(paretoFront) 
+        png(filename= paste("plots/cluster_Pareto_", i, ".png", sep = ""), width = 1600, height = 1200)    
+        plot(paretoFront[,1:2], col = rainbow(numOfAlgs) , xlim=c(min(paretoFront$AUC), max(paretoFront$AUC)), ylim=c(0, 5), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+        
+        if (simplify == TRUE) { 
+            legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.8, pt.cex = 1.8) 
+            text(paretoFront[,1:2], labels = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
+        } else { 
+            legend("topright", legend = paste(paretoFront[, 6], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.8, pt.cex = 1.8) 
+            text(paretoFront[,1:2], labels = paste(paretoFront[, 6], paretoFront[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
+        }
+        dev.off() 
+    } 
+    
+    png(filename= paste("plots/cluster_", i, ".png", sep = ""), width = 1600, height = 1200)     
+    sizeOfAlgs <- nrow(aggregatedValues) 
+    if (simplify == TRUE) {
+        plot(aggregatedValues[,1:2], col = rainbow(sizeOfAlgs) , xlim=c(min(aggregatedValues$AUC), max(aggregatedValues$AUC)), ylim=c(0, 5), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+        legend("topright", legend = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), col =  rainbow(sizeOfAlgs) , pch = 20, lty = 1, cex = 0.8, pt.cex = 1.8) 
+        text(aggregatedValues[,1:2], labels = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
+    } else { 
+        plot(aggregatedValues[,1:2], col = rainbow(sizeOfAlgs) , xlim=c(min(aggregatedValues$AUC), max(aggregatedValues$AUC)), ylim=c(0, 5), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+        legend("topright", legend = paste(aggregatedValues[, 6], aggregatedValues[, 4], sep = "_"), col =  rainbow(sizeOfAlgs), pch = 20, lty = 1, cex = 0.7, pt.cex = 1.8) 
+        text(aggregatedValues[,1:2], labels = paste(aggregatedValues[, 6], aggregatedValues[, 4], sep = "_"), cex = 0.8, pos = 3 )     
+    }
+    dev.off() 
+} 
+ 
+algorithmsToCheck <- unique(selectedAlgorithms$Algorithm) 
+
+setwd(oldwd) 
+
