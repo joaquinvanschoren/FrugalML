@@ -3,8 +3,9 @@ library(MOCCA)
 # perform new calculations or load data from a file 
 newCalculatations = FALSE 
 
-if(newCalculatations) {
-    mocca_res <- mocca(hugeMatrix, R = 10, K = 2:10, iter.max = 1000, nstart = 10) 
+if(newCalculatations) { 
+    bSize <- dim(hugeMatrix)[1] 
+    mocca_res <- mocca(hugeMatrix, R = bSize, K = 2:30, iter.max = 1000, nstart = 10) 
     analyzePareto(mocca_res$objectiveVals) 
 } else {
     mocca_res <- readRDS("objects/mocca_res_huge_matrix_complete.rds") 
