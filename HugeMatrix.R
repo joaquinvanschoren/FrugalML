@@ -115,13 +115,10 @@ createHugeMatrix <- function(originData) {
         }
                
         # replace all NA values with negative value 
-
         paretoRes[is.na(paretoRes)] <- -1  
         
         # add results to the matrix    
         hugeMatrix <- rbind(hugeMatrix, paretoRes)  
-        
-
     } 
     
     return (hugeMatrix)  

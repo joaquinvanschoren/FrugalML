@@ -8,7 +8,7 @@ if(newCalculatations) {
     analyzePareto(mocca_res$objectiveVals) 
 } else {
     load(file = "objects/mocca_res_huge_matrix_complete.rda") 
-}
+} 
 
+# save results since it takes substatial amount of time to compute a number of clusters 
 save(mocca_res, file = "objects/mocca_res_huge_matrix_complete.rda") 
- 
