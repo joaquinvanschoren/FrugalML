@@ -13,7 +13,7 @@ source("HugeMatrixFunctions.R")
 algorithms <- data.frame(levels(evaluations$algo)) 
  
 # prepare matrix with filling in the names of algorithms as column names
-hugeMatrix <- data.frame(t(algorithms))
+hugeMatrix <- data.frame(t(algorithms)) 
 colnames(hugeMatrix) <- algorithms[1:103, 1]
 hugeMatrix <- hugeMatrix[-1,]
 
@@ -35,7 +35,7 @@ algorithms <- data.frame(t(algorithms))
 algorithms[] <- lapply(algorithms, as.character)
 
 # replace long names with short names
-colnames(hugeMatrix) <- algorithms[1,]
+colnames(hugeMatrix) <- algorithms[1,] 
 
 # calculate the number of all sets in files
 quantityDataSets <- length(separate_evaluations)
@@ -43,12 +43,31 @@ quantityDataSets <- length(separate_evaluations)
 for (i in 1:quantityDataSets) {
     # make a copy of set
     dataSet <- as.data.frame(separate_evaluations[i])
-    
+
     processedDataSet <- originalScoreData(hugeMatrix, dataSet)
     
     # add results to the matrix
-    hugeMatrix <- rbind(hugeMatrix, processedDataSet)
+    hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]]) 
 } 
+
+# explore the number of missing values for data sets  
+dataSetMissingValues <- data.frame() 
+for (i in 1:quantityDataSets) { 
+    sumMissing <- sum(is.na(hugeMatrix[i, ])) 
+    dataSetMissingValues <- rbind(dataSetMissingValues, data.frame(rownames(hugeMatrix)[i], sumMissing)) 
+} 
+dataSetMissingValues <- dataSetMissingValues[order(dataSetMissingValues$sumMissing, decreasing = TRUE), ] 
+
+# find the number of missing values for algorithms 
+algsMissingValues <- data.frame() 
+for (i in 1:numOfAlgs) { 
+    sumMissing <- sum(is.na(hugeMatrix[, i])) 
+    algsMissingValues <- rbind(algsMissingValues, data.frame(colnames(hugeMatrix)[i], sumMissing)) 
+} 
+algsMissingValues <- algsMissingValues[order(algsMissingValues$sumMissing, decreasing = TRUE), ] 
+ 
+# replace all NA values with negative value
+processedValues[is.na(processedValues)] <- -1 
 
 write.csv(hugeMatrix, "hugeMatrix.csv") 
 

@@ -6,7 +6,7 @@ createHugeMatrix <- function(originData, splitFactor) {
     
     # prepare matrix with filling in the names of algorithms as column names
     hugeMatrix <- data.frame(t(algorithms))
-    colnames(hugeMatrix) <- algorithms[1:103, 1]
+    colnames(hugeMatrix) <- algorithms[1:nrow(algorithms), 1] 
     hugeMatrix <- hugeMatrix[-1,]
     
     # store the number of algorithms in all items
@@ -30,21 +30,57 @@ createHugeMatrix <- function(originData, splitFactor) {
     colnames(hugeMatrix) <- algorithms[1,]
     
     # calculate the number of all sets in files
-    quantityDataSets <- length(separate_evaluations)
-    
+    quantityDataSets <- length(separate_evaluations) 
+
     for (i in 1:quantityDataSets) {
         # make a copy of set
         dataSet <- as.data.frame(separate_evaluations[i])
         
         processedDataSet <- originalScoreData(hugeMatrix, dataSet)
-        
+
         # add results to the matrix
-        hugeMatrix <- rbind(hugeMatrix, processedDataSet)
+        hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]]) 
     }
     return (hugeMatrix)
 }
 
-originalScoreData <- function(dataMatrix, dataSet) { 
+originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE) { 
+    ## standard version with the original frulgality score 
+    
+    # receive name
+    xName <- as.character(dataSet[1, 2]) 
+    
+    cleanData <- computeTimeAUC(dataSet)
+    
+    # create a vector of values for this set
+    processedValues <- t(data.frame(rep(NA, numOfAlgs)))
+    colnames(processedValues) <- colnames(dataMatrix)
+    rownames(processedValues) <- xName
+    
+    # update value for each algorithm and data set
+    for (algValue in 1:nrow(cleanData)) {
+        algName <- as.character(cleanData[algValue, 3])
+        algIndex <-
+            grep(
+                pattern = substr(algName, 0, 5), x = colnames(processedValues), ignore.case = TRUE
+            )
+        processedValues[1, algIndex] <-
+            cleanData[algValue, 1] - 0.1 * log(1 + cleanData[algValue, 2])
+    }
+
+    # calculate the quntity of missing values for a data set     
+    sumMissing <- sum(is.na(processedValues)) 
+    missingData <- data.frame(xName, sumMissing) 
+    
+    # replace all NA values with negative value
+    if (replaceMissingValues) {
+        processedValues[is.na(processedValues)] <- -1 
+    } 
+        
+    return (list(missingData, processedValues)) 
+} 
+
+frugalityScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE) { 
     ## standard version with the original frulgality score 
     
     # receive name
@@ -68,15 +104,17 @@ originalScoreData <- function(dataMatrix, dataSet) {
             cleanData[algValue, 1] - 0.1 * log(1 + cleanData[algValue, 2])
     }
     
-    if (sum(is.na(processedValues) > 0)) {
-        
-    }
+    # calculate the quntity of missing values for a data set     
+    sumMissing <- sum(is.na(processedValues)) 
+    missingData <- data.frame(xName, sumMissing) 
     
     # replace all NA values with negative value
-    processedValues[is.na(processedValues)] <- -1
+    if (replaceMissingValues) {
+        processedValues[is.na(processedValues)] <- -1 
+    } 
     
-    return (processedValues)
-}
+    return (list(missingData, processedValues)) 
+} 
 
 computeTimeAUC <- function(dataSet) {
     dataSet <-
