@@ -32,48 +32,13 @@ for (i in 1: max(clusters[, 1])) {
             
             # make a copy of set
             x <- as.data.frame(separate_evaluations[j])
-            x <-
-                setNames(
-                    x, c(
-                        "task_id", "dataset", "algo", "error_message", "accuracy", "auroc", "training_millis", "testing_millis", "confusion_matrix"
-                    )
-                )
+
+            source("HugeMatrixFunctions.R") 
             
-            # receive name
-            xName <- as.character(x$dataset[1]) 
+            smallX <- computeTimeAUC(x) 
             
-            # change type from factor to numeric and remove NA values 
-            x$auroc <- as.numeric(as.character(x$auroc))
-            x <- x[!is.na(x$auroc),] 
+            smallX$CombineTime <- log(smallX$CombineTime + 1) 
             
-            # convert time variable to numbers 
-            x$training_millis <-
-                as.numeric(as.character(x$training_millis))
-            x$testing_millis <-
-                as.numeric(as.character(x$testing_millis))
-            
-            # check if training time in milliseconds and change to seconds
-            x <- x[!is.na(x$training_millis),]
-#             if (max(x$training_millis > 1000000)) {
-#                 x$training_millis <- x$training_millis / 1000
-#             }
-#             x <- x[x$training_millis < 100000,] 
-            
-            # check if testing time in milliseconds and change for seconds
-            x <- x[!is.na(x$testing_millis),] 
-#             if (max(x$testing_millis > 1000000)) {
-#                 x$testing_millis <- x$testing_millis / 1000
-#             }
-#             x <- x[x$testing_millis < 100000,] 
-            
-            # caclulate and log combined time for each algorithm
-            x$combineTime <- log(x$training_millis + x$testing_millis + 1)
-            
-            # filter columns and save AUC, training time and name of algorithm
-            x <- data.frame(x$auroc, x$combineTime, x$algo)
-            smallX <- setNames(x, c("AUC", "CombineTime", "Algorithm"))
-            smallX <-
-                smallX[order(smallX$AUC,smallX$CombineTime,decreasing = TRUE),]
             smallX$AUC <- smallX$AUC * -1
             
             combinedAllResultsinCluster <- rbind(combinedAllResultsinCluster, smallX) 
