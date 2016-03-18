@@ -25,7 +25,7 @@ if (sum(svd_d > 3) > 20) {
     num_latent_features <- sum(svd_d > 3) 
 } 
 
-x.svd <- svd(as.matrix(hugeMatrixImputed$Xfill), num_latent_features, num_latent_features) 
+x.svd <- svd(as.matrix(hugeMatrix), num_latent_features, num_latent_features) 
 svd_u <- x.svd$u 
 
 # perform ALS decomposition    
@@ -137,30 +137,38 @@ train <- data.frame(mydata)
 train$label <- matrix(newSpcCls$cluster, nrow = nrow(mydata), ncol = 1) 
 
 train$name <- matrix(rownames(hugeMatrix), nrow = nrow(hugeMatrix), ncol = 1) 
-
 train$name <- lapply(X = train$name, function(x) { 
     pos_un <- gregexpr("_", x, ignore.case = TRUE)[[1]][[1]] 
     x <- substr(x, 0, pos_un - 1) 
 }) 
-
 train$name <- as.numeric(train$name) 
 
 # shrinking the size for the time limit
 numTrain <- 517
 set.seed(1)
 rows <- sample(1:nrow(train), numTrain)
-trainx <- train[rows, -22] 
+trainx <- train[ , c(-17)] 
+
+# change every column with random numbers
+noise <- scale(matrix(rexp(517 * 15, rate = 0.1), ncol = 15)) 
+noise <- cbind(noise, matrix(rep(0, 517), ncol = 1)) 
+trainx <- trainx + noise 
+  
+# create a new column with random generated values   
+noise <- scale(matrix(rexp(517, rate = 0.1), ncol = 1)) 
+trainx <- cbind(trainx, noise) 
+
 # using tsne
 set.seed(1) # for reproducibility 
 
-tsne <- Rtsne(trainx[,-1], dims = 2, perplexity=30, check_duplicates = FALSE, verbose=TRUE, max_iter = 500) 
+tsne <- Rtsne(trainx, dims = 2, perplexity=30, check_duplicates = FALSE, verbose=TRUE, max_iter = 500) 
 
 # visualizing
 png(filename= "plots/tsne.png", width = 3200, height = 2500) 
-colors = rainbow(length(unique(trainx$label)))
-names(colors) = unique(trainx$label)
+colors = rainbow(length(unique(train$label)))
+names(colors) = unique(train$label)
 plot(tsne$Y, t='n', main="tsne")
-text(tsne$Y, labels=train$name, col=colors[trainx$label], cex = 0.8) 
+text(tsne$Y, labels=train$name, col=colors[train$label], cex = 0.8) 
 dev.off() 
 
 # compare with pca
