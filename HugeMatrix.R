@@ -79,7 +79,7 @@ hugeMatrix <- hugeMatrix[, !colnames(hugeMatrix) %in% topAlgorithmsMissingValues
 # replace all NA values with negative value
 processedValues[is.na(processedValues)] <- -1 
 
-write.csv(hugeMatrix, "hugeMatrix.csv") 
+saveRDS(hugeMatrix, "objects/hugeMatrixOnlyWithRealValues.rds") 
 
 setwd(oldwd) 
 
