@@ -65,7 +65,17 @@ for (i in 1:numOfAlgs) {
     algsMissingValues <- rbind(algsMissingValues, data.frame(colnames(hugeMatrix)[i], sumMissing)) 
 } 
 algsMissingValues <- algsMissingValues[order(algsMissingValues$sumMissing, decreasing = TRUE), ] 
- 
+
+# select algorithms with more than half of missing values   
+limit <- quantile(algsMissingValues$sumMissing, 0.8) 
+topAlgorithmsMissingValues <- algsMissingValues[algsMissingValues[ , 2] > limit, ] 
+
+# find all algorithms with missing values   
+topAlgorithmsMissingValues <- algsMissingValues[algsMissingValues[ , 2] > 0, ] 
+
+# delete them from a matrix   
+hugeMatrix <- hugeMatrix[, !colnames(hugeMatrix) %in% topAlgorithmsMissingValues[, 1]] 
+
 # replace all NA values with negative value
 processedValues[is.na(processedValues)] <- -1 
 
