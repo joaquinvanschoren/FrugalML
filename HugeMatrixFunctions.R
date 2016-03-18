@@ -103,7 +103,11 @@ frugalityScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE
         processedValues[1, algIndex] <-
             cleanData[algValue, 1] - 0.1 * log(1 + cleanData[algValue, 2])
     }
-    
+
+    # scale all values with respect to the best result   
+    bestFrugalValue <- max(processedValues, na.rm = TRUE) 
+    processedValues <- processedValues / bestFrugalValue 
+
     # calculate the quntity of missing values for a data set     
     sumMissing <- sum(is.na(processedValues)) 
     missingData <- data.frame(xName, sumMissing) 
