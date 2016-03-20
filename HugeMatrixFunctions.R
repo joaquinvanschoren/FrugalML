@@ -80,7 +80,7 @@ originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE)
     return (list(missingData, processedValues)) 
 } 
 
-frugalityScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE) { 
+frugalityScoreData <- function(dataMatrix, dataSet, w = 0.1, replaceMissingValues = FALSE) { 
     ## standard version with the original frulgality score 
     
     # receive name
@@ -101,7 +101,7 @@ frugalityScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE
                 pattern = substr(algName, 0, 5), x = colnames(processedValues), ignore.case = TRUE
             )
         processedValues[1, algIndex] <-
-            cleanData[algValue, 1] - 0.1 * log(1 + cleanData[algValue, 2])
+            cleanData[algValue, 1] - w * log(1 + cleanData[algValue, 2])
     }
 
     # scale all values with respect to the best result   
