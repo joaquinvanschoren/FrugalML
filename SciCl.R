@@ -5,7 +5,13 @@ library(gplots)
 # set your own directory 
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
 
-hasEmptyValues <- FALSE 
+# function for evaluation distance between vectors 
+distfunction <- 'euclidean' 
+# path for images with plots 
+savePath <- 'plots/'
+
+# matrix has empty values 
+hasEmptyValues <- sum(is.na(hugeMatrix)) != 0 
 
 if (hasEmptyValues) {
     # remove empty values
@@ -19,6 +25,7 @@ if (hasEmptyValues) {
 #  start SVD method to look at results 
 x.svd <- svd(as.matrix(hugeMatrix), 20, 20) 
 svd_d <- x.svd$d 
+plot(svd_d[1:65]) 
 
 # save the number of important features for the next stages   
 if (sum(svd_d > 3) > 20) {
@@ -27,18 +34,31 @@ if (sum(svd_d > 3) > 20) {
     num_latent_features <- sum(svd_d > 3) 
 } 
 
-x.svd <- svd(as.matrix(hugeMatrix), num_latent_features, num_latent_features) 
-svd_u <- x.svd$u 
+# select number of features based on the image 
+num_latent_features <- 8 
 
-# perform ALS decomposition    
-x.als <- nnmf(as.matrix(hugeMatrixImputed$Xfill), num_latent_features, 'nnmf_als')   
-als_Wv <- x.als$W
-als_Hv <- x.als$H 
+# what method to use SVD or ALS for decomposition of original matrix 
+enableALS <- FALSE 
+
+if (enableALS) {
+    # perform ALS decomposition    
+    x.als <- nnmf(as.matrix(hugeMatrix), num_latent_features, 'nnmf_als') 
+    als_Wv <- x.als$W
+    als_Hv <- x.als$H 
+    
+    hugeMatrixDecomposed_d <- als_Wv 
+    hugeMatrixDecomposed_a <- t(als_Hv) 
+} else {
+    x.svd <- svd(as.matrix(hugeMatrix), num_latent_features, num_latent_features) 
+    hugeMatrixDecomposed_d <- x.svd$u 
+    hugeMatrixDecomposed_a <- x.svd$v 
+}
+
+mydata <- hugeMatrixDecomposed_d 
 
 # identify number of clusters with sum of squares with a cluster
 # from http://www.statmethods.net/advstats/cluster.html   
 
-mydata <- svd_u 
 wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
 for (i in 2:50) wss[i] <- sum(kmeans(mydata,
                                      centers=i)$withinss)
@@ -69,9 +89,6 @@ abline(v = which.max(sil), lty = 2)
 newSpcCls <- kmeans(mydata, 10) 
 clusters <- data.frame(newSpcCls$cluster) 
 
-# alias for the decomposed matrix   
-hugeMatrixDecomposed <- x.svd 
- 
 # construct heat maps with heatmap function 
 ds <- as.matrix(scale(hugeMatrix)) 
 heatmap(ds, Colv = NA, Rowv = NULL, scale = 'none', distfun = function(x) dist(x,method = 'minkowski'), col = brewer.pal(8, "Accent")) 
@@ -82,16 +99,19 @@ heatmap(algos, Colv = T, Rowv = NA, scale = 'none', distfun = function(x) dist(x
 source("HugeMatrixFunctions.R") 
 
 # heatmap for data sets  
-dsBig <- drawPlot(hugeMatrix, "datasets.png", dendrogramType = "row", breakLen = 9, p.Rowv = TRUE, p.Colv = NULL, 
+dsBig <- drawPlot(hugeMatrix, "datasets.png", dendrogramType = "row", p.distfunction = distfunction, 
+                  breakLen = 9, p.Rowv = TRUE, p.Colv = NULL, 
                   p.cellNote = TRUE)   
 
 # heatmap for algorithms 
-algBig <- drawPlot(hugeMatrix, "algorithms.png", dendrogramType = "col", breakLen = 9, p.Rowv = NULL, p.Colv = TRUE, 
+algBig <- drawPlot(hugeMatrix, "algorithms.png", dendrogramType = "col", p.distfunction = distfunction, 
+                   breakLen = 9, p.Rowv = NULL, p.Colv = TRUE, 
                    p.cellNote = TRUE)  
 
 # heatmap for decomposed data sets  
-dsDecomp <- drawPlot(hugeMatrixDecomposed$u, "datasets_svd.png", width = 3048, height = 2536, 
-                     dendrogramType = "row", decomposed = TRUE, breakLen = 9, p.Rowv = TRUE, p.Colv = NULL, 
+dsDecomp <- drawPlot(hugeMatrixDecomposed_d, "datasets_svd.png", width = 3048, height = 2536, 
+                     dendrogramType = "row", p.distfunction = distfunction, 
+                     decomposed = TRUE, breakLen = 9, p.Rowv = TRUE, p.Colv = NULL, 
                      p.cellNote = FALSE, p.cexRow = 0.8, p.cexCol = 2, p.margins = c(10, 10), 
                      p.lmat = rbind(c(4, 3, 0), c(0, 2, 1)), p.lhei=c(0.5, 5), p.lwid = c(0.5, 3, 3))  
 
@@ -99,18 +119,18 @@ lowDimRows <- dsDecomp$rowInd
 lowDimRoden <- dsDecomp$rowDendrogram 
 
 # heatmap for decomposed algorithms  
-algDecomp <- drawPlot(t(hugeMatrixDecomposed$v), "algorithms_svd.png", width = 2048, height = 1536, 
-                      dendrogramType = "col", decomposed = TRUE, breakLen = 9, p.Rowv = NULL, p.Colv = TRUE, 
+algDecomp <- drawPlot(t(hugeMatrixDecomposed_a), "algorithms_svd.png", width = 2048, height = 1536, 
+                      dendrogramType = "col", p.distfunction = distfunction, 
+                      decomposed = TRUE, breakLen = 9, p.Rowv = NULL, p.Colv = TRUE, 
                       p.cellNote = FALSE, p.cexRow = 2, p.cexCol = 1.2, p.margins = c(10, 10), 
                       p.lmat = rbind(c(4, 2), c(0, 3), c(0, 1)), p.lhei = c(0.5, 2, 5), p.lwid = c(0.5, 3)) 
 
 lowDimCols <- algDecomp$colInd 
 lowDimCoden <- algDecomp$colDendrogram 
 
-# heatmap for decomposed algorithms two dimensional dendrogram with flat left structure 
-alg2Decomp <- drawPlot(t(hugeMatrixDecomposed$v), "algorithms_svd_un.png", width = 2048, height = 1536, 
-                       dendrogramType = "both", decomposed = TRUE, breakLen = 9, p.Rowv = TRUE, p.Colv = TRUE, 
-                       p.cellNote = FALSE, p.cexRow = 2, p.cexCol = 1.2, p.margins = c(10, 10)) 
+bothBigMx <- drawPlot(hugeMatrix, "togetherMx.png", dendrogramType = "both",
+                      p.distfunction = distfunction, 
+                      breakLen = 9, p.Rowv = lowDimRoden, p.Colv = lowDimCoden, p.cellNote = FALSE) 
 
 # calculate principal components general function  
 pcomponents <- prcomp(x = mydata, center = TRUE, scale = FALSE) 
@@ -134,33 +154,25 @@ library(Rtsne)
 
 train <- data.frame(mydata)  
 train$label <- matrix(newSpcCls$cluster, nrow = nrow(mydata), ncol = 1) 
+ 
+trainx <- train 
 
 train$name <- matrix(rownames(hugeMatrix), nrow = nrow(hugeMatrix), ncol = 1) 
 train$name <- lapply(X = train$name, function(x) { 
     pos_un <- gregexpr("_", x, ignore.case = TRUE)[[1]][[1]] 
     x <- substr(x, 0, pos_un - 1) 
 }) 
-train$name <- as.numeric(train$name) 
+train$name <- as.character(train$name) 
 
-# shrinking the size for the time limit
-numTrain <- 517
-set.seed(1)
-rows <- sample(1:nrow(train), numTrain)
-trainx <- train[ , c(-17)] 
-
-# change every column with random numbers
-noise <- scale(matrix(rexp(517 * 15, rate = 0.1), ncol = 15)) 
-noise <- cbind(noise, matrix(rep(0, 517), ncol = 1)) 
-trainx <- trainx + noise 
-  
-# create a new column with random generated values   
-noise <- scale(matrix(rexp(517, rate = 0.1), ncol = 1)) 
-trainx <- cbind(trainx, noise) 
+# create new data points with random generated values    
+noiseLevel <- 1 
+noise <- scale(matrix(rexp(517 * noiseLevel, rate = 0.1), ncol = noiseLevel)) 
+train <- cbind(train, noise) 
 
 # using tsne
 set.seed(1) # for reproducibility 
 
-tsne <- Rtsne(trainx, dims = 2, perplexity=30, check_duplicates = FALSE, verbose=TRUE, max_iter = 500) 
+tsne <- Rtsne(train, dims = 2, perplexity=30, check_duplicates = FALSE, verbose=TRUE, max_iter = 500) 
 
 # visualizing
 png(filename= "plots/tsne.png", width = 3200, height = 2500) 
@@ -171,7 +183,7 @@ text(tsne$Y, labels=train$name, col=colors[train$label], cex = 0.8)
 dev.off() 
 
 # compare with pca
-pca = princomp(train[,-1])$scores[,1:2] 
+pca = princomp(trainx)$scores[,1:2] 
 plot(pca, t='n', main="pca")
 text(pca, labels=train$label,col=colors[train$label]) 
  
