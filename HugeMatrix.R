@@ -5,9 +5,9 @@ setwd("/home/mikhail/Desktop/GitProjects/FrugalML")
 
 # results of algorithms
 evaluations <- read.csv("data/openml_evaluations_all.csv")
-separate_evaluations <- split(evaluations, evaluations$task_id)
+separate_evaluations <- split(evaluations, evaluations$task_id) 
 
-source("HugeMatrixFunctions.R")
+source("HugeMatrixFunctions.R") 
 
 # find all algrothms from all results
 algorithms <- data.frame(levels(evaluations$algo))
@@ -44,8 +44,8 @@ for (i in 1:quantityDataSets) {
     # make a copy of set
     dataSet <- as.data.frame(separate_evaluations[i])
     
-    processedDataSet <- originalScoreData(hugeMatrix, dataSet)
-    
+    processedDataSet <- frugalityScoreData(hugeMatrix, dataSet, valOfAlgs = numOfAlgs) 
+ 
     # add results to the matrix
     hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]])
 }
@@ -70,24 +70,33 @@ for (i in 1:numOfAlgs) {
 algsMissingValues <-
     algsMissingValues[order(algsMissingValues$sumMissing, decreasing = TRUE),]
 
-matrixEmptyValuesAllow <- FALSE
+matrixEmptyValuesAllow <- FALSE 
 
 if (matrixEmptyValuesAllow) { 
     # replace all NA values with negative value
     processedValues[is.na(processedValues)] <- -1
 } else {
-    # select algorithms with more than half of missing values
-    limit <- quantile(algsMissingValues$sumMissing, 0.8)
-    topAlgorithmsMissingValues <-
-        algsMissingValues[algsMissingValues[, 2] > limit,]
-    
-    # find all algorithms with missing values
-    topAlgorithmsMissingValues <-
-        algsMissingValues[algsMissingValues[, 2] > 0,]
-    
+    deleteAllEmpty <- FALSE 
+    if (deleteAllEmpty) {
+        # find all algorithms with missing values
+        topAlgorithmsMissingValues <-
+            algsMissingValues[algsMissingValues[, 2] > 0,]        
+    } else {
+        # select algorithms with more than half of missing values
+        limit <- quantile(algsMissingValues$sumMissing, 0.9)
+        topAlgorithmsMissingValues <-
+            algsMissingValues[algsMissingValues[, 2] > limit,] 
+    }
+
     # delete them from a matrix
     hugeMatrix <-
         hugeMatrix[,!colnames(hugeMatrix) %in% topAlgorithmsMissingValues[, 1]] 
+} 
+
+# remove left empty values or left as is in in a table 
+postProcessingEmptyValues <- TRUE 
+if (postProcessingEmptyValues) {
+    hugeMatrix[is.na(hugeMatrix)] <- -1 
 } 
 
 saveRDS(hugeMatrix, "objects/hugeMatrixOnlyWithRealValues.rds")
