@@ -10,7 +10,7 @@ library (RColorBrewer)
 w <- 0.1
 
 # number of latent features for SVD decomposition    
-nlf <- 8  
+nlf <- 10  
 
 # function for evaluation distance between vectors 
 distfunction <- 'minkowski' 

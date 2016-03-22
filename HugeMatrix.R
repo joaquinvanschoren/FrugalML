@@ -70,12 +70,9 @@ for (i in 1:numOfAlgs) {
 algsMissingValues <-
     algsMissingValues[order(algsMissingValues$sumMissing, decreasing = TRUE),]
 
-matrixEmptyValuesAllow <- FALSE 
+matrixEmptyValuesThrow <- TRUE  
 
-if (matrixEmptyValuesAllow) { 
-    # replace all NA values with negative value
-    processedValues[is.na(processedValues)] <- -1
-} else {
+if (matrixEmptyValuesThrow) { 
     deleteAllEmpty <- FALSE 
     if (deleteAllEmpty) {
         # find all algorithms with missing values
@@ -83,11 +80,11 @@ if (matrixEmptyValuesAllow) {
             algsMissingValues[algsMissingValues[, 2] > 0,]        
     } else {
         # select algorithms with more than half of missing values
-        limit <- quantile(algsMissingValues$sumMissing, 0.9)
+        limit <- 10 
         topAlgorithmsMissingValues <-
-            algsMissingValues[algsMissingValues[, 2] > limit,] 
+            algsMissingValues[algsMissingValues[, 2] >= limit,] 
     }
-
+    
     # delete them from a matrix
     hugeMatrix <-
         hugeMatrix[,!colnames(hugeMatrix) %in% topAlgorithmsMissingValues[, 1]] 

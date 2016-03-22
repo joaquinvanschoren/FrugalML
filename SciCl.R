@@ -7,6 +7,7 @@ setwd("/home/mikhail/Desktop/GitProjects/FrugalML")
 
 # function for evaluation distance between vectors 
 distfunction <- 'euclidean' 
+
 # path for images with plots 
 savePath <- 'plots/'
 
@@ -35,7 +36,7 @@ if (sum(svd_d > 3) > 20) {
 } 
 
 # select number of features based on the image 
-num_latent_features <- 8 
+num_latent_features <- 10 
 
 # what method to use SVD or ALS for decomposition of original matrix 
 enableALS <- FALSE 
@@ -172,7 +173,7 @@ train <- cbind(train, noise)
 # using tsne
 set.seed(1) # for reproducibility 
 
-tsne <- Rtsne(train, dims = 2, perplexity=30, check_duplicates = FALSE, verbose=TRUE, max_iter = 500) 
+tsne <- Rtsne(train, dims = 2, perplexity = 30, check_duplicates = FALSE, verbose = TRUE, max_iter = 500) 
 
 # visualizing
 png(filename= "plots/tsne.png", width = 3200, height = 2500) 
