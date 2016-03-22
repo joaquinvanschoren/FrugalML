@@ -5,18 +5,20 @@ library(gplots)
 # set your own directory 
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
 
-# remove empty values
-hugeMatrix <- hugeMatrix[, -37] 
-hugeMatrix <- hugeMatrix[-75, ] 
+hasEmptyValues <- FALSE 
 
-# compute missed values
-hugeMatrixImputed <- SVDmiss(X = hugeMatrix, niter = 25, ncomp = dim(hugeMatrix)[2], conv.reldiff = 1E-3) 
+if (hasEmptyValues) {
+    # remove empty values
+    hugeMatrix <- hugeMatrix[, -37] 
+    hugeMatrix <- hugeMatrix[-75, ] 
+    
+    # compute missed values
+    hugeMatrixImputed <- SVDmiss(X = hugeMatrix, niter = 25, ncomp = dim(hugeMatrix)[2], conv.reldiff = 1E-3) 
+}
 
 #  start SVD method to look at results 
 x.svd <- svd(as.matrix(hugeMatrix), 20, 20) 
-svd_u <- x.svd$u 
 svd_d <- x.svd$d 
-svd_v <- x.svd$v 
 
 # save the number of important features for the next stages   
 if (sum(svd_d > 3) > 20) {
@@ -38,9 +40,9 @@ als_Hv <- x.als$H
 
 mydata <- svd_u 
 wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
-for (i in 2:500) wss[i] <- sum(kmeans(mydata,
+for (i in 2:50) wss[i] <- sum(kmeans(mydata,
                                      centers=i)$withinss)
-plot(1:500, wss, type="b", xlab="Number of Clusters",
+plot(1:50, wss, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares") 
 
 library(cluster) 
@@ -63,9 +65,8 @@ for(i in 2:k.max){
 plot(1:k.max, sil, type = "b", pch = 19, frame = FALSE, xlab = "Number of clusters k")
 abline(v = which.max(sil), lty = 2) 
 
-
 # make clustering 
-newSpcCls <- kmeans(mydata, 15) 
+newSpcCls <- kmeans(mydata, 10) 
 clusters <- data.frame(newSpcCls$cluster) 
 
 # alias for the decomposed matrix   
@@ -78,61 +79,38 @@ heatmap(ds, Colv = NA, Rowv = NULL, scale = 'none', distfun = function(x) dist(x
 algos <- as.matrix(scale(hugeMatrix)) 
 heatmap(algos, Colv = T, Rowv = NA, scale = 'none', distfun = function(x) dist(x,method = 'minkowski')) 
 
-# new function heatmap2 for data sets  
-breaks_a <- seq(min(hugeMatrix), max(hugeMatrix), length.out = 9) 
+source("HugeMatrixFunctions.R") 
 
-png(filename= "plots/datasets.png", width = 6400, height = 4800) 
-heatmap.2(as.matrix(hugeMatrix), 
-    breaks = breaks_a, col = brewer.pal(8, "Set2"), keysize = 0.3, 
-    Colv = NULL, density.info = "none", trace = "none", dendrogram = c("row"), 
-    symm=F,symkey=F,symbreaks=T, 
-    scale="none",  distfun = function(x) dist(x,method = 'minkowski'), 
-    cellnote = as.matrix(round(hugeMatrix, 2)), 
-    cexRow = 0.9, cexCol = 2, 
-    margins = c(50,50)) 
-dev.off() 
+# heatmap for data sets  
+dsBig <- drawPlot(hugeMatrix, "datasets.png", dendrogramType = "row", breakLen = 9, p.Rowv = TRUE, p.Colv = NULL, 
+                  p.cellNote = TRUE)   
 
 # heatmap for algorithms 
-breaks_b <- seq(min(hugeMatrix), max(hugeMatrix), length.out = 9) 
+algBig <- drawPlot(hugeMatrix, "algorithms.png", dendrogramType = "col", breakLen = 9, p.Rowv = NULL, p.Colv = TRUE, 
+                   p.cellNote = TRUE)  
 
-png(filename= "plots/algorithms.png", width = 6400, height = 4800) 
-heatmap.2(as.matrix(hugeMatrix), 
-    breaks = breaks_b, col = brewer.pal(8, "Set2"), keysize = 0.3, 
-    Rowv = NULL, density.info = "none", trace = "none", dendrogram = c("col"), 
-    symm=F,symkey=F,symbreaks=T, 
-    scale="none",  distfun = function(x) dist(x,method = 'minkowski'), 
-    cellnote = as.matrix(round(hugeMatrix, 2)), 
-    cexRow = 0.9, cexCol = 2, 
-    margins = c(50,50)) 
-dev.off() 
+# heatmap for decomposed data sets  
+dsDecomp <- drawPlot(hugeMatrixDecomposed$u, "datasets_svd.png", width = 3048, height = 2536, 
+                     dendrogramType = "row", decomposed = TRUE, breakLen = 9, p.Rowv = TRUE, p.Colv = NULL, 
+                     p.cellNote = FALSE, p.cexRow = 0.8, p.cexCol = 2, p.margins = c(10, 10), 
+                     p.lmat = rbind(c(4, 3, 0), c(0, 2, 1)), p.lhei=c(0.5, 5), p.lwid = c(0.5, 3, 3))  
 
-# heatmap2 for decomposed data sets  
-breaks_c <- seq(min(hugeMatrixDecomposed$u), max(hugeMatrixDecomposed$u), length.out = 9) 
+lowDimRows <- dsDecomp$rowInd 
+lowDimRoden <- dsDecomp$rowDendrogram 
 
-png(filename= "plots/datasets_svd.png", width = 3048, height = 2536) 
-heatmap.2(as.matrix(hugeMatrixDecomposed$u), 
-    breaks = breaks_c, col = brewer.pal(8, "Set2"), keysize = 0.3, 
-    Colv = NULL, density.info = "none", trace = "none", dendrogram = c("row"), 
-    symm=F,symkey=F,symbreaks=T, 
-    scale="none",  distfun = function(x) dist(x,method = 'minkowski'), 
-    cexRow = 0.8, cexCol = 2, 
-    margins = c(10,10),
-    lmat=rbind(c(4, 3, 0), c(0, 2, 1)), lhei=c(0.5, 5), lwid = c(0.5, 3, 3)) 
-dev.off() 
+# heatmap for decomposed algorithms  
+algDecomp <- drawPlot(t(hugeMatrixDecomposed$v), "algorithms_svd.png", width = 2048, height = 1536, 
+                      dendrogramType = "col", decomposed = TRUE, breakLen = 9, p.Rowv = NULL, p.Colv = TRUE, 
+                      p.cellNote = FALSE, p.cexRow = 2, p.cexCol = 1.2, p.margins = c(10, 10), 
+                      p.lmat = rbind(c(4, 2), c(0, 3), c(0, 1)), p.lhei = c(0.5, 2, 5), p.lwid = c(0.5, 3)) 
 
-# heatmap for decomposed algorithms 
-breaks_d <- seq(min(hugeMatrixDecomposed$v), max(hugeMatrixDecomposed$v), length.out = 9) 
+lowDimCols <- algDecomp$colInd 
+lowDimCoden <- algDecomp$colDendrogram 
 
-png(filename= "plots/algorithms_svd.png", width = 2048, height = 1536) 
-heatmap.2(as.matrix(t(hugeMatrixDecomposed$v)), 
-    breaks = breaks_d, col = brewer.pal(8, "Set2"), keysize = 0.3, 
-    Rowv = NULL, density.info = "none", trace = "none", dendrogram = c("col"), 
-    symm=F,symkey=F,symbreaks=T, 
-    scale="none",  distfun = function(x) dist(x,method = 'minkowski'), 
-    cexRow = 2, cexCol = 1.2, 
-    margins = c(10,10),
-    lmat=rbind(c(4, 2), c(0, 3), c(0, 1)), lhei=c(0.5, 2, 5), lwid = c(0.5, 3)) 
-dev.off() 
+# heatmap for decomposed algorithms two dimensional dendrogram with flat left structure 
+alg2Decomp <- drawPlot(t(hugeMatrixDecomposed$v), "algorithms_svd_un.png", width = 2048, height = 1536, 
+                       dendrogramType = "both", decomposed = TRUE, breakLen = 9, p.Rowv = TRUE, p.Colv = TRUE, 
+                       p.cellNote = FALSE, p.cexRow = 2, p.cexCol = 1.2, p.margins = c(10, 10)) 
 
 # calculate principal components general function  
 pcomponents <- prcomp(x = mydata, center = TRUE, scale = FALSE) 

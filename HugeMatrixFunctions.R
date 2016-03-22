@@ -22,7 +22,7 @@ createHugeMatrix <- function(originData, splitFactor) {
         algorithms[i, 1] <- shortNameAlgorithm(algFullName)
     }
     algorithms <- data.frame(t(algorithms))
-    
+    source("HugeMatrixFunctions.R") 
     # change from factor to character
     algorithms[] <- lapply(algorithms, as.character)
     
@@ -36,7 +36,7 @@ createHugeMatrix <- function(originData, splitFactor) {
         # make a copy of set
         dataSet <- as.data.frame(separate_evaluations[i])
         
-        processedDataSet <- originalScoreData(hugeMatrix, dataSet)
+        processedDataSet <- frugalityScoreData(hugeMatrix, dataSet, valOfAlgs = numOfAlgs) 
 
         # add results to the matrix
         hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]]) 
@@ -44,7 +44,7 @@ createHugeMatrix <- function(originData, splitFactor) {
     return (hugeMatrix)
 }
 
-originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE) { 
+originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE, valOfAlgs) { 
     ## standard version with the original frulgality score 
     
     # receive name
@@ -53,7 +53,7 @@ originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE)
     cleanData <- computeTimeAUC(dataSet)
     
     # create a vector of values for this set
-    processedValues <- t(data.frame(rep(NA, numOfAlgs)))
+    processedValues <- t(data.frame(rep(NA, valOfAlgs)))
     colnames(processedValues) <- colnames(dataMatrix)
     rownames(processedValues) <- xName
     
@@ -80,16 +80,16 @@ originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE)
     return (list(missingData, processedValues)) 
 } 
 
-frugalityScoreData <- function(dataMatrix, dataSet, w = 0.1, replaceMissingValues = FALSE) { 
+frugalityScoreData <- function(dataMatrix, dataSet, w = 0.1, replaceMissingValues = FALSE, valOfAlgs) { 
     ## standard version with the original frulgality score 
     
     # receive name
     xName <- as.character(dataSet[1, 2]) 
-    
+
     cleanData <- computeTimeAUC(dataSet)
     
     # create a vector of values for this set
-    processedValues <- t(data.frame(rep(NA, numOfAlgs)))
+    processedValues <- t(data.frame(rep(NA, valOfAlgs)))
     colnames(processedValues) <- colnames(dataMatrix)
     rownames(processedValues) <- xName
     
@@ -106,7 +106,8 @@ frugalityScoreData <- function(dataMatrix, dataSet, w = 0.1, replaceMissingValue
 
     # scale all values with respect to the best result   
     bestFrugalValue <- max(processedValues, na.rm = TRUE) 
-    processedValues <- processedValues / bestFrugalValue 
+    lowestFrugalScore <- min(processedValues, na.rm = TRUE) 
+    processedValues <- (processedValues - lowestFrugalScore) / (bestFrugalValue - lowestFrugalScore) 
 
     # calculate the quntity of missing values for a data set     
     sumMissing <- sum(is.na(processedValues)) 
@@ -181,3 +182,55 @@ shortNameAlgorithm <- function(algOriginalName) {
     
     return (shortName)
 }
+
+# function for use advanced version of heatmap plot  
+drawPlot <- function(p.matrix, fileName, 
+                     width = 6400, height = 4800, dendrogramType, 
+                     decomposed = FALSE, 
+                     breakLen, p.Rowv = NULL, p.Colv = NULL, 
+                     p.cellNote = FALSE, p.keysize = 0.3, 
+                     p.lmat = NULL, p.lhei = NULL, p.lwid = NULL, 
+                     p.cexRow = 0.9, p.cexCol = 2, p.margins = c(50, 50)) {
+    
+    # calculate number of intervals for a legend 
+    
+    if (decomposed) {
+        breaks_s <- seq(quantile(p.matrix, 0.05, na.rm = TRUE), quantile(p.matrix, 0.95, na.rm = TRUE), length.out = breakLen) 
+    } else {
+        breaks_s <- seq(0, quantile(p.matrix, 0.95, na.rm = TRUE), length.out = breakLen - 1) 
+        breaks_s <- c(-1, breaks_s) 
+    }
+    
+    # create a file 
+    png(filename = paste(savePath, fileName, sep = ""), width = width, height = height) 
+    
+    # check whether it is necessary to draw a vakue within a cell 
+    if (p.cellNote) { 
+        hm2res <- heatmap.2(as.matrix(p.matrix), 
+                            breaks = breaks_s, col = brewer.pal(8, "YlOrRd"), keysize = p.keysize, 
+                            Colv = p.Colv, Rowv = p.Rowv, density.info = "none", trace = "none", dendrogram = c(dendrogramType), 
+                            symm=F,symkey=F,symbreaks=T, 
+                            scale="none",  distfun = function(x) dist(x,method = distfunction), 
+                            cellnote = as.matrix(round(p.matrix, 2)),  
+                            cexRow = p.cexRow, cexCol = p.cexCol, 
+                            margins = p.margins, 
+                            lmat = p.lmat,
+                            lhei = p.lhei, 
+                            lwid = p.lwid) 
+    } else {
+        hm2res <- heatmap.2(as.matrix(p.matrix), 
+                            breaks = breaks_s, col = brewer.pal(8, "YlOrRd"), keysize = p.keysize, 
+                            Colv = p.Colv, Rowv = p.Rowv, density.info = "none", trace = "none", dendrogram = c(dendrogramType), 
+                            symm=F,symkey=F,symbreaks=T, 
+                            scale="none",  distfun = function(x) dist(x,method = distfunction), 
+                            cexRow = p.cexRow, cexCol = p.cexCol, 
+                            margins = p.margins, 
+                            lmat = p.lmat,
+                            lhei = p.lhei, 
+                            lwid = p.lwid) 
+    } 
+    dev.off() 
+    
+    return (hm2res) 
+} 
+
