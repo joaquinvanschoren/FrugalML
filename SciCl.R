@@ -102,9 +102,9 @@ plot(1:k.max, sil, type = "b", pch = 19, frame = FALSE, xlab = "Number of cluste
 abline(v = which.max(sil), lty = 2) 
 
 # make clustering 
-newSpcCls <- kmeans(mydata, 11) 
+newSpcCls <- kmeans(mydata, 10) 
 clusters <- data.frame(newSpcCls$cluster) 
-
+ 
 # construct heat maps with heatmap function 
 ds <- as.matrix(scale(hugeMatrix)) 
 heatmap(ds, Colv = NA, Rowv = NULL, scale = 'none', distfun = function(x) dist(x,method = 'minkowski'), col = brewer.pal(8, "Accent")) 
@@ -182,7 +182,7 @@ train$name <- as.character(train$name)
 
 # create new data points with random generated values    
 noiseLevel <- 1 
-noise <- scale(matrix(rexp(517 * noiseLevel, rate = 0.1), ncol = noiseLevel)) 
+noise <- scale(matrix(rexp(dim(hugeMatrix)[1] * noiseLevel, rate = 0.1), ncol = noiseLevel)) 
 train <- cbind(train, noise) 
 
 # using tsne

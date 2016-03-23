@@ -47,7 +47,9 @@ for (i in 1:quantityDataSets) {
     processedDataSet <- frugalityScoreData(hugeMatrix, dataSet, valOfAlgs = numOfAlgs) 
  
     # add results to the matrix
-    hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]])
+    if (!is.na(processedDataSet)) {
+        hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]])         
+    } 
 }
 
 # explore the number of missing values for data sets

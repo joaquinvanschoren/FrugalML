@@ -39,18 +39,24 @@ createHugeMatrix <- function(originData, splitFactor) {
         processedDataSet <- frugalityScoreData(hugeMatrix, dataSet, valOfAlgs = numOfAlgs) 
 
         # add results to the matrix
-        hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]]) 
-    }
+        if (!is.na(processedDataSet)) {
+            hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]])         
+        } 
+    } 
     return (hugeMatrix)
 }
-
+   
 originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE, valOfAlgs) { 
     ## standard version with the original frulgality score 
     
     # receive name
     xName <- as.character(dataSet[1, 2]) 
-    
-    cleanData <- computeTimeAUC(dataSet)
+
+    # compute new values and check if data correct 
+    cleanData <- computeTimeAUC(dataSet) 
+    if (is.na(cleanData)) {
+        return (NA) 
+    } 
     
     # create a vector of values for this set
     processedValues <- t(data.frame(rep(NA, valOfAlgs)))
@@ -85,8 +91,12 @@ frugalityScoreData <- function(dataMatrix, dataSet, w = 0.1, replaceMissingValue
     
     # receive name
     xName <- as.character(dataSet[1, 2]) 
-
-    cleanData <- computeTimeAUC(dataSet)
+ 
+    # compute new values and check if data correct 
+    cleanData <- computeTimeAUC(dataSet) 
+    if (is.na(cleanData)) {
+        return (NA) 
+    } 
     
     # create a vector of values for this set
     processedValues <- t(data.frame(rep(NA, valOfAlgs)))
@@ -135,6 +145,10 @@ computeTimeAUC <- function(dataSet) {
     
     # store highest value for AUC in this particular data set
     highestAUC <- max(dataSet$auroc)
+
+    if (highestAUC <= 0 | highestAUC > 1) { 
+        return (NA)        
+    } 
     
     # convert time variable to numbers
     dataSet$training_millis <-
