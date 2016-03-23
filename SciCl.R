@@ -55,23 +55,37 @@ if (enableALS) {
     hugeMatrixDecomposed_a <- x.svd$v 
 }
 
-mydata <- hugeMatrixDecomposed_d 
+# scale columns in accordance with eigenvalues 
+dataWeight <- t(t(hugeMatrixDecomposed_d) * svd_d[1:num_latent_features]) 
 
 # identify number of clusters with sum of squares with a cluster
 # from http://www.statmethods.net/advstats/cluster.html   
+mydata <- hugeMatrixDecomposed_d 
 
-wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
-for (i in 2:50) wss[i] <- sum(kmeans(mydata,
-                                     centers=i)$withinss)
-plot(1:50, wss, type="b", xlab="Number of Clusters",
-     ylab="Within groups sum of squares") 
+useWeight <- TRUE 
+
+if (useWeight) {
+    numOfEigenvalues <- length(svd_d) 
+    
+    wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
+    for (i in 2:numOfEigenvalues) wss[i] <- sum(kmeans(mydata,
+                                                       centers=i)$withinss * svd_d[1:i]) 
+    plot(1:numOfEigenvalues, wss, type="b", xlab="Number of Clusters",
+         ylab="Within groups sum of squares")     
+} else {
+    wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
+    for (i in 2:99) wss[i] <- sum(kmeans(mydata,
+                                                       centers=i)$withinss) 
+    plot(1:99, wss, type="b", xlab="Number of Clusters",
+         ylab="Within groups sum of squares")        
+}
 
 library(cluster) 
 
-# try anotehr way to identify a number of clusters 
-time.scaled <- scale(hugeMatrix) 
-k.max <- 15
-data <- time.scaled
+# try another way to identify a number of clusters 
+time.scaled <- scale(hugeMatrixDecomposed_d) 
+k.max <- 25
+data <- time.scaled 
 sil <- rep(0, k.max)
 
 # Compute the average silhouette width for 
