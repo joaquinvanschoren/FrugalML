@@ -1,7 +1,8 @@
 library(NMFN) 
 library(SpatioTemporal)
-library(gplots)
-
+library(gplots) 
+library (RColorBrewer) 
+  
 # set your own directory 
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
 
@@ -101,7 +102,7 @@ plot(1:k.max, sil, type = "b", pch = 19, frame = FALSE, xlab = "Number of cluste
 abline(v = which.max(sil), lty = 2) 
 
 # make clustering 
-newSpcCls <- kmeans(mydata, 10) 
+newSpcCls <- kmeans(mydata, 11) 
 clusters <- data.frame(newSpcCls$cluster) 
 
 # construct heat maps with heatmap function 
