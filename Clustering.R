@@ -13,6 +13,23 @@ showParetoFront <- TRUE
 evaluations <- read.csv("data/openml_evaluations_all.csv")
 separate_evaluations <- split(evaluations, evaluations$task_id) 
 
+# remove incorrect values   
+separate_evaluations <- separate_evaluations[-75] 
+
+# matrix has empty values 
+hasEmptyValues <- sum(is.na(hugeMatrix)) != 0 
+
+if (hasEmptyValues) {
+    # compute missed values
+    hugeMatrixImputed <- SVDmiss(X = hugeMatrix, niter = 25, ncomp = dim(hugeMatrix)[2], conv.reldiff = 1E-3) 
+    
+    hugeMatrix <- hugeMatrixImputed$Xfill 
+} 
+
+# make clustering 
+newSpcCls <- kmeans(hugeMatrix, 10) 
+clusters <- data.frame(newSpcCls$cluster) 
+ 
 allMeasures <- nrow(clusters) 
 
 selectedAlgorithms <- data.frame() 
@@ -93,6 +110,8 @@ for (i in 1: max(clusters[, 1])) {
         aggregatedValues <- aggregatedValues[!is.na(aggregatedValues$AUC), ] 
     }
     
+    aggregatedValues <- aggregatedValues[order(-1*aggregatedValues$AUC, aggregatedValues$CombineTime, decreasing = TRUE), ] 
+    
     # calculate Pareto front
     paretoFront = aggregatedValues[which(!duplicated(cummin(aggregatedValues$CombineTime))),] 
     
@@ -101,7 +120,7 @@ for (i in 1: max(clusters[, 1])) {
     if (showParetoFront == TRUE) { 
         numOfAlgs <- nrow(paretoFront) 
         png(filename= paste("plots/cluster_Pareto_", i, ".png", sep = ""), width = 1600, height = 1200)    
-        plot(paretoFront[,1:2], col = rainbow(numOfAlgs) , xlim=c(min(paretoFront$AUC), max(paretoFront$AUC)), ylim=c(0, 5), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+        plot(paretoFront[,1:2], col = rainbow(numOfAlgs) , xlim=c(min(paretoFront$AUC), max(paretoFront$AUC)), ylim=c(0, max(paretoFront$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
         
         if (simplify == TRUE) { 
             legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.8, pt.cex = 1.8) 

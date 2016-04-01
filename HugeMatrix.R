@@ -52,7 +52,9 @@ for (i in 1:quantityDataSets) {
     # add results to the matrix
     if (!is.na(processedDataSet)) {
         hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]])         
-    } 
+    } else { 
+        print(paste("The next data set is skipped ", as.character(dataSet[1, 2]), ", id = ", i, sep = "")) 
+    }
 }
 
 # explore the number of missing values for data sets
