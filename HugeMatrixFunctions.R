@@ -105,11 +105,9 @@ frugalityScoreData <- function(dataMatrix, dataSet, p.w = 0.1, replaceMissingVal
     
     # update value for each algorithm and data set
     for (algValue in 1:nrow(cleanData)) {
-        algName <- as.character(cleanData[algValue, 3])
+        algName <- shortNameAlgorithmIndividual(as.character(cleanData[algValue, 3])) 
         algIndex <-
-            grep(
-                pattern = substr(algName, 0, 5), x = colnames(processedValues), ignore.case = TRUE
-            )
+            grep(pattern = algName, x = colnames(processedValues), ignore.case = TRUE)
         processedValues[1, algIndex] <-
             cleanData[algValue, 1] - w * log(1 + cleanData[algValue, 2])
     }
@@ -180,7 +178,7 @@ computeTimeAUC <- function(dataSet) {
     
     return (smallX)
 }
-
+ 
 shortNameAlgorithm <- function(algOriginalName) {
     posOfSpace <- gregexpr(pattern = ' ', algOriginalName)[[1]][1]
     
@@ -193,6 +191,128 @@ shortNameAlgorithm <- function(algOriginalName) {
         shortName <-
             paste(substr(algOriginalName, 0, 5), substr(algOriginalName, 23, nchar(algOriginalName)), sep = "")
     }
+    
+    return (shortName)
+} 
+
+shortNameAlgorithmIndividual <- function(algOriginalName) {
+    posOfSpace <- gregexpr(pattern = ' ', algOriginalName)[[1]][1]
+    
+    if (posOfSpace > 0) {
+        shortName <-
+            paste(
+                substr(algOriginalName, 0, 5), substr(algOriginalName, 23, posOfSpace - 1), sep = ""
+            )
+    } else {
+        shortName <-
+            paste(substr(algOriginalName, 0, 5), substr(algOriginalName, 23, nchar(algOriginalName)), sep = "")
+    }
+    
+    if (shortName == "1105_lazy.IBk") {
+        if (algOriginalName == "1105_weka.classifiers.lazy.IBk -- -K 1 -W 0 -A \\weka.core.neighboursearch.LinearNNSearch -A \\\\\\weka.core.EuclideanDistance -R first-last\\\\\\\\") { 
+            shortName <- "1105_lazy.IBk.K1" 
+        } else if (algOriginalName == "1105_weka.classifiers.lazy.IBk -- -K 3 -W 0 -A \\weka.core.neighboursearch.LinearNNSearch -A \\\\\\weka.core.EuclideanDistance -R first-last\\\\\\\\") { 
+            shortName <- "1105_lazy.IBk.K3" 
+        } else if (algOriginalName == "1105_weka.classifiers.lazy.IBk -- -K 5 -W 0 -A \\weka.core.neighboursearch.LinearNNSearch -A \\\\\\weka.core.EuclideanDistance -R first-last\\\\\\\\") { 
+            shortName <- "1105_lazy.IBk.K5" 
+        }
+    } else if (shortName == "1112_functions.LibLINEAR") {
+        if (algOriginalName == "1112_weka.classifiers.functions.LibLINEAR -- -S 1 -C 1.0 -E 0.001 -B 1.0") {
+            shortName <- "1112_LibLINEAR.E0.001" 
+        } else if (algOriginalName == "1112_weka.classifiers.functions.LibLINEAR -- -S 1 -C 1.0 -E 0.01 -B 1.0") {
+            shortName <- "1112_LibLINEAR.E0.01" 
+        }
+    } else if (shortName == "1165_bayes.AveragedNDependenceEstimators.A1DE") {
+            shortName <- "1165_bayes.A1DE" 
+    } else if (shortName == "1166_bayes.AveragedNDependenceEstimators.A2DE") {
+        shortName <- "1166_bayes.A2DE" 
+    }
+    else if (shortName == "1182_meta.AdaBoostM1") {
+            if (algOriginalName == "1182_weka.classifiers.meta.AdaBoostM1 -- -P 100 -S 1 -I 10 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1182_AdaBoostM1.I10" 
+            } else if (algOriginalName == "1182_weka.classifiers.meta.AdaBoostM1 -- -P 100 -S 1 -I 160 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1182_AdaBoostM1.I160" 
+            } else if (algOriginalName == "1182_weka.classifiers.meta.AdaBoostM1 -- -P 100 -S 1 -I 20 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1182_AdaBoostM1.I20" 
+            } else if (algOriginalName == "1182_weka.classifiers.meta.AdaBoostM1 -- -P 100 -S 1 -I 40 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1182_AdaBoostM1.I40" 
+            } else if (algOriginalName == "1182_weka.classifiers.meta.AdaBoostM1 -- -P 100 -S 1 -I 80 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1182_AdaBoostM1.I80" 
+            }
+    } else if (shortName == "1185_meta.Bagging") { 
+        if (algOriginalName == "1185_weka.classifiers.meta.Bagging -- -P 100 -S 1 -num-slots 1 -I 10 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") {
+            shortName <- "1185_Bagging.I10" 
+        } else if (algOriginalName == "1185_weka.classifiers.meta.Bagging -- -P 100 -S 1 -num-slots 1 -I 160 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") {
+            shortName <- "1185_Bagging.I160" 
+        } else if (algOriginalName == "1185_weka.classifiers.meta.Bagging -- -P 100 -S 1 -num-slots 1 -I 20 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") {
+            shortName <- "1185_Bagging.I20" 
+        } else if (algOriginalName == "1185_weka.classifiers.meta.Bagging -- -P 100 -S 1 -num-slots 1 -I 40 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") {
+            shortName <- "1185_Bagging.I40" 
+        } else if (algOriginalName == "1185_weka.classifiers.meta.Bagging -- -P 100 -S 1 -num-slots 1 -I 80 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") {
+            shortName <- "1185_.Bagging.I80" 
+        }
+    } else if (shortName == "1191_meta.LogitBoost") {
+            if (algOriginalName ==  "1191_weka.classifiers.meta.LogitBoost -- -P 100 -L -1.7976931348623157E308 -H 1.0 -Z 3.0 -O 1 -E 1 -S 1 -I 10 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1191_LogitBoost.I10" 
+            } else if (algOriginalName ==  "1191_weka.classifiers.meta.LogitBoost -- -P 100 -L -1.7976931348623157E308 -H 1.0 -Z 3.0 -O 1 -E 1 -S 1 -I 160 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1191_LogitBoost.I160" 
+            } else if (algOriginalName ==  "1191_weka.classifiers.meta.LogitBoost -- -P 100 -L -1.7976931348623157E308 -H 1.0 -Z 3.0 -O 1 -E 1 -S 1 -I 20 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1191_LogitBoost.I20" 
+            } else if (algOriginalName ==  "1191_weka.classifiers.meta.LogitBoost -- -P 100 -L -1.7976931348623157E308 -H 1.0 -Z 3.0 -O 1 -E 1 -S 1 -I 40 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1191_LogitBoost.I0" 
+            } else if (algOriginalName ==  "1191_weka.classifiers.meta.LogitBoost -- -P 100 -L -1.7976931348623157E308 -H 1.0 -Z 3.0 -O 1 -E 1 -S 1 -I 80 -W weka.classifiers.trees.DecisionStump") {
+                shortName <- "1191_LogitBoost.I80" 
+            }   
+    } else if (shortName == "1192_meta.MultiBoostAB") {
+        if (algOriginalName == "1192_weka.classifiers.meta.MultiBoostAB -- -C 3 -P 100 -S 1 -I 10 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1192_MultiBoostAB.I10" 
+        } else if (algOriginalName == "1192_weka.classifiers.meta.MultiBoostAB -- -C 3 -P 100 -S 1 -I 20 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1192_MultiBoostAB.I160" 
+        } else if (algOriginalName == "1192_weka.classifiers.meta.MultiBoostAB -- -C 3 -P 100 -S 1 -I 160 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1192_MultiBoostAB.I20" 
+        } else if (algOriginalName == "1192_weka.classifiers.meta.MultiBoostAB -- -C 3 -P 100 -S 1 -I 40 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1192_MultiBoostAB.I40" 
+        } else if (algOriginalName == "1192_weka.classifiers.meta.MultiBoostAB -- -C 3 -P 100 -S 1 -I 80 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1192_MultiBoostAB.I80" 
+        } 
+    } else if (shortName == "1194_meta.RandomSubSpace") {
+        if (algOriginalName == "1194_weka.classifiers.meta.RandomSubSpace -- -P 0.5 -S 1 -num-slots 1 -I 10 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") { 
+            shortName <- "1194_RandomSubSpace.I10" 
+        } else if (algOriginalName == "1194_weka.classifiers.meta.RandomSubSpace -- -P 0.5 -S 1 -num-slots 1 -I 160 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") { 
+            shortName <- "1194_RandomSubSpace.I160" 
+        } else if (algOriginalName == "1194_weka.classifiers.meta.RandomSubSpace -- -P 0.5 -S 1 -num-slots 1 -I 20 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") { 
+            shortName <- "1194_RandomSubSpace.I20" 
+        } else if (algOriginalName == "1194_weka.classifiers.meta.RandomSubSpace -- -P 0.5 -S 1 -num-slots 1 -I 40 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") { 
+            shortName <- "1194_RandomSubSpace.I40" 
+        } else if (algOriginalName == "1194_weka.classifiers.meta.RandomSubSpace -- -P 0.5 -S 1 -num-slots 1 -I 80 -W weka.classifiers.trees.REPTree -- -M 2 -V 0.001 -N 3 -S 1 -L -1 -I 0.0") { 
+            shortName <- "1194_RandomSubSpace.I80" 
+        }
+    }  else if (shortName == "1195_meta.RealAdaBoost") {
+        if (algOriginalName == "1195_weka.classifiers.meta.RealAdaBoost -- -P 100 -H 1.0 -S 1 -I 10 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1195_meta.RealAdaBoost.I10" 
+        } else if (algOriginalName == "1195_weka.classifiers.meta.RealAdaBoost -- -P 100 -H 1.0 -S 1 -I 160 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1195_meta.RealAdaBoost.I160" 
+        } else if (algOriginalName == "1195_weka.classifiers.meta.RealAdaBoost -- -P 100 -H 1.0 -S 1 -I 20 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1195_meta.RealAdaBoost.I20" 
+        } else if (algOriginalName == "1195_weka.classifiers.meta.RealAdaBoost -- -P 100 -H 1.0 -S 1 -I 40 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1195_meta.RealAdaBoost.I40" 
+        } else if (algOriginalName == "1195_weka.classifiers.meta.RealAdaBoost -- -P 100 -H 1.0 -S 1 -I 80 -W weka.classifiers.trees.DecisionStump") { 
+            shortName <- "1195_meta.RealAdaBoost.I80" 
+        }
+    } else if (shortName == "1196_meta.RotationForest") {
+        if (algOriginalName == "1196_weka.classifiers.meta.RotationForest -- -G 3 -H 3 -P 50 -F \\weka.filters.unsupervised.attribute.PrincipalComponents -R 1.0 -A 5 -M -1\\ -S 1 -num-slots 1 -I 10 -W weka.classifiers.trees.J48 -- -C 0.25 -M 2") {
+            shortName <- "1196_RotationForest.I10" 
+        } else if (algOriginalName == "1196_weka.classifiers.meta.RotationForest -- -G 3 -H 3 -P 50 -F \\weka.filters.unsupervised.attribute.PrincipalComponents -R 1.0 -A 5 -M -1\\ -S 1 -num-slots 1 -I 160 -W weka.classifiers.trees.J48 -- -C 0.25 -M 2") {
+            shortName <- "1196_RotationForest.I160" 
+        } else if (algOriginalName == "1196_weka.classifiers.meta.RotationForest -- -G 3 -H 3 -P 50 -F \\weka.filters.unsupervised.attribute.PrincipalComponents -R 1.0 -A 5 -M -1\\ -S 1 -num-slots 1 -I 20 -W weka.classifiers.trees.J48 -- -C 0.25 -M 2") {
+            shortName <- "1196_RotationForest.I20" 
+        } else if (algOriginalName == "1196_weka.classifiers.meta.RotationForest -- -G 3 -H 3 -P 50 -F \\weka.filters.unsupervised.attribute.PrincipalComponents -R 1.0 -A 5 -M -1\\ -S 1 -num-slots 1 -I 40 -W weka.classifiers.trees.J48 -- -C 0.25 -M 2") {
+            shortName <- "1196_RotationForest.I40" 
+        } else if (algOriginalName == "1196_weka.classifiers.meta.RotationForest -- -G 3 -H 3 -P 50 -F \\weka.filters.unsupervised.attribute.PrincipalComponents -R 1.0 -A 5 -M -1\\ -S 1 -num-slots 1 -I 80 -W weka.classifiers.trees.J48 -- -C 0.25 -M 2") {
+            shortName <- "1196_RotationForest.I80" 
+        }
+    } 
+    
     
     return (shortName)
 }

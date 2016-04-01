@@ -7,7 +7,7 @@ setwd("/home/mikhail/Desktop/GitProjects/FrugalML")
 evaluations <- read.csv("data/openml_evaluations_all.csv")
 separate_evaluations <- split(evaluations, evaluations$task_id) 
 
-source("codes/HugeMatrixFunctions.R") 
+source("HugeMatrixFunctions.R") 
 
 # find all algrothms from all results
 algorithms <- data.frame(levels(evaluations$algo))
@@ -27,9 +27,9 @@ algorithms$algorithm <- as.character(algorithms$algorithm)
 # create short names
 for (i in 1:numOfAlgs) {
     algFullName <- as.character(algorithms[i, 1])
-    algorithms[i, 1] <- shortNameAlgorithm(algFullName)
+    algorithms[i, 1] <- shortNameAlgorithmIndividual(algFullName) 
 }
-algorithms <- data.frame(t(algorithms))
+algorithms <- data.frame(t(algorithms)) 
 
 # change from factor to character
 algorithms[] <- lapply(algorithms, as.character)
@@ -41,7 +41,7 @@ colnames(hugeMatrix) <- algorithms[1,]
 quantityDataSets <- length(separate_evaluations)
 
 # set frugality coeeficient 
-w <- 0.2
+w <- 0.2 
 
 for (i in 1:quantityDataSets) {
     # make a copy of set

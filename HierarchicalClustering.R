@@ -26,7 +26,7 @@ savePath <- 'plots/'
 # results of algorithms 
 evaluations <- read.csv("data/openml_evaluations_all.csv")
 
-source("codes/HugeMatrixFunctions.R") 
+source("HugeMatrixFunctions.R") 
 
 hugeMatrix <- createHugeMatrix(evaluations, 'task_id') 
 
