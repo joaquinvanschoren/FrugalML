@@ -326,14 +326,16 @@ drawPlot <- function(p.matrix, fileName,
                      p.cellNote = FALSE, p.keysize = 0.3, 
                      p.lmat = NULL, p.lhei = NULL, p.lwid = NULL, 
                      p.cexRow = 0.9, p.cexCol = 2, p.margins = c(50, 50)) {
-    
+
+    # define source palette for scaling 
+    getPalette = colorRampPalette(brewer.pal(9, "YlOrRd")) 
+
     # calculate number of intervals for a legend 
-    
     if (decomposed) {
-        breaks_s <- seq(quantile(p.matrix, 0.05, na.rm = TRUE), quantile(p.matrix, 0.95, na.rm = TRUE), length.out = breakLen) 
+        breaks_s <- seq(quantile(p.matrix, 0.01, na.rm = TRUE), quantile(p.matrix, 0.99, na.rm = TRUE), length.out = breakLen + 1) 
+        # breaks_s <- c(-1, breaks_s) 
     } else {
-        breaks_s <- seq(0, quantile(p.matrix, 0.95, na.rm = TRUE), length.out = breakLen - 1) 
-        breaks_s <- c(-1, breaks_s) 
+        breaks_s <- seq(0, 1, length.out = breakLen + 1) 
     }
     
     # create a file 
@@ -342,7 +344,7 @@ drawPlot <- function(p.matrix, fileName,
     # check whether it is necessary to draw a vakue within a cell 
     if (p.cellNote) { 
         hm2res <- heatmap.2(as.matrix(p.matrix), 
-                            breaks = breaks_s, col = brewer.pal(8, "YlOrRd"), keysize = p.keysize, 
+                            breaks = breaks_s, col = getPalette(breakLen), keysize = p.keysize, 
                             Colv = p.Colv, Rowv = p.Rowv, density.info = "none", trace = "none", dendrogram = c(dendrogramType), 
                             symm=F,symkey=F,symbreaks=T, 
                             scale="none",  distfun = function(x) dist(x,method = distfunction), 
@@ -354,7 +356,7 @@ drawPlot <- function(p.matrix, fileName,
                             lwid = p.lwid) 
     } else {
         hm2res <- heatmap.2(as.matrix(p.matrix), 
-                            breaks = breaks_s, col = brewer.pal(8, "YlOrRd"), keysize = p.keysize, 
+                            breaks = breaks_s, col = getPalette(breakLen), keysize = p.keysize, 
                             Colv = p.Colv, Rowv = p.Rowv, density.info = "none", trace = "none", dendrogram = c(dendrogramType), 
                             symm=F,symkey=F,symbreaks=T, 
                             scale="none",  distfun = function(x) dist(x,method = distfunction), 
