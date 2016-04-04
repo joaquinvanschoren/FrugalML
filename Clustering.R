@@ -2,6 +2,8 @@ library(SpatioTemporal)
 
 oldwd <- getwd()
 
+set.seed(101) 
+
 # set your own directory 
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
 
