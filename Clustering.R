@@ -8,7 +8,7 @@ set.seed(101)
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
 
 # control for grouping different values of hyper parameters to a one value  
-simplify = TRUE 
+simplify = FALSE  
 
 # create images for Pareto Front 
 showParetoFront <- TRUE 
@@ -144,7 +144,7 @@ for (i in 1: max(clusters[, 1])) {
     
     if (showParetoFront == TRUE) { 
         numOfAlgs <- nrow(paretoFront) 
-        png(filename= paste("plots/cluster_Pareto_", i, ".png", sep = ""), width = 1600, height = 1200)    
+        png(filename= paste("plots/cluster_Pareto_", i, ".png", sep = ""), width = 800, height = 600)    
         plot(paretoFront[,1:2], col = rainbow(numOfAlgs) , xlim=c(min(paretoFront$AUC), max(paretoFront$AUC)), ylim=c(0, max(paretoFront$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
         
         if (simplify == TRUE) { 

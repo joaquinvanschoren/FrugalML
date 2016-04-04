@@ -123,22 +123,26 @@ source("HugeMatrixFunctions.R")
 numOfIntervals <- 11 
 
 # heatmap for data sets  
-dsBig <- drawPlot(hugeMatrix, "datasets.png", dendrogramType = "row", p.distfunction = distfunction, 
+dsBig <- drawPlot(hugeMatrix, "datasets.png", width = 6400, height = 4800, 
+                  dendrogramType = "row", p.distfunction = distfunction, 
                   decomposed = FALSE, breakLen = numOfIntervals, 
-                  p.Rowv = TRUE, p.Colv = NULL, p.cellNote = TRUE)   
+                  p.Rowv = TRUE, p.Colv = NULL, 
+                  p.cellNote = TRUE)   
 
 # heatmap for algorithms 
-algBig <- drawPlot(hugeMatrix, "algorithms.png", dendrogramType = "col", p.distfunction = distfunction, 
+algBig <- drawPlot(hugeMatrix, "algorithms.png", width = 6400, height = 4800, 
+                  dendrogramType = "col", p.distfunction = distfunction, 
                   decomposed = FALSE, breakLen = numOfIntervals, 
-                  p.Rowv = NULL, p.Colv = TRUE, p.cellNote = TRUE)  
+                  p.Rowv = NULL, p.Colv = TRUE, 
+                  p.cellNote = TRUE)  
 
 # heatmap for decomposed data sets  
 dsDecomp <- drawPlot(hugeMatrixDecomposed_d, "datasets_svd.png", width = 3048, height = 2536, 
                      dendrogramType = "row", p.distfunction = distfunction, 
                      decomposed = TRUE, breakLen = numOfIntervals, p.Rowv = TRUE, p.Colv = NULL, 
-                     p.cellNote = TRUE, p.cexRow = 0.8, p.cexCol = 2, p.margins = c(10, 10), 
+                     p.cellNote = FALSE, p.cexRow = 0.8, p.cexCol = 2, p.margins = c(10, 10), 
                      p.lmat = rbind(c(4, 3, 0), c(0, 2, 1)), p.lhei=c(0.5, 5), p.lwid = c(0.5, 3, 3))  
-
+  
 lowDimRows <- dsDecomp$rowInd 
 lowDimRoden <- dsDecomp$rowDendrogram 
 
@@ -152,10 +156,11 @@ algDecomp <- drawPlot(t(hugeMatrixDecomposed_a), "algorithms_svd.png", width = 2
 lowDimCols <- algDecomp$colInd 
 lowDimCoden <- algDecomp$colDendrogram 
 
-bothBigMx <- drawPlot(hugeMatrix, "togetherMx.png", 
+bothBigMx <- drawPlot(hugeMatrix, "togetherMx.png", width = 6400, height = 4800, 
                       dendrogramType = "both", p.distfunction = distfunction, 
                       decomposed = FALSE, breakLen = numOfIntervals, 
-                      p.Rowv = lowDimRoden, p.Colv = lowDimCoden, p.cellNote = FALSE) 
+                      p.Rowv = lowDimRoden, p.Colv = lowDimCoden, 
+                      p.cellNote = FALSE) 
 
 # calculate principal components general function  
 pcomponents <- prcomp(x = mydata, center = TRUE, scale = FALSE) 

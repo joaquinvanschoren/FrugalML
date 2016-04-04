@@ -319,7 +319,7 @@ shortNameAlgorithmIndividual <- function(algOriginalName) {
 
 # function for use advanced version of heatmap plot  
 drawPlot <- function(p.matrix, fileName, 
-                     width = 6400, height = 4800, dendrogramType, 
+                     width = 3200, height = 2400, dendrogramType, 
                      p.distfunction = 'minkowski', 
                      decomposed = FALSE, 
                      breakLen, p.Rowv = NULL, p.Colv = NULL, 
