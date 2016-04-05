@@ -107,9 +107,11 @@ for(i in 2:k.max){
 plot(1:k.max, sil, type = "b", pch = 19, frame = FALSE, xlab = "Number of clusters k")
 abline(v = which.max(sil), lty = 2) 
 
+
 # make clustering 
 newSpcCls <- kmeans(mydata, 10) 
 clusters <- data.frame(newSpcCls$cluster) 
+
  
 # construct heat maps with heatmap function 
 ds <- as.matrix(scale(hugeMatrix)) 
@@ -118,9 +120,17 @@ heatmap(ds, Colv = NA, Rowv = NULL, scale = 'none', distfun = function(x) dist(x
 algos <- as.matrix(scale(hugeMatrix)) 
 heatmap(algos, Colv = T, Rowv = NA, scale = 'none', distfun = function(x) dist(x,method = 'minkowski')) 
 
+
+# use pam clustering with number of clusters from previous steps 
+sbx <- pam(x = hugeMatrix, 11) 
+
+# find center elements
+medos <- as.data.frame(sbx$medoids) 
+
+
 source("HugeMatrixFunctions.R") 
 
-numOfIntervals <- 11 
+numOfIntervals <- 7 
 
 # heatmap for data sets  
 dsBig <- drawPlot(hugeMatrix, "datasets.png", width = 6400, height = 4800, 

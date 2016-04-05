@@ -19,7 +19,7 @@ createHugeMatrix <- function(originData, splitFactor) {
     # create short names
     for (i in 1:numOfAlgs) {
         algFullName <- as.character(algorithms[i, 1])
-        algorithms[i, 1] <- shortNameAlgorithm(algFullName)
+        algorithms[i, 1] <- shortNameAlgorithmIndividual(algFullName)
     }
     algorithms <- data.frame(t(algorithms))
     source("HugeMatrixFunctions.R") 

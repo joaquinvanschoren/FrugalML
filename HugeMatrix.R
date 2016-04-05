@@ -41,7 +41,7 @@ colnames(hugeMatrix) <- algorithms[1,]
 quantityDataSets <- length(separate_evaluations)
 
 # set frugality coeeficient 
-w <- 0.3 
+w <- 0.05 
 
 for (i in 1:quantityDataSets) {
     # make a copy of set

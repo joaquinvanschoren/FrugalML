@@ -22,7 +22,7 @@ separate_evaluations <- split(evaluations, evaluations$task_id)
 
 # remove incorrect values   
 separate_evaluations <- separate_evaluations[-75] 
-
+ 
 # matrix has empty values 
 hasEmptyValues <- sum(is.na(hugeMatrix)) != 0 
 
