@@ -176,6 +176,12 @@ bothBigMx <- drawPlot(hugeMatrix, "togetherMx.png", width = 6400, height = 4800,
 pcomponents <- prcomp(x = mydata, center = TRUE, scale = FALSE) 
 names(pcomponents)  
 
+
+# cut a tree from hierarchical clustering and compare with original splitting 
+hcLowRoden <- as.hclust(lowDimRoden)  
+cpDataSets  <- cutree(hcLowRoden, k = 11) 
+
+
 # cumulative explained variance for each component   
 png(filename= "plots/pca_first_variance.png", width = 800, height = 600) 
 plot(cumsum(pcomponents$sdev^2/sum(pcomponents$sdev^2)), xlab = "Index of component", ylab = "Cumulative variance", main = "Explained variance") 
