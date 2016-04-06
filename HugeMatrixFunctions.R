@@ -1,4 +1,5 @@
-createHugeMatrix <- function(originData, splitFactor) {
+
+createHugeMatrix <- function(originData, splitFactor, p.w = 0.1, p.normalize = TRUE, p.matrixEmptyValuesThrow = FALSE) {
     separate_evaluations <- split(originData, originData[splitFactor])
     
     # find all algrothms from all results
@@ -36,13 +37,56 @@ createHugeMatrix <- function(originData, splitFactor) {
         # make a copy of set
         dataSet <- as.data.frame(separate_evaluations[i])
         
-        processedDataSet <- frugalityScoreData(hugeMatrix, dataSet, valOfAlgs = numOfAlgs) 
-
+        processedDataSet <- frugalityScoreData(hugeMatrix, dataSet, p.w = p.w, p.normalize <- p.normalize, valOfAlgs = numOfAlgs) 
+        
         # add results to the matrix
         if (!is.na(processedDataSet)) {
             hugeMatrix <- rbind(hugeMatrix, processedDataSet[[2]])         
+        } else { 
+            print(paste("The next data set is skipped ", as.character(dataSet[1, 2]), ", id = ", i, sep = "")) 
         } 
     } 
+    
+    # explore the number of missing values for data sets
+    dataSetMissingValues <- data.frame()
+    for (i in 1:quantityDataSets) {
+        sumMissing <- sum(is.na(hugeMatrix[i,]))
+        dataSetMissingValues <-
+            rbind(dataSetMissingValues, data.frame(rownames(hugeMatrix)[i], sumMissing))
+    }
+    dataSetMissingValues <-
+        dataSetMissingValues[order(dataSetMissingValues$sumMissing, decreasing = TRUE),]
+    
+    # find the number of missing values for algorithms
+    algsMissingValues <- data.frame()
+    for (i in 1:numOfAlgs) {
+        sumMissing <- sum(is.na(hugeMatrix[, i]))
+        algsMissingValues <-
+            rbind(algsMissingValues, data.frame(colnames(hugeMatrix)[i], sumMissing))
+    }
+    algsMissingValues <-
+        algsMissingValues[order(algsMissingValues$sumMissing, decreasing = TRUE),]
+    
+    matrixEmptyValuesThrow <- p.matrixEmptyValuesThrow  
+    
+    if (matrixEmptyValuesThrow) { 
+        deleteAllEmpty <- FALSE 
+        if (deleteAllEmpty) {
+            # find all algorithms with missing values
+            topAlgorithmsMissingValues <-
+                algsMissingValues[algsMissingValues[, 2] > 0,]        
+        } else {
+            # select algorithms with more than half of missing values
+            limit <- 10 
+            topAlgorithmsMissingValues <-
+                algsMissingValues[algsMissingValues[, 2] >= limit,] 
+        }
+        
+        # delete them from a matrix
+        hugeMatrix <-
+            hugeMatrix[,!colnames(hugeMatrix) %in% topAlgorithmsMissingValues[, 1]] 
+    } 
+    
     return (hugeMatrix)
 }
    
@@ -86,7 +130,7 @@ originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE,
     return (list(missingData, processedValues)) 
 } 
 
-frugalityScoreData <- function(dataMatrix, dataSet, p.w = 0.1, replaceMissingValues = FALSE, valOfAlgs) { 
+frugalityScoreData <- function(dataMatrix, dataSet, p.w, p.normalize = TRUE, replaceMissingValues = FALSE, valOfAlgs) { 
     ## standard version with the original frulgality score 
     
     # receive name
@@ -109,14 +153,16 @@ frugalityScoreData <- function(dataMatrix, dataSet, p.w = 0.1, replaceMissingVal
         algIndex <-
             grep(pattern = algName, x = colnames(processedValues), ignore.case = TRUE)
         processedValues[1, algIndex] <-
-            cleanData[algValue, 1] - w * log(1 + cleanData[algValue, 2])
+            cleanData[algValue, 1] - p.w * log10(1 + cleanData[algValue, 2])
     }
 
     # scale all values with respect to the best result   
-    bestFrugalValue <- max(processedValues, na.rm = TRUE) 
-    lowestFrugalScore <- min(processedValues, na.rm = TRUE) 
-    processedValues <- (processedValues - lowestFrugalScore) / (bestFrugalValue - lowestFrugalScore) 
-
+     if (p.normalize) {
+        bestFrugalValue <- max(processedValues, na.rm = TRUE) 
+        lowestFrugalScore <- min(processedValues, na.rm = TRUE) 
+        processedValues <- (processedValues - lowestFrugalScore) / (bestFrugalValue - lowestFrugalScore)         
+     } 
+    
     # calculate the quntity of missing values for a data set     
     sumMissing <- sum(is.na(processedValues)) 
     missingData <- data.frame(xName, sumMissing) 
