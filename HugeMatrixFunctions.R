@@ -23,7 +23,7 @@ createHugeMatrix <- function(originData, splitFactor, p.w = 0.1, p.normalize = T
         algorithms[i, 1] <- shortNameAlgorithmIndividual(algFullName)
     }
     algorithms <- data.frame(t(algorithms))
-    source("HugeMatrixFunctions.R") 
+
     # change from factor to character
     algorithms[] <- lapply(algorithms, as.character)
     
@@ -190,7 +190,7 @@ computeTimeAUC <- function(dataSet) {
     # store highest value for AUC in this particular data set
     highestAUC <- max(dataSet$auroc)
 
-    if (highestAUC <= 0 | highestAUC > 1) { 
+    if (highestAUC <= 0 | highestAUC > 1 | is.na(highestAUC)) { 
         return (NA)        
     } 
     
@@ -212,7 +212,11 @@ computeTimeAUC <- function(dataSet) {
         dataSet$training_millis + dataSet$testing_millis
     
     # find the lowest combined time in this data set
-    lowestTime <- min(dataSet$combineTime + 1)
+    lowestTime <- min(dataSet$combineTime + 1) 
+    
+    if (is.na(lowestTime)) {
+        return (NA)  
+    }
     
     # filter columns and save AUC, training time and name of algorithm
     dataSet <-
@@ -369,6 +373,7 @@ drawPlot <- function(p.matrix, fileName,
                      p.distfunction = 'minkowski', 
                      decomposed = FALSE, 
                      breakLen, p.Rowv = NULL, p.Colv = NULL, 
+                     p.savePath = "plots/", 
                      p.cellNote = FALSE, p.keysize = 0.3, 
                      p.lmat = NULL, p.lhei = NULL, p.lwid = NULL, 
                      p.cexRow = 0.9, p.cexCol = 2, p.margins = c(50, 50)) {
@@ -385,7 +390,7 @@ drawPlot <- function(p.matrix, fileName,
     }
     
     # create a file 
-    png(filename = paste(savePath, fileName, sep = ""), width = width, height = height) 
+    png(filename = paste(p.savePath, fileName, sep = ""), width = width, height = height) 
     
     # check whether it is necessary to draw a vakue within a cell 
     if (p.cellNote) { 
@@ -393,7 +398,7 @@ drawPlot <- function(p.matrix, fileName,
                             breaks = breaks_s, col = getPalette(breakLen), keysize = p.keysize, 
                             Colv = p.Colv, Rowv = p.Rowv, density.info = "none", trace = "none", dendrogram = c(dendrogramType), 
                             symm=F,symkey=F,symbreaks=T, 
-                            scale="none",  distfun = function(x) dist(x,method = distfunction), 
+                            scale="none",  distfun = function(x) dist(x,method = p.distfunction), 
                             cellnote = as.matrix(round(p.matrix, 2)),  
                             cexRow = p.cexRow, cexCol = p.cexCol, 
                             margins = p.margins, 
@@ -405,7 +410,7 @@ drawPlot <- function(p.matrix, fileName,
                             breaks = breaks_s, col = getPalette(breakLen), keysize = p.keysize, 
                             Colv = p.Colv, Rowv = p.Rowv, density.info = "none", trace = "none", dendrogram = c(dendrogramType), 
                             symm=F,symkey=F,symbreaks=T, 
-                            scale="none",  distfun = function(x) dist(x,method = distfunction), 
+                            scale="none",  distfun = function(x) dist(x,method = p.distfunction), 
                             cexRow = p.cexRow, cexCol = p.cexCol, 
                             margins = p.margins, 
                             lmat = p.lmat,
@@ -417,3 +422,25 @@ drawPlot <- function(p.matrix, fileName,
     return (hm2res) 
 } 
 
+compareMatrices <- function(a, b) {
+    sod <- c() 
+    for (i in 1:nrow(a)) {
+        brc <- setequal(a[i, ], b[i, ])
+        sod <- c(sod, brc)
+    } 
+    matches <- sum(sod) 
+    
+    if (matches == nrow(a)) {
+        return (TRUE) 
+    } else {
+        return (FALSE) 
+    }
+} 
+
+loadEvaluations <- function() {
+    evaluations <- read.csv("data/openml_evaluations_all.csv") 
+    
+    return (evaluations) 
+}
+
+ 

@@ -16,7 +16,7 @@ for (i in 1: length(separate_evaluations)) {
     
     smallX <- computeTimeAUC(x) 
     
-    smallX$CombineTime <- log(smallX$CombineTime + 1) 
+    smallX$CombineTime <- log10(smallX$CombineTime + 1) 
     
     smallX$AUC <- smallX$AUC * -1 
     

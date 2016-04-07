@@ -56,9 +56,11 @@ rownames(dfValues) <- as.character(wOptions)
  
 if (printFast) {
     algQn <- length(algorithms) 
-    matplot(dfValues, type = c("b"), pch=1, col = 1:algQn, ylim = c(0, 1), ylab = "Frugality score", xlab = "Index w") #plot
-    legend("topright", legend = colnames(dfValues)[1:algQn] , col=1:algQn, cex = 0.5, pch=1) # optional legend     
-} else { 
+    matplot(dfValues, type = c("b"), pch=1, col = 1:algQn, ylim = c(0, 1), ylab = "Frugality score", xlab = "Index w", axes = F) #plot  
+    legend("topright", legend = colnames(dfValues)[1:algQn] , col=1:algQn, cex = 0.55, pch=1) # optional legend  
+    axis(2) 
+    axis(side = 1, at = 1:nrow(dfValues), labels = rownames(dfValues)) 
+    } else { 
     dfValues$w <- wOptions  
     
     p <- ggplot() + 

@@ -4,7 +4,7 @@ oldwd <- getwd()
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML")
 
 # results of algorithms
-evaluations <- read.csv("data/openml_evaluations_all.csv")
+evaluations <- read.csv("data/openml_evaluations_all.csv") 
 separate_evaluations <- split(evaluations, evaluations$task_id) 
 
 source("HugeMatrixFunctions.R") 
