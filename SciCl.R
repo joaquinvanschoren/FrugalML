@@ -68,12 +68,15 @@ makeSVDanalysis <- function(resMatrix, p.ALS = FALSE, p.numLatent = 20) {
     return (x.tiny) 
 } 
 
-findSSE <- function(p.matrix, v.features, n.features, p.useWeights = FALSE) {
+findSSE <- function(p.matrix, v.features, n.features = ncol(p.matrix), p.useWeights = FALSE, p.scaledFeatures = FALSE) {
     # scale columns in accordance with eigenvalues 
     svd_d <- v.features 
     
-    dataWeight <- t(t(p.matrix) * svd_d[1:n.features]) 
-    
+    if (p.scaledFeatures) { 
+        # values of every feature scaled on a weight   
+        dataWeight <- t(t(p.matrix) * svd_d[1:n.features]) 
+    }
+
     # identify number of clusters with sum of squares with a cluster
     # from http://www.statmethods.net/advstats/cluster.html   
     if (p.useWeights) {
