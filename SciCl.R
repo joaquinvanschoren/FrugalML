@@ -15,7 +15,7 @@ imputeEmptyVals <- function(resMatrix) {
         # hugeMatrix <- hugeMatrix[-75, ] 
         
         # compute missed values
-        resMatrixImputed <- SVDmiss(X = resMatrix, niter = 25, ncomp = dim(hugeMatrix)[2], conv.reldiff = 1E-3) 
+        resMatrixImputed <- SVDmiss(X = resMatrix, niter = 25, ncomp = dim(resMatrix)[2], conv.reldiff = 1E-3) 
         
         resMatrix <- resMatrixImputed$Xfill 
         

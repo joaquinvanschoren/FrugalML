@@ -88,7 +88,7 @@ createHugeMatrix <- function(originData, splitFactor, p.w = 0.1, p.normalize = T
     } 
     
     return (hugeMatrix)
-}
+} 
    
 originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE, valOfAlgs) { 
     ## standard version with the original frulgality score 
@@ -436,11 +436,11 @@ compareMatrices <- function(a, b) {
         return (FALSE) 
     }
 } 
-
+  
 loadEvaluations <- function() {
     evaluations <- read.csv("data/openml_evaluations_all.csv") 
     
     return (evaluations) 
-}
+} 
 
  

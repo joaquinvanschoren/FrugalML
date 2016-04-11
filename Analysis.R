@@ -45,18 +45,18 @@ table(clusters)
 # identify a limited number of data sets for detailed analysis
 selectedDataSets <- rownames(getMedoids(p.matrix = hugeMatrix, p.numMedoids = numDataSets)) 
 
-# create heatmaps and place them in files
+# create heatmaps and place them in files 
 dendrograms <- createHeatMapsComplex(
     p.matrix = hugeMatrix, p.dataSetsDecomposed = resMatrixDecomposed_d,
     p.algorithmsDecomposed = resMatrixDecomposed_a, p.distfunction = 'euclidean',
-    p.savePath = 'plots/', p.numOfIntervals = 7)
+    p.savePath = 'plots/', p.numOfIntervals = 7) 
 
 # get clusters for data sets with hierarchical clustering
 hclusters <- getHierarchicalClusters(p.dendrogram = dendrograms$rows, p.numClusters = numDataSets) 
 table(hclusters) 
 
 # perform PCA analysis and put plots in files
-pcaPlots(p.matrix = resMatrixDecomposed_d, p.clusters = clusters, p.alternative = FALSE)
+pcaPlots(p.matrix = resMatrixDecomposed_d, p.clusters = clusters, p.alternative = FALSE) 
 
 # stude visualization received with t-SNE method and resistance against noise
 tsnePlot(p.matrix = resMatrixDecomposed_d, p.names = rownames(hugeMatrix), noiseLevel = 0, 

@@ -13,7 +13,7 @@ source("HugeMatrixFunctions.R")
 algorithms <- data.frame(levels(evaluations$algo))
 
 # prepare matrix with filling in the names of algorithms as column names
-hugeMatrix <- data.frame(t(algorithms))
+hugeMatrix <- data.frame(t(algorithms)) 
 colnames(hugeMatrix) <- algorithms[1:103, 1]
 hugeMatrix <- hugeMatrix[-1,]
 
