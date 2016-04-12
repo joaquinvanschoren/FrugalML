@@ -55,8 +55,8 @@ for (i in 1:quantityDataSets) {
     } else { 
         print(paste("The next data set is skipped ", as.character(dataSet[1, 2]), ", id = ", i, sep = "")) 
     }
-}
-
+} 
+  
 # explore the number of missing values for data sets
 dataSetMissingValues <- data.frame()
 for (i in 1:quantityDataSets) {

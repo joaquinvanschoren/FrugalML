@@ -241,8 +241,13 @@ pcaPlots <- function(p.matrix, p.center = TRUE, p.scale = TRUE, p.savePath = 'pl
 
 tsnePlot <- function(p.matrix, p.names, addName = TRUE, noiseLevel = 0, p.savePath = 'plots/', p.clusters, clusterAsFactor = TRUE) { 
     train <- data.frame(p.matrix)  
-    train$label <- matrix(p.clusters, nrow = nrow(p.matrix), ncol = 1) 
-
+    
+    # consider a number of cluster as a factor for visual analysis
+    if (clusterAsFactor) { 
+        train$label <- matrix(p.clusters, nrow = nrow(p.matrix), ncol = 1)      
+        train$label <- as.factor(train$label) 
+    } 
+    
     if (addName) {
         train$name <- matrix(p.names, nrow = nrow(p.matrix), ncol = 1) 
         train$name <- lapply(X = train$name, function(x) { 
@@ -257,23 +262,27 @@ tsnePlot <- function(p.matrix, p.names, addName = TRUE, noiseLevel = 0, p.savePa
         noise <- scale(matrix(rexp(dim(p.matrix)[1] * noiseLevel, rate = 0.1), ncol = noiseLevel)) 
         train <- cbind(train, noise) 
     } 
-
-    # consider a number of cluster as a factor for visual analysis
-    if (clusterAsFactor) { 
-        train$label <- as.factor(train$label) 
-    } 
     
     # usage of tSNE function from a corresponding package  
     tsne <- Rtsne(train, dims = 2, perplexity = 30, check_duplicates = FALSE, verbose = TRUE, max_iter = 500) 
     
-       
-    # visualizing
+    # visualizing 
     png(filename= paste(p.savePath, "tsne.png", sep = ""), width = 800, height = 600) 
-    colors = rainbow(length(unique(train$label))) 
-    names(colors) = unique(train$label)
-    plot(tsne$Y, t='n', main="tsne")
-    text(tsne$Y, labels=train$name, col=colors[train$label], cex = 0.8) 
-    dev.off() 
+    if (clusterAsFactor) {
+        colors = rainbow(length(unique(train$label))) 
+        names(colors) = unique(train$label)
+        plot(tsne$Y, t='n', main="tsne")
+        text(tsne$Y, labels=train$name, col=colors[train$label], cex = 0.8)         
+    } else {
+        colors = rainbow(length(unique(train$name))) 
+        names(colors) = unique(train$name)
+        plot(tsne$Y, t='n', main="tsne")
+        text(tsne$Y, labels=train$name, col=colors[train$name], cex = 0.8)           
+    }
+    dev.off()        
 } 
   
+srv <- function() {
+    set.seed(7L)     
+}  
   
