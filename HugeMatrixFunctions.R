@@ -45,14 +45,25 @@ createHugeMatrix <- function(originData, splitFactor, p.w = 0.1, p.normalize = T
         } else { 
             print(paste("The next data set is skipped ", as.character(dataSet[1, 2]), ", id = ", i, sep = "")) 
         } 
-    } 
+    }  
+    
+    if (p.matrixEmptyValuesThrow) {
+        hugeMatrix <- throwMissingValues(hugeMatrix) 
+    }
+    
+    return (hugeMatrix)
+} 
+
+throwMissingValues <- function(dataMatrix, p.matrixEmptyValuesThrow = TRUE) {
+    quantityDataSets <- nrow(dataMatrix) 
+    numOfAlgs <- ncol(dataMatrix) 
     
     # explore the number of missing values for data sets
     dataSetMissingValues <- data.frame()
     for (i in 1:quantityDataSets) {
-        sumMissing <- sum(is.na(hugeMatrix[i,]))
+        sumMissing <- sum(is.na(dataMatrix[i,]))
         dataSetMissingValues <-
-            rbind(dataSetMissingValues, data.frame(rownames(hugeMatrix)[i], sumMissing))
+            rbind(dataSetMissingValues, data.frame(rownames(dataMatrix)[i], sumMissing))
     }
     dataSetMissingValues <-
         dataSetMissingValues[order(dataSetMissingValues$sumMissing, decreasing = TRUE),]
@@ -60,16 +71,14 @@ createHugeMatrix <- function(originData, splitFactor, p.w = 0.1, p.normalize = T
     # find the number of missing values for algorithms
     algsMissingValues <- data.frame()
     for (i in 1:numOfAlgs) {
-        sumMissing <- sum(is.na(hugeMatrix[, i]))
+        sumMissing <- sum(is.na(dataMatrix[, i]))
         algsMissingValues <-
-            rbind(algsMissingValues, data.frame(colnames(hugeMatrix)[i], sumMissing))
+            rbind(algsMissingValues, data.frame(colnames(dataMatrix)[i], sumMissing))
     }
     algsMissingValues <-
-        algsMissingValues[order(algsMissingValues$sumMissing, decreasing = TRUE),]
-    
-    matrixEmptyValuesThrow <- p.matrixEmptyValuesThrow  
-    
-    if (matrixEmptyValuesThrow) { 
+        algsMissingValues[order(algsMissingValues$sumMissing, decreasing = TRUE),] 
+
+    if (p.matrixEmptyValuesThrow) { 
         deleteAllEmpty <- FALSE 
         if (deleteAllEmpty) {
             # find all algorithms with missing values
@@ -83,13 +92,13 @@ createHugeMatrix <- function(originData, splitFactor, p.w = 0.1, p.normalize = T
         }
         
         # delete them from a matrix
-        hugeMatrix <-
-            hugeMatrix[,!colnames(hugeMatrix) %in% topAlgorithmsMissingValues[, 1]] 
+        dataMatrix <-
+            dataMatrix[,!colnames(dataMatrix) %in% topAlgorithmsMissingValues[, 1]] 
     } 
     
-    return (hugeMatrix)
+    return (dataMatrix) 
 } 
-   
+
 originalScoreData <- function(dataMatrix, dataSet, replaceMissingValues = FALSE, valOfAlgs) { 
     ## standard version with the original frulgality score 
     
@@ -227,7 +236,7 @@ computeTimeAUC <- function(dataSet) {
         smallX[order(smallX$AUC,smallX$CombineTime,decreasing = TRUE),]
     
     return (smallX)
-}
+} 
  
 shortNameAlgorithm <- function(algOriginalName) {
     posOfSpace <- gregexpr(pattern = ' ', algOriginalName)[[1]][1]
@@ -421,7 +430,7 @@ drawPlot <- function(p.matrix, fileName,
     
     return (hm2res) 
 } 
-
+  
 compareMatrices <- function(a, b) {
     sod <- c() 
     for (i in 1:nrow(a)) {

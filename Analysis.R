@@ -1,16 +1,32 @@
 source("HugeMatrixFunctions.R")
 source("SciCl.R") 
+source("GetCleanMeasuresFromSource.R") 
+source("DataSetsQualities.R") 
 
 # state for reproducibility of results 
-set.seed(7L) 
+srv() 
 
 # create a matrix from a function or from a script
 matrixGenericType <- TRUE 
 if (matrixGenericType) {
-    evaluations <- loadEvaluations()
-    hugeMatrix <- createHugeMatrix(originData = evaluations, splitFactor = "task_id",
-                                   p.w = 0.5, p.normalize = FALSE, p.matrixEmptyValuesThrow = TRUE)
-    hugeMatrix <- imputeEmptyVals(hugeMatrix)
+    evaluations <- getCleanMeasures() 
+
+    pAUC <- evaluations[[1]] 
+    pTime <- evaluations[[2]] 
+    
+    pAUC <- imputeEmptyVals(pAUC) 
+    pTime <- imputeEmptyVals(pTime) 
+
+    # compute matrix with original method or from separately imputed values   
+    originalMethod <- FALSE 
+    if (originalMethod) {
+        hugeMatrix <- createHugeMatrix(originData = evaluations, splitFactor = "task_id",
+                                       p.w = 0.5, p.normalize = FALSE, p.matrixEmptyValuesThrow = TRUE) 
+        hugeMatrix <- imputeEmptyVals(hugeMatrix)         
+    } else {
+        hugeMatrix <- pAUC - 0.5 * log10(pTime + 1)  
+    } 
+
 } else {
     source("HugeMatrix.R")
 } 
@@ -39,7 +55,12 @@ findSSE(
 numDataSets <- drawSilhouette(p.matrix = hugeMatrix, p.k = 56L) 
 
 # get clusters for data sets with kMeans algorithm
-clusters <- getkMeansClusters(p.matrix = resMatrixDecomposed_d, p.numClusters = numDataSets) 
+clustersFromSource <- TRUE 
+if (clustersFromSource) {
+    clusters <- getOriginalClusters() 
+} else {
+    clusters <- getkMeansClusters(p.matrix = resMatrixDecomposed_d, p.numClusters = numDataSets)     
+}
 table(clusters) 
  
 # identify a limited number of data sets for detailed analysis
@@ -61,7 +82,7 @@ pcaPlots(p.matrix = resMatrixDecomposed_d, p.clusters = clusters, p.alternative 
 # stude visualization received with t-SNE method and resistance against noise
 tsnePlot(p.matrix = resMatrixDecomposed_d, p.names = rownames(hugeMatrix), noiseLevel = 0, 
          p.clusters = clusters) 
-
+ 
 # create a plot with index w and Frugality score values
 plotAlgorithmsIndex <- FALSE 
  if (plotAlgorithmsIndex) {
