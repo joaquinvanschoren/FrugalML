@@ -29,7 +29,7 @@ algorithms <- colnames(hugeMatrix)[c(sAlgorithm1, sAlgorithm2, sAlgorithm3, sAlg
                                      sAlgorithm6, sAlgorithm7, sAlgorithm8, sAlgorithm9, sAlgorithm10)] 
 
 # use pam clustering and find central elelements   
-pamClusters <- pam(x = hugeMatrix, 11) 
+pamClusters <- pam(x = hugeMatrix, 10) 
 dataSets <- rownames(pamClusters$medoids)  
 
 hugeMatrixSequence <- c() 

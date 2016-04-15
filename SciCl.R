@@ -4,6 +4,8 @@ library(gplots)
 library (RColorBrewer) 
 library(cluster) 
 library(Rtsne) 
+library(tidyr)   
+library(clustertend) 
 
 imputeEmptyVals <- function(resMatrix) {
     # matrix has empty values 
@@ -15,6 +17,7 @@ imputeEmptyVals <- function(resMatrix) {
         # hugeMatrix <- hugeMatrix[-75, ] 
         
         # compute missed values
+        srv() 
         resMatrixImputed <- SVDmiss(X = resMatrix, niter = 25, ncomp = dim(resMatrix)[2], conv.reldiff = 1E-3) 
         
         resMatrix <- resMatrixImputed$Xfill 
@@ -33,6 +36,7 @@ makeSVDanalysis <- function(resMatrix, p.ALS = FALSE, p.numLatent = 20) {
     
     #  start SVD method to look at results
     nFeatures <- ncol(resMatrix)  
+    srv() 
     x.svd <- svd(as.matrix(resMatrix), nFeatures, nFeatures) 
     svd_d <- x.svd$d 
     plot(svd_d[1:nFeatures], xlab = "Number of a feature", ylab = "Importance of a feature") 
@@ -62,6 +66,7 @@ makeSVDanalysis <- function(resMatrix, p.ALS = FALSE, p.numLatent = 20) {
         # als_Wv <- x.als$W
         # als_Hv <- x.als$H 
     } else {
+        srv() 
         x.tiny <- svd(as.matrix(resMatrix), num_latent_features, num_latent_features) 
     } 
     
@@ -83,33 +88,38 @@ findSSE <- function(p.matrix, v.features, n.features = ncol(p.matrix), p.useWeig
         numOfEigenvalues <- length(svd_d) 
         
         wss <- (nrow(p.matrix)-1)*sum(apply(p.matrix,2,var))
-        for (i in 2:numOfEigenvalues) wss[i] <- sum(kmeans(p.matrix,
-                                                           centers=i, iter.max = 100)$withinss * svd_d[1:i]) 
+        for (i in 2:numOfEigenvalues) { 
+            srv() 
+            wss[i] <- sum(kmeans(p.matrix, centers=i, nstart = 25, iter.max = 100)$withinss * svd_d[1:i]) 
+        }
         plot(1:numOfEigenvalues, wss, type="b", xlab="Number of Clusters",
              ylab="Within groups sum of squares")     
     } else {
         wss <- (nrow(p.matrix)-1)*sum(apply(p.matrix,2,var))
-        for (i in 2:99) wss[i] <- sum(kmeans(p.matrix,
-                                             centers=i, iter.max = 100)$withinss) 
+        for (i in 2:99) { 
+            srv() 
+            wss[i] <- sum(kmeans(p.matrix, centers=i, nstart = 25, iter.max = 100)$withinss) 
+        }
         plot(1:99, wss, type="b", xlab="Number of Clusters",
              ylab="Within groups sum of squares")        
-    }
-
+    } 
+    
 } 
-
+ 
 drawSilhouette <- function(p.matrix, p.k = 25, scale = TRUE) {
     # try another way to identify a number of clusters 
     if (scale) {
         time.scaled <- scale(p.matrix)  
     } else {
         time.scaled <- p.matrix 
-    }
+    } 
     k.max <- p.k 
     sil <- rep(0, k.max)
     
     # Compute the average silhouette width for 
     # k = 2 to k = 15
     for(i in 2:k.max){
+        srv() 
         km.res <- kmeans(time.scaled, centers = i, nstart = 25, iter.max = 100)
         ss <- silhouette(km.res$cluster, dist(time.scaled))     
         sil[i] <- mean(ss[, 3])
@@ -124,9 +134,14 @@ drawSilhouette <- function(p.matrix, p.k = 25, scale = TRUE) {
     return(maxValue) 
 } 
 
-getkMeansClusters <- function(p.matrix, p.numClusters) {
+getkMeansClusters <- function(p.matrix, p.numClusters, scale = TRUE) {
+    if (scale) {
+        p.matrix <- scale(p.matrix)  
+    } 
+    
     # make clustering 
-    newSpcCls <- kmeans(p.matrix, p.numClusters, iter.max = 100) 
+    srv() 
+    newSpcCls <- kmeans(p.matrix, p.numClusters, nstart = 25, iter.max = 100) 
     clusters <- newSpcCls$cluster 
     
     return (clusters) 
@@ -151,6 +166,8 @@ basicHeatMapsCreate <- function(p.matrix) {
 
 getMedoids <- function(p.matrix, p.numMedoids) { 
     # use pam clustering with number of clusters from previous steps 
+    p.matrix <- scale(p.matrix) 
+    srv() 
     sbx <- pam(x = p.matrix, p.numMedoids) 
     
     # find center elements
@@ -214,6 +231,7 @@ createHeatMapsComplex <- function(p.matrix, p.dataSetsDecomposed, p.algorithmsDe
 
 pcaPlots <- function(p.matrix, p.center = TRUE, p.scale = TRUE, p.savePath = 'plots/', p.clusters, p.alternative = FALSE) { 
     # calculate principal components general function  
+    srv() 
     pcomponents <- prcomp(x = p.matrix, center = p.center, scale = p.scale) 
     names(pcomponents)  
 
@@ -247,7 +265,17 @@ tsnePlot <- function(p.matrix, p.names, addName = TRUE, noiseLevel = 0, p.savePa
         train$label <- matrix(p.clusters, nrow = nrow(p.matrix), ncol = 1)      
         train$label <- as.factor(train$label) 
     } 
-    
+
+    if (noiseLevel > 0) {
+        # create new data points with random generated values    
+        noise <- scale(matrix(rexp(dim(p.matrix)[1] * noiseLevel, rate = 0.1), ncol = noiseLevel)) 
+        train <- cbind(train, noise) 
+    } 
+
+    # usage of tSNE function from a corresponding package  
+    srv()     
+    tsne <- Rtsne(train, dims = 2, perplexity = 90, check_duplicates = FALSE, verbose = TRUE, max_iter = 1600) 
+
     if (addName) {
         train$name <- matrix(p.names, nrow = nrow(p.matrix), ncol = 1) 
         train$name <- lapply(X = train$name, function(x) { 
@@ -255,30 +283,31 @@ tsnePlot <- function(p.matrix, p.names, addName = TRUE, noiseLevel = 0, p.savePa
             x <- substr(x, 0, pos_un - 1) 
         }) 
         train$name <- as.factor(as.character(train$name)) 
-    }     
-    
-    if (noiseLevel > 0) {
-        # create new data points with random generated values    
-        noise <- scale(matrix(rexp(dim(p.matrix)[1] * noiseLevel, rate = 0.1), ncol = noiseLevel)) 
-        train <- cbind(train, noise) 
-    } 
-    
-    # usage of tSNE function from a corresponding package  
-    tsne <- Rtsne(train, dims = 2, perplexity = 30, check_duplicates = FALSE, verbose = TRUE, max_iter = 500) 
-    
+    }       
+        
     # visualizing 
     png(filename= paste(p.savePath, "tsne.png", sep = ""), width = 800, height = 600) 
     if (clusterAsFactor) {
         colors = rainbow(length(unique(train$label))) 
         names(colors) = unique(train$label)
-        plot(tsne$Y, t='n', main="tsne")
-        text(tsne$Y, labels=train$name, col=colors[train$label], cex = 0.8)         
+        plot(tsne$Y, t='n', main="tsne") 
+        if (addName) {
+            text(tsne$Y, labels=train$name, col=colors[train$label], cex = 0.8)                  
+        } else {
+            text(tsne$Y, labels=train$label, col=colors[train$label], cex = 0.8)              
+        }
+  
     } else {
-        colors = rainbow(length(unique(train$name))) 
-        names(colors) = unique(train$name)
-        plot(tsne$Y, t='n', main="tsne")
-        text(tsne$Y, labels=train$name, col=colors[train$name], cex = 0.8)           
-    }
+        colors = rainbow(length(unique(p.clusters))) 
+        names(colors) = unique(p.clusters)
+        plot(tsne$Y, t='n', main="tsne") 
+        if (addName) {
+            text(tsne$Y, labels = train$name, col = colors[p.clusters], cex = 0.8)                   
+        } else {
+            text(tsne$Y, labels = p.clusters, col = colors[p.clusters], cex = 0.8)               
+        }
+    
+    } 
     dev.off()        
 } 
   
