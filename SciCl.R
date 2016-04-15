@@ -84,9 +84,8 @@ findSSE <- function(p.matrix, v.features, n.features = ncol(p.matrix), p.useWeig
 
     # identify number of clusters with sum of squares with a cluster
     # from http://www.statmethods.net/advstats/cluster.html   
+    numOfEigenvalues <- length(svd_d) - 1  
     if (p.useWeights) {
-        numOfEigenvalues <- length(svd_d) 
-        
         wss <- (nrow(p.matrix)-1)*sum(apply(p.matrix,2,var))
         for (i in 2:numOfEigenvalues) { 
             srv() 
@@ -96,7 +95,7 @@ findSSE <- function(p.matrix, v.features, n.features = ncol(p.matrix), p.useWeig
              ylab="Within groups sum of squares")     
     } else {
         wss <- (nrow(p.matrix)-1)*sum(apply(p.matrix,2,var))
-        for (i in 2:99) { 
+        for (i in 2:numOfEigenvalues) { 
             srv() 
             wss[i] <- sum(kmeans(p.matrix, centers=i, nstart = 25, iter.max = 100)$withinss) 
         }
@@ -191,14 +190,14 @@ createHeatMapsComplex <- function(p.matrix, p.dataSetsDecomposed, p.algorithmsDe
                       dendrogramType = "row", p.distfunction = distfunction, 
                       decomposed = FALSE, breakLen = numOfIntervals, 
                       p.Rowv = TRUE, p.Colv = NULL, 
-                      p.cellNote = TRUE)   
+                      p.cellNote = FALSE)   
     
     # heatmap for algorithms 
     algBig <- drawPlot(p.matrix, "algorithms.png", width = 6400, height = 4800, 
                        dendrogramType = "col", p.distfunction = distfunction, 
                        decomposed = FALSE, breakLen = numOfIntervals, 
                        p.Rowv = NULL, p.Colv = TRUE, 
-                       p.cellNote = TRUE)  
+                       p.cellNote = FALSE)  
     
     # heatmap for decomposed data sets  
     dsDecomp <- drawPlot(p.dataSetsDecomposed, "datasets_svd.png", width = 3048, height = 2536, 

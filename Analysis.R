@@ -17,20 +17,32 @@ if (matrixGenericType) {
     pAUC <- imputeEmptyVals(pAUC) 
     pTime <- imputeEmptyVals(pTime) 
 
+    w <- 0.1 
+    
     # compute matrix with original method or from separately imputed values   
     originalMethod <- FALSE 
     if (originalMethod) {
         hugeMatrix <- createHugeMatrix(originData = evaluations, splitFactor = "task_id",
-                                       p.w = 0.5, p.normalize = FALSE, p.matrixEmptyValuesThrow = TRUE) 
+                                       p.w = w, p.normalize = TRUE, p.matrixEmptyValuesThrow = TRUE) 
         hugeMatrix <- imputeEmptyVals(hugeMatrix)         
     } else {
-        hugeMatrix <- pAUC - 0.5 * log10(pTime + 1)  
+        normalize = TRUE 
+        if (normalize) {
+            sMatrix <- pAUC - w * log10(pTime + 1)  
+            minValue <- apply(sMatrix, 1, min) 
+            maxValue <- apply(sMatrix, 1, max)   
+            for (i in 1:nrow(sMatrix)) {
+                sMatrix[i, ] <- (sMatrix[i, ] - minValue[i]) / (maxValue[i] - minValue[i]) 
+            }
+            hugeMatrix <- sMatrix 
+        } else {
+            hugeMatrix <- pAUC - w * log10(pTime + 1)  
+        }
     } 
-
 } else {
     source("HugeMatrix.R")
 } 
-
+ 
 # create files with a Pareto front for every data set and every cluster
 makeParetoFront <- FALSE
 if (makeParetoFront) {
@@ -44,15 +56,15 @@ if (makeIndividualParetoFrontForEveryDataSet) {
 }
 
 # perform SVD analysis and decompose a matrix
-decomposedMatrix <- makeSVDanalysis(resMatrix = hugeMatrix, p.numLatent = 20) 
+decomposedMatrix <- makeSVDanalysis(resMatrix = hugeMatrix, p.numLatent = 15) 
 resMatrixDecomposed_d <- decomposedMatrix$u
 resMatrixDecomposed_a <- t(decomposedMatrix$v) 
-featureWeights <- decomposedMatrix$d
+featureWeights <- decomposedMatrix$d 
 findSSE(
     p.matrix = resMatrixDecomposed_d, v.features = featureWeights, p.useWeights = FALSE)
 
 # use cluster analysis
-numDataSets <- drawSilhouette(p.matrix = hugeMatrix, p.k = 56L) 
+numDataSets <- drawSilhouette(p.matrix = hugeMatrix, p.k = 30L) 
 
 # get clusters for data sets with kMeans algorithm
 clustersFromSource <- TRUE 
@@ -60,8 +72,16 @@ if (clustersFromSource) {
     clusters <- getOriginalClusters() 
 } else {
     clusters <- getkMeansClusters(p.matrix = resMatrixDecomposed_d, p.numClusters = numDataSets)     
-}
+} 
 table(clusters) 
+
+# split the main matrix to clusters 
+hugeMatrixFirst <- hugeMatrix[clusters == 1, ] 
+hugeMatrixSecond <- hugeMatrix[clusters == 2, ] 
+
+hugeMatrix <- hugeMatrixFirst 
+
+hugeMatrix <- hugeMatrixSecond 
  
 # identify a limited number of data sets for detailed analysis
 selectedDataSets <- rownames(getMedoids(p.matrix = hugeMatrix, p.numMedoids = numDataSets)) 

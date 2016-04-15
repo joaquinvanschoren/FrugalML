@@ -164,12 +164,12 @@ additionalProcessing <- function() {
     pcaPlots(p.matrix = cleanData, p.clusters = clusters) 
        
     # study visualization received with t-SNE method and resistance against noise
-    tsnePlot(p.matrix = cleanData, p.names = rownames(cleanData), noiseLevel = 0, 
+    tsnePlot(p.matrix = cleanData, p.names = rownames(cleanData), noiseLevel = 1, 
              p.clusters = clusters, clusterAsFactor = FALSE, addName = TRUE)  
     
     cleanData <- cbind(imputeData, clusters)  
     cleanData <- split(x = cleanData, f = as.factor(cleanData$clusters))  
-    commonData <- computeInformationForClusters(p.values = cleanData,p.function = mean, p.showPlots = FALSE) 
+    commonData <- computeInformationForClusters(p.values = cleanData, p.function = median, p.showPlots = FALSE) 
 
     commonData <- commonData[-nrow(commonData), ] 
     
@@ -181,13 +181,13 @@ additionalProcessing <- function() {
 
     # identify the structure in data points 
     srv() 
-    hi <- hopkins(scale(imputeData), n = nrow(imputeData) - 1) 
+    hi <- hopkins(scale(imputeData), n = nrow(imputeData) - 1)$H  
 
     # choose data sets for extended analysis 
     firstDataCluster <- imputeData[clusters == 1, ] 
     secondDataCluster <- imputeData[clusters == 2, ] 
-    selectedFirstGroupSets <- rownames(getMedoids(p.matrix = firstDataCluster, p.numMedoids = 5)) 
-    selectedSecondGroupSets <- rownames(getMedoids(p.matrix = secondDataCluster, p.numMedoids = 5)) 
+    selectedFirstGroupSets <- rownames(getMedoids(p.matrix = firstDataCluster, p.numMedoids = 9)) 
+    selectedSecondGroupSets <- rownames(getMedoids(p.matrix = secondDataCluster, p.numMedoids = 1)) 
             
     noisyData <- c("475_analcatdata_germangss", "848_schlvote", 
                    "737_space_ga", "453_analcatdata_bondrate", 
