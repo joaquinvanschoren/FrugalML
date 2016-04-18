@@ -5,7 +5,7 @@ source("DataSetsQualities.R")
 
 # get the data from a local directory 
 cleanedEvaluations <- getCleanMeasures(p.throwMissingValues = TRUE) 
-hugeMatrix <- createHugeMatrixFromImputedMeasures(cleanedEvaluations, p.w = 0.1, p.normalize = FALSE) 
+hugeMatrix <- createHugeMatrixFromImputedMeasures(cleanedEvaluations, p.w = 0.1, p.normalize = FALSE, p.throwMissingValues = TRUE) 
 
 # create files with a Pareto front for every data set and every cluster
 makeParetoFront <- FALSE

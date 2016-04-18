@@ -172,6 +172,8 @@ getMedoids <- function(p.matrix, p.numMedoids) {
     # find center elements
     medos <- as.data.frame(sbx$medoids) 
     
+    medos <- rownames(medos) 
+    
     return (medos) 
 } 
 

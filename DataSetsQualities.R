@@ -154,7 +154,7 @@ getOriginalClusters <- function() {
     clusters <- getkMeansClusters(p.matrix = cleanData, p.numClusters = numDataSets) 
     table(clusters) 
 
-    return (clusters) 
+    return (list(dsClusters = clusters, numDataSetsOverall = numDataSets)) 
 } 
 
 additionalProcessing <- function() { 
