@@ -4,7 +4,7 @@ library(cluster)
 source("HugeMatrixFunctions.R")  
  
 printFast <- TRUE 
-wOptions <- seq(0.0, 0.5, 0.1) 
+wOptions <- seq(0.0, 1.5, 0.1) 
 
 # results of algorithms
 evaluations <- read.csv("data/openml_evaluations_all.csv") 
@@ -82,3 +82,5 @@ if (printFast) {
     print(p) 
 }
    
+
+ 

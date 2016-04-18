@@ -1,7 +1,7 @@
 source("HugeMatrixFunctions.R")
 source("SciCl.R") 
 
-getCleanMeasures <- function() {
+getCleanMeasures <- function(p.throwMissingValues = TRUE, p.emptyAlgResults) { 
     evaluations <- loadEvaluations() 
     splitFactor <- 'task_id' 
     separate_evaluations <- split(evaluations, evaluations[splitFactor]) 
@@ -176,9 +176,18 @@ getCleanMeasures <- function() {
             print(paste("The next data set is skipped ", as.character(dataSet[1, 2]), ", id = ", i, sep = "")) 
         } 
     } 
-
-    matrixAUC <- throwMissingValues(dataMatrix = matrixAUC, p.matrixEmptyValuesThrow = TRUE) 
-    matrixTime <- throwMissingValues(dataMatrix = matrixTime, p.matrixEmptyValuesThrow = TRUE) 
     
+    matrixAUC <- cleanEmptyColumns(matrixAUC, p.emptyAlgResults) 
+    matrixTime <- cleanEmptyColumns(matrixTime, p.emptyAlgResults) 
+    
+    if (ncol(matrixAUC) != ncol(matrixTime)) {
+        print("please check the number of columns") 
+    }
+
+    if (p.throwMissingValues) {
+        matrixAUC <- throwMissingValues(dataMatrix = matrixAUC, p.matrixEmptyValuesThrow = TRUE) 
+        matrixTime <- throwMissingValues(dataMatrix = matrixTime, p.matrixEmptyValuesThrow = TRUE)         
+    } 
+
     return (list(matrixAUC, matrixTime)) 
 } 

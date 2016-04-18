@@ -18,12 +18,12 @@ imputeEmptyVals <- function(resMatrix) {
         
         # compute missed values
         srv() 
-        resMatrixImputed <- SVDmiss(X = resMatrix, niter = 25, ncomp = dim(resMatrix)[2], conv.reldiff = 1E-3) 
+        resMatrixImputed <- SVDmiss(X = resMatrix, niter = 55, ncomp = dim(resMatrix)[2], conv.reldiff = 1E-3) 
         
         resMatrix <- resMatrixImputed$Xfill 
-        
-        return (resMatrix) 
     }      
+    
+    return (resMatrix) 
 }
 
 makeSVDanalysis <- function(resMatrix, p.ALS = FALSE, p.numLatent = 20) { 

@@ -1,8 +1,8 @@
-library(SpatioTemporal) 
+source("SciCl.R")  
 
 oldwd <- getwd()
 
-set.seed(101) 
+srv() 
 
 # set your own directory 
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 

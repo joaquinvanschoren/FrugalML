@@ -452,4 +452,38 @@ loadEvaluations <- function() {
     return (evaluations) 
 } 
 
+createHugeMatrixFromImputedMeasures <- function(evaluations, p.w, p.normalize) {
+    pAUC <- evaluations[[1]] 
+    pTime <- evaluations[[2]] 
+    
+    pAUC <- imputeEmptyVals(pAUC) 
+    pTime <- imputeEmptyVals(pTime) 
+    
+    if (p.normalize) {
+        sMatrix <- pAUC - p.w * log10(pTime + 1)  
+        minValue <- apply(sMatrix, 1, min) 
+        maxValue <- apply(sMatrix, 1, max)   
+        for (i in 1:nrow(sMatrix)) {
+            sMatrix[i, ] <- (sMatrix[i, ] - minValue[i]) / (maxValue[i] - minValue[i]) 
+        }
+        hugeMatrix <- sMatrix 
+    } else {
+        hugeMatrix <- pAUC - p.w * log10(pTime + 1)  
+    } 
+    
+    return (hugeMatrix) 
+} 
+  
+cleanEmptyColumns <- function(p.matrix, p.threshold) {
+    sufficientDataColumn <- rep(TRUE, ncol(p.matrix)) 
+    for (i in 1:ncol(p.matrix)) {
+        if (sum(is.na(p.matrix[, i])) >= p.threshold) {
+            sufficientDataColumn[i] <- FALSE 
+        }
+    }
+    p.matrix <- p.matrix[, sufficientDataColumn]  
+    
+    return (p.matrix) 
+}
+
  
