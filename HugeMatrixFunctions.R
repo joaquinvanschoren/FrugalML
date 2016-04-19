@@ -452,6 +452,12 @@ loadEvaluations <- function() {
     return (evaluations) 
 } 
 
+cleanMissingItems <- function(p.separate_evaluations) {
+    separate_evaluations <- p.separate_evaluations[-75] 
+    
+    return (separate_evaluations) 
+}
+
 createHugeMatrixFromImputedMeasures <- function(evaluations, p.w, p.normalize) {
     pAUC <- evaluations[[1]] 
     pTime <- evaluations[[2]] 

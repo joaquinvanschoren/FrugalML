@@ -8,32 +8,30 @@ oldwd <- getwd()
 # set your own directory 
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
 
-makeClustering <- function() {
+makeClustering <- function(p.clusters, p.plots = FALSE) {
     # control for grouping different values of hyper parameters to a one value  
     simplify = FALSE  
     
     # create images for Pareto Front 
     showParetoFront <- TRUE 
-    
+       
     # leave or delete outliers in results 
     filterOutlierValues <- TRUE 
+    
+    # present results for an example algorithm 
+    removeBaselineAlgorithm <- TRUE 
     
     # load original data for consistency
     evaluations <- loadEvaluations() 
     separate_evaluations <- split(evaluations, evaluations$task_id) 
+    separate_evaluations <- cleanMissingItems(separate_evaluations)  
 
-    separate_evaluations <- separate_evaluations[-75] 
-
-    # make clustering 
-    clustersProperties <- getOriginalClusters() 
-    clusters <- as.integer(clustersProperties$dsClusters)  
-    
-    allMeasures <- length(clusters) 
+    allMeasures <- length(p.clusters) 
     
     selectedAlgorithms <- data.frame() 
     
     # script contains values for time and AUC that are not normalized, need to rewrite if use to create plots 
-    for (i in 1: max(clusters)) {
+    for (i in 1: max(p.clusters)) {
         combinedParetoFrontsinCluster <- data.frame() 
         
         combinedAllResultsinCluster <- data.frame() 
@@ -41,7 +39,7 @@ makeClustering <- function() {
         setCount <- 0
         
         for (j in 1: allMeasures) {
-            if (clusters[j] == i) {
+            if (p.clusters[j] == i) {
                 
                 setCount <- setCount + 1 
                 
@@ -56,7 +54,7 @@ makeClustering <- function() {
                 
                 combinedAllResultsinCluster <- rbind(combinedAllResultsinCluster, smallX) 
             }
-        }
+        } 
         
         # change variable from Pareto front to all values   
         combinedParetoFrontsinCluster <- combinedAllResultsinCluster
@@ -94,7 +92,7 @@ makeClustering <- function() {
         # process names of algorithms with a common template 
         aggregatedValues$ShortAlgorithm <- sapply(aggregatedValues$Algorithm, function(x) shortNameAlgorithmIndividual(x)) 
         
-        # combine results and friquencies for algorithms 
+        # combine results and frequencies for algorithms 
         aggregatedValues$Frequency <- as.numeric(frequencies$Freq) 
         
         # filter algorithms that appear in less than half observations 
@@ -102,7 +100,13 @@ makeClustering <- function() {
             aggregatedValues <- aggregatedValues[aggregatedValues$Frequency >= setCount / 2, ]         
         } 
         
-        if (simplify == TRUE) { 
+        # remove an example for other algorithms  
+        if (removeBaselineAlgorithm) {
+            zrIndex <- grep("ZeroR", rownames(aggregatedValues))[1]  
+            aggregatedValues <- aggregatedValues[-zrIndex, ] 
+        }  
+        
+        if (simplify == TRUE) {  
             aggregatedAUC <- data.frame(tapply(aggregatedValues$AUC, aggregatedValues$V4, mean)) 
             aggregatedTime <- data.frame(tapply(aggregatedValues$CombineTime, aggregatedValues$V4, mean)) 
             aggregatedFrequency <- data.frame(tapply(aggregatedValues$Frequency, aggregatedValues$V4, sum)) 
@@ -131,33 +135,35 @@ makeClustering <- function() {
         
         selectedAlgorithms <- rbind(selectedAlgorithms, cbind(i, paretoFront)) 
         
-        if (showParetoFront == TRUE) { 
-            numOfAlgs <- nrow(paretoFront) 
-            png(filename= paste("plots/cluster_Pareto_", i, ".png", sep = ""), width = 800, height = 600)    
-            plot(paretoFront[,1:2], col = rainbow(numOfAlgs) , xlim=c(min(paretoFront$AUC), max(paretoFront$AUC)), ylim=c(0, max(paretoFront$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+        if (p.plots) { 
+            if (showParetoFront == TRUE) { 
+                numOfAlgs <- nrow(paretoFront) 
+                png(filename= paste("plots/cluster_Pareto_", i, ".png", sep = ""), width = 800, height = 600)    
+                plot(paretoFront[,1:2], col = rainbow(numOfAlgs) , xlim=c(min(paretoFront$AUC), max(paretoFront$AUC)), ylim=c(0, max(paretoFront$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+                
+                if (simplify == TRUE) { 
+                    legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.9, pt.cex = 1.8) 
+                    text(paretoFront[,1:2], labels = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
+                } else { 
+                    legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.7, pt.cex = 1.8) 
+                    text(paretoFront[,1:2], labels = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
+                }
+                dev.off() 
+            } 
             
-            if (simplify == TRUE) { 
-                legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.9, pt.cex = 1.8) 
-                text(paretoFront[,1:2], labels = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
+            sizeOfAlgs <- nrow(aggregatedValues) 
+            png(filename= paste("plots/cluster_", i, ".png", sep = ""), width = 1600, height = 1200)     
+            plot(aggregatedValues[,1:2], col = rainbow(sizeOfAlgs) , xlim=c(min(aggregatedValues$AUC), max(aggregatedValues$AUC)), ylim=c(0, max(aggregatedValues$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+            
+            if (simplify == TRUE) {
+                legend("topright", legend = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), col =  rainbow(sizeOfAlgs) , pch = 20, lty = 1, cex = 0.9, pt.cex = 1.8) 
+                text(aggregatedValues[,1:2], labels = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
             } else { 
-                legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.7, pt.cex = 1.8) 
-                text(paretoFront[,1:2], labels = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
+                legend("topright", legend = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), col =  rainbow(sizeOfAlgs), pch = 20, lty = 1, cex = 0.7, pt.cex = 1.8) 
+                text(aggregatedValues[,1:2], labels = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), cex = 0.7, pos = 3 )     
             }
             dev.off() 
-        } 
-        
-        sizeOfAlgs <- nrow(aggregatedValues) 
-        png(filename= paste("plots/cluster_", i, ".png", sep = ""), width = 1600, height = 1200)     
-        plot(aggregatedValues[,1:2], col = rainbow(sizeOfAlgs) , xlim=c(min(aggregatedValues$AUC), max(aggregatedValues$AUC)), ylim=c(0, max(aggregatedValues$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
-        
-        if (simplify == TRUE) {
-            legend("topright", legend = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), col =  rainbow(sizeOfAlgs) , pch = 20, lty = 1, cex = 0.9, pt.cex = 1.8) 
-            text(aggregatedValues[,1:2], labels = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
-        } else { 
-            legend("topright", legend = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), col =  rainbow(sizeOfAlgs), pch = 20, lty = 1, cex = 0.7, pt.cex = 1.8) 
-            text(aggregatedValues[,1:2], labels = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), cex = 0.7, pos = 3 )     
         }
-        dev.off() 
     } 
     
     algorithmsToCheck <- unique(selectedAlgorithms$Algorithm) 

@@ -177,7 +177,7 @@ getMedoids <- function(p.matrix, p.numMedoids) {
     return (medos) 
 } 
 
-createHeatMapsComplex <- function(p.matrix, p.dataSetsDecomposed, p.algorithmsDecomposed, p.distfunction = 'euclidean', p.savePath = 'plots/', p.numOfIntervals = 7) { 
+createHeatMapsComplex <- function(p.matrix, p.dataSetsDecomposed, p.algorithmsDecomposed, p.distfunction = 'euclidean', p.savePath = 'plots/', p.numOfIntervals = 7, p.fixColumns = FALSE) {  
     # function for evaluation distance between vectors 
     distfunction <- p.distfunction
     
@@ -187,47 +187,55 @@ createHeatMapsComplex <- function(p.matrix, p.dataSetsDecomposed, p.algorithmsDe
     # number of regions in a legend   
     numOfIntervals <- p.numOfIntervals  
     
-    # heatmap for data sets  
-    dsBig <- drawPlot(p.matrix, "datasets.png", width = 6400, height = 4800, 
-                      dendrogramType = "row", p.distfunction = distfunction, 
-                      decomposed = FALSE, breakLen = numOfIntervals, 
-                      p.Rowv = TRUE, p.Colv = NULL, 
-                      p.cellNote = FALSE)   
-    
-    # heatmap for algorithms 
-    algBig <- drawPlot(p.matrix, "algorithms.png", width = 6400, height = 4800, 
-                       dendrogramType = "col", p.distfunction = distfunction, 
-                       decomposed = FALSE, breakLen = numOfIntervals, 
-                       p.Rowv = NULL, p.Colv = TRUE, 
-                       p.cellNote = FALSE)  
-    
-    # heatmap for decomposed data sets  
-    dsDecomp <- drawPlot(p.dataSetsDecomposed, "datasets_svd.png", width = 3048, height = 2536, 
-                         dendrogramType = "row", p.distfunction = distfunction, 
-                         decomposed = TRUE, breakLen = numOfIntervals, p.Rowv = TRUE, p.Colv = NULL, 
-                         p.cellNote = FALSE, p.cexRow = 0.8, p.cexCol = 2, p.margins = c(10, 10), 
-                         p.lmat = rbind(c(4, 3, 0), c(0, 2, 1)), p.lhei=c(0.5, 5), p.lwid = c(0.5, 3, 3))  
-    
-    lowDimRows <- dsDecomp$rowInd 
-    lowDimRoden <- dsDecomp$rowDendrogram 
-    
-    # heatmap for decomposed algorithms  
-    algDecomp <- drawPlot(p.algorithmsDecomposed, "algorithms_svd.png", width = 2048, height = 1536, 
-                          dendrogramType = "col", p.distfunction = distfunction, 
-                          decomposed = TRUE, breakLen = numOfIntervals, p.Rowv = NULL, p.Colv = TRUE, 
-                          p.cellNote = FALSE, p.cexRow = 2, p.cexCol = 1.2, p.margins = c(10, 10), 
-                          p.lmat = rbind(c(4, 2), c(0, 3), c(0, 1)), p.lhei = c(0.5, 2, 5), p.lwid = c(0.5, 3)) 
-    
-    lowDimCols <- algDecomp$colInd 
-    lowDimCoden <- algDecomp$colDendrogram 
-    
-    bothBigMx <- drawPlot(p.matrix, "togetherMx.png", width = 6400, height = 4800, 
-                          dendrogramType = "both", p.distfunction = distfunction, 
+    if (p.fixColumns) {
+        bothBigMx <- drawPlot(p.matrix, "togetherMx.png", width = 6400, height = 4800, 
+                              dendrogramType = "none", p.distfunction = distfunction, 
+                              decomposed = FALSE, breakLen = numOfIntervals, 
+                              p.Rowv = NULL, p.Colv = NULL, 
+                              p.cellNote = FALSE)        
+    } else { 
+        # heatmap for data sets  
+        dsBig <- drawPlot(p.matrix, "datasets.png", width = 6400, height = 4800, 
+                          dendrogramType = "row", p.distfunction = distfunction, 
                           decomposed = FALSE, breakLen = numOfIntervals, 
-                          p.Rowv = lowDimRoden, p.Colv = lowDimCoden, 
-                          p.cellNote = FALSE)     
-    
-    return (list(rows = lowDimRoden, cols = lowDimCoden))
+                          p.Rowv = TRUE, p.Colv = NULL, 
+                          p.cellNote = FALSE)   
+        
+        # heatmap for algorithms 
+        algBig <- drawPlot(p.matrix, "algorithms.png", width = 6400, height = 4800, 
+                           dendrogramType = "col", p.distfunction = distfunction, 
+                           decomposed = FALSE, breakLen = numOfIntervals, 
+                           p.Rowv = NULL, p.Colv = TRUE, 
+                           p.cellNote = FALSE)  
+        
+        # heatmap for decomposed data sets  
+        dsDecomp <- drawPlot(p.dataSetsDecomposed, "datasets_svd.png", width = 3048, height = 2536, 
+                             dendrogramType = "row", p.distfunction = distfunction, 
+                             decomposed = TRUE, breakLen = numOfIntervals, p.Rowv = TRUE, p.Colv = NULL, 
+                             p.cellNote = FALSE, p.cexRow = 0.8, p.cexCol = 2, p.margins = c(10, 10), 
+                             p.lmat = rbind(c(4, 3, 0), c(0, 2, 1)), p.lhei=c(0.5, 5), p.lwid = c(0.5, 3, 3))  
+        
+        lowDimRows <- dsDecomp$rowInd 
+        lowDimRoden <- dsDecomp$rowDendrogram 
+        
+        # heatmap for decomposed algorithms  
+        algDecomp <- drawPlot(p.algorithmsDecomposed, "algorithms_svd.png", width = 2048, height = 1536, 
+                              dendrogramType = "col", p.distfunction = distfunction, 
+                              decomposed = TRUE, breakLen = numOfIntervals, p.Rowv = NULL, p.Colv = TRUE, 
+                              p.cellNote = FALSE, p.cexRow = 2, p.cexCol = 1.2, p.margins = c(10, 10), 
+                              p.lmat = rbind(c(4, 2), c(0, 3), c(0, 1)), p.lhei = c(0.5, 2, 5), p.lwid = c(0.5, 3)) 
+        
+        lowDimCols <- algDecomp$colInd 
+        lowDimCoden <- algDecomp$colDendrogram 
+        
+        bothBigMx <- drawPlot(p.matrix, "togetherMx.png", width = 6400, height = 4800, 
+                              dendrogramType = "both", p.distfunction = distfunction, 
+                              decomposed = FALSE, breakLen = numOfIntervals, 
+                              p.Rowv = lowDimRoden, p.Colv = lowDimCoden, 
+                              p.cellNote = FALSE) 
+        
+        return (list(rows = lowDimRoden, cols = lowDimCoden)) 
+    } 
 }  
 
 pcaPlots <- function(p.matrix, p.center = TRUE, p.scale = TRUE, p.savePath = 'plots/', p.clusters, p.alternative = FALSE) { 
@@ -315,4 +323,25 @@ tsnePlot <- function(p.matrix, p.names, addName = TRUE, noiseLevel = 0, p.savePa
 srv <- function() {
     set.seed(7L)     
 }  
+
+getRows <- function(p.selectedAlgorithms, p.cleanedEvaluations) { 
+    p.matrix <- createHugeMatrixFromImputedMeasures(p.cleanedEvaluations, p.w = 0L, p.normalize = FALSE)   
+
+    # prepare a matrix for heat maps with selected algorithms 
+    p.aMatrix <- p.matrix[, p.selectedAlgorithms] 
+    decomposedAlgsMatrix <- makeSVDanalysis(resMatrix = p.aMatrix, p.numLatent = 10) 
+    resAlgsMatrixDecomposed_d <- decomposedAlgsMatrix$u
+    resAlgsMatrixDecomposed_a <- t(decomposedAlgsMatrix$v) 
+    
+    # obtain an order of data sets for consistency 
+    dsDecomp <- drawPlot(resAlgsMatrixDecomposed_d, "datasets_svd.png", width = 3048, height = 2536, 
+                         dendrogramType = "row", p.distfunction = 'euclidean', 
+                         decomposed = TRUE, breakLen = 7, p.Rowv = TRUE, p.Colv = NULL, 
+                         p.cellNote = FALSE, p.cexRow = 0.8, p.cexCol = 2, p.margins = c(10, 10), 
+                         p.lmat = rbind(c(4, 3, 0), c(0, 2, 1)), p.lhei=c(0.5, 5), p.lwid = c(0.5, 3, 3))  
+    lowDimSets <- dsDecomp$rowInd  
+    
+    return (lowDimSets) 
+}
+
   

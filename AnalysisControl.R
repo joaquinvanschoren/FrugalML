@@ -9,12 +9,11 @@ createHugeMatrixFromFunction <- TRUE
 newMethod <- TRUE  
 
 normalize <- FALSE 
-w <- 0.7 
+w <- 1.0 
 throwMissingValuesVariable <- FALSE 
 thresholdForEmptyAlgsResults <- 250 
 
 makeIndividualParetoFrontForEveryDataSet <- FALSE 
-makeParetoFrontForClusters <- TRUE 
 
 clustersFromAnalysis <- TRUE 
 plotAlgorithmsIndex <- TRUE 
@@ -59,9 +58,7 @@ if (clustersFromAnalysis) {
 table(clusters) 
 
 # create files with a Pareto front for every data set and every cluster
-if (makeParetoFrontForClusters) {
-    selectedAlgorithms <- makeClustering() 
-} 
+selectedAlgorithms <- makeClustering(p.clusters = clusters, p.plots = FALSE) 
 
 # split the main matrix to clusters 
 hugeMatrixFirst <- hugeMatrix[clusters == 1, ] 
@@ -71,12 +68,19 @@ hugeMatrixSecond <- hugeMatrix[clusters == 2, ]
 selectedDataSets <- getMedoids(p.matrix = hugeMatrixFirst, p.numMedoids = 9) 
 selectedDataSets <- c(selectedDataSets, getMedoids(p.matrix = hugeMatrixSecond, p.numMedoids = 1)) 
 
+# set permanent structure for data sets for analysis 
+lowDimSets <- getRows(p.selectedAlgorithms = selectedAlgorithms, p.cleanedEvaluations = cleanedEvaluations) 
+aMatrix <- hugeMatrix[lowDimSets, selectedAlgorithms]  
+decomposedAlgsMatrix <- makeSVDanalysis(resMatrix = aMatrix, p.numLatent = 10) 
+resAlgsMatrixDecomposed_d <- decomposedAlgsMatrix$u 
+resAlgsMatrixDecomposed_a <- t(decomposedAlgsMatrix$v) 
+
 # create heatmaps and place them in files 
 dendrograms <- createHeatMapsComplex(
-    p.matrix = hugeMatrix, p.dataSetsDecomposed = resMatrixDecomposed_d,
-    p.algorithmsDecomposed = resMatrixDecomposed_a, p.distfunction = 'euclidean',
-    p.savePath = 'plots/', p.numOfIntervals = 50) 
-
+    p.matrix = aMatrix, p.dataSetsDecomposed = resAlgsMatrixDecomposed_d,
+    p.algorithmsDecomposed = resAlgsMatrixDecomposed_a, p.distfunction = 'euclidean',
+    p.savePath = 'plots/', p.numOfIntervals = 50, p.fixColumns = TRUE) 
+ 
 # perform PCA analysis and put plots in files
 pcaPlots(p.matrix = resMatrixDecomposed_d, p.clusters = clusters, p.alternative = FALSE) 
 
@@ -88,7 +92,4 @@ tsnePlot(p.matrix = resMatrixDecomposed_d, p.names = rownames(hugeMatrix), noise
 if (plotAlgorithmsIndex) {
     makeLinearPLots(p.algorithms = selectedAlgorithms, p.datasets = selectedDataSets, p.normalize = normalize, w.start = 0, w.finish = 1, p.cleanedEvaluations = cleanedEvaluations)  
 } 
-
-
-
-
+   
