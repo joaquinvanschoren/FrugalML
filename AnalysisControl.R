@@ -9,7 +9,7 @@ createHugeMatrixFromFunction <- TRUE
 newMethod <- TRUE  
 
 normalize <- FALSE 
-w <- 1.0 
+w <- 0.1 
 throwMissingValuesVariable <- FALSE 
 thresholdForEmptyAlgsResults <- 250 
 
@@ -60,6 +60,9 @@ table(clusters)
 # create files with a Pareto front for every data set and every cluster
 selectedAlgorithms <- makeClustering(p.clusters = clusters, p.plots = FALSE) 
 
+# manual change in the order of algorithms for new plots 
+selectedAlgorithms <- c(selectedAlgorithms[1], selectedAlgorithms[15:17], selectedAlgorithms[2:8], selectedAlgorithms[18], selectedAlgorithms[9:14]) 
+
 # split the main matrix to clusters 
 hugeMatrixFirst <- hugeMatrix[clusters == 1, ] 
 hugeMatrixSecond <- hugeMatrix[clusters == 2, ] 
@@ -90,6 +93,6 @@ tsnePlot(p.matrix = resMatrixDecomposed_d, p.names = rownames(hugeMatrix), noise
 
 # create a plot with index w and Frugality score values
 if (plotAlgorithmsIndex) {
-    makeLinearPLots(p.algorithms = selectedAlgorithms, p.datasets = selectedDataSets, p.normalize = normalize, w.start = 0, w.finish = 1, p.cleanedEvaluations = cleanedEvaluations)  
+    makeLinearPLots(p.algorithms = selectedAlgorithms, p.datasets = selectedDataSets, p.normalize = normalize, w.start = 0, w.finish = 2, p.cleanedEvaluations = cleanedEvaluations)  
 } 
    

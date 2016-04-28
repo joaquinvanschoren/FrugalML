@@ -15,7 +15,7 @@ makeLinearPLots <- function(p.algorithms, p.datasets, p.normalize,
     for (w in wOptions) { 
         nextMatrix <- createHugeMatrixFromImputedMeasures(evaluations = p.cleanedEvaluations, p.w = w, p.normalize = p.normalize) 
 
-        nextMatrix <- nextMatrix[p.datasets, p.algorithms]  
+        nextMatrix <- as.data.frame(nextMatrix[p.datasets, p.algorithms])   
         hugeMatrixSequence <- append(hugeMatrixSequence, nextMatrix) 
     } 
     

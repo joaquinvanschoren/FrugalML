@@ -473,8 +473,8 @@ createHugeMatrixFromImputedMeasures <- function(evaluations, p.w, p.normalize) {
             sMatrix[i, ] <- (sMatrix[i, ] - minValue[i]) / (maxValue[i] - minValue[i]) 
         }
         hugeMatrix <- sMatrix 
-    } else {
-        hugeMatrix <- pAUC - p.w * log10(pTime + 1)  
+    } else { 
+        hugeMatrix <- pAUC - p.w * (1 / (1 + exp(1) ^ (-(pTime + 1))) ) 
     } 
     
     return (hugeMatrix) 
