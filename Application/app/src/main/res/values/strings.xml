@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">FrugalMachineLearning</string>
+    <string name="hello_round">Frugal Machine Learning</string>
+    <string name="hello_square">Hello Square World!</string>
+    <string name="time">Time of event</string>
+    <string name="activity_name">Activity is</string>>
+    <string name="walking">Walking</string>
+    <string name="walking_upstairs">Upstairs</string>
+    <string name="walking_downstairs">Downstairs</string>
+    <string name="sitting">Sitting</string>
+    <string name="standing">Standing</string>
+    <string name="laying">Laying</string>
+    <string name="empty">Empty</string>
+    <string name="new_activity">New activity is</string>
+</resources>
+
