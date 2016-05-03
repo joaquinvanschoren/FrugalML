@@ -7,6 +7,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
 import android.view.View;
@@ -16,11 +17,13 @@ import com.project.frugalmachinelearning.classifiers.ActivityType;
 import com.project.frugalmachinelearning.classifiers.ActivityWindow;
 import com.project.frugalmachinelearning.classifiers.FactoryClassifiers;
 import com.project.frugalmachinelearning.tools.FileOperations;
+import com.project.frugalmachinelearning.tools.InstancesSaved;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -38,10 +41,10 @@ import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instances;
 
-public class MainActivity extends Activity implements SensorEventListener {
+public class MainActivity extends WearableActivity implements SensorEventListener {
 
     private static final String TAG = "MainActivity";
-    private static final int AMOUNT_OF_ATTRIBUTES = 18;
+    private static final int AMOUNT_OF_ATTRIBUTES = 23;
 
     private SensorManager mSensorManager;
     private Map<String, Double> mResults = new LinkedHashMap<String, Double>();
@@ -52,7 +55,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private boolean needTitle = true;
 
     private AbstractClassifier selectedClassifier = null;
-    private DenseInstance[] instances = new DenseInstance[20];
+    private DenseInstance[] instances = new DenseInstance[AMOUNT_OF_ATTRIBUTES + 2];
     private int posInstance;
     private boolean warmingUp;
     private int performingActivity;
@@ -60,6 +63,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     private TextView mActivityTextView;
     private TextView mTime;
     private TextView mNewActivity;
+
+    private PrintWriter pw;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,12 +80,23 @@ public class MainActivity extends Activity implements SensorEventListener {
             }
         });
 
-        Random random = new Random();
-        int fileNumber = random.nextInt();
+        setAmbientEnabled();
 
-        final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements.txt";
-        FileOperations.deleteFile(sensorDataName);
-        final File sensorData = new File(sensorDataName);
+        try {
+            Random random = new Random();
+            int fileNumber = random.nextInt(100);
+            final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
+            FileOperations.deleteFile(sensorDataName);
+            final File sensorData = new File(sensorDataName);
+
+            pw = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
+
+            Log.i(TAG, sensorDataName);
+
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
 
         // clean old files with random results
         FileOperations.deleteFile("/storage/emulated/0/myfile_nbp.txt");
@@ -112,17 +128,13 @@ public class MainActivity extends Activity implements SensorEventListener {
                                 try {
                                     if (isExternalStorageWritable() && mResults.size() >= AMOUNT_OF_ATTRIBUTES - 1) {
 
-                                        PrintWriter pw = new PrintWriter(new BufferedWriter(
-                                                new FileWriter(sensorData, true)));
-
                                         StringBuilder allSensorsData = new StringBuilder();
 
-                                        DateFormat df = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
+                                        DateFormat df = new SimpleDateFormat("HH:mm:ss.SSS dd/MM/yyyy");
                                         Date current = new Date();
-
                                         allSensorsData.append(df.format(current)).append(",");
 
-                                        mTime.setText(new SimpleDateFormat("HH:mm:ss").format(current) + " update time");
+                                        mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
 
                                         if (needTitle) {
                                             StringBuilder title = new StringBuilder();
@@ -148,8 +160,10 @@ public class MainActivity extends Activity implements SensorEventListener {
 
                                         allSensorsData.append(performingActivity);
                                         pw.println(allSensorsData.toString());
-                                        pw.close();
 
+
+
+/*
                                         DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
 
                                         instances[posInstance] = instance;
@@ -157,22 +171,17 @@ public class MainActivity extends Activity implements SensorEventListener {
                                         if (posInstance == instances.length) {
                                             posInstance = 0;
                                         }
+*/
 
+
+/*
                                         InputStream insValues = getResources().openRawResource(getResources().getIdentifier("measurements",
                                                 "raw", getPackageName()));
 
-                                        BufferedReader br = new BufferedReader(new InputStreamReader(insValues));
+                                        int stableValue = InstancesSaved.getLabelFromSavedFirstInstances(insValues, selectedClassifier);
+                                        Log.i(TAG, String.valueOf(stableValue));
+*/
 
-                                        Instances instancesLabeled = new Instances(br);
-
-                                        br.close();
-
-                                        instancesLabeled.setClassIndex(instancesLabeled.numAttributes() - 1);
-
-                                        int s1 = 0;
-
-                                        double value = selectedClassifier.classifyInstance(
-                                                instancesLabeled.instance(s1));
 
                                     }
                                 } catch (Exception e) {
@@ -218,7 +227,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             }
         };
 
-        tClassifyActivity.start();
+//         tClassifyActivity.start();
     }
 
     @Override
@@ -228,11 +237,27 @@ public class MainActivity extends Activity implements SensorEventListener {
         t.interrupt();
         tClassifyActivity.interrupt();
 
+        pw.close();
+
+        mSensorManager = null;
+
         Log.i(TAG, "Activity was stopped");
     }
 
     @Override
     public void onAccuracyChanged(Sensor arg0, int arg1) {
+
+    }
+
+    @Override
+    public void onEnterAmbient(Bundle ambientDetails) {
+        super.onEnterAmbient(ambientDetails);
+
+    }
+
+    @Override
+    public void onExitAmbient() {
+        super.onExitAmbient();
 
     }
 
@@ -264,6 +289,18 @@ public class MainActivity extends Activity implements SensorEventListener {
                 mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE),
                 SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
 
+        mSensorManager.registerListener(this,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR),
+                SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+
+        mSensorManager.registerListener(this,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE),
+                SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+
+        mSensorManager.registerListener(this,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
+                SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+
         // print the amount of sensors and short information
         Log.i(TAG, String.valueOf(mList.size()));
         for (int i = 0; i < mList.size(); i++) {
@@ -276,9 +313,9 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            double ax = Math.round(event.values[0] * 1000) / 1000.0;
-            double ay = Math.round(event.values[1] * 1000) / 1000.0;
-            double az = Math.round(event.values[2] * 1000) / 1000.0;
+            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+            double ay = Math.round(event.values[1] * 100000) / 100000.0;
+            double az = Math.round(event.values[2] * 100000) / 100000.0;
 
             mResults.put("AccelX", ax);
             mResults.put("AccelY", ay);
@@ -296,9 +333,9 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         if (event.sensor.getType() == Sensor.TYPE_GRAVITY){
-            double ax = Math.round(event.values[0] * 1000) / 1000.0;
-            double ay = Math.round(event.values[1] * 1000) / 1000.0;
-            double az = Math.round(event.values[2] * 1000) / 1000.0;
+            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+            double ay = Math.round(event.values[1] * 100000) / 100000.0;
+            double az = Math.round(event.values[2] * 100000) / 100000.0;
 
             mResults.put("GravityX", ax);
             mResults.put("GravityY", ay);
@@ -316,10 +353,10 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR){
-            double ax = Math.round(event.values[0] * 1000) / 1000.0;
-            double ay = Math.round(event.values[1] * 1000) / 1000.0;
-            double az = Math.round(event.values[2] * 1000) / 1000.0;
-            double as = Math.round(event.values[2] * 1000) / 1000.0;
+            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+            double ay = Math.round(event.values[1] * 100000) / 100000.0;
+            double az = Math.round(event.values[2] * 100000) / 100000.0;
+            double as = Math.round(event.values[2] * 100000) / 100000.0;
 
             mResults.put("RotVecX", ax);
             mResults.put("RotVecY", ay);
@@ -327,13 +364,36 @@ public class MainActivity extends Activity implements SensorEventListener {
             mResults.put("RotVecS", as);
         }
 
+        if (event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
+            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+
+            mResults.put("StDetVal", ax);
+        }
+
+        if (event.sensor.getType() == Sensor.TYPE_PRESSURE) {
+            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+
+            mResults.put("AiPreVal", ax);
+        }
+
+        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+            double ay = Math.round(event.values[1] * 100000) / 100000.0;
+            double az = Math.round(event.values[2] * 100000) / 100000.0;
+
+            mResults.put("MagFielX", ax);
+            mResults.put("MagFielY", ay);
+            mResults.put("MagFielZ", az);
+        }
+
         if (event.sensor.getType() == Sensor.TYPE_HEART_RATE){
-            double ax = Math.round(event.values[0] * 1000) / 1000.0;
+            double ax = Math.round(event.values[0] * 100000) / 100000.0;
 
             mResults.put("HeartRateVal", ax);
         }
 
         if (warmingUp) {
+            mResults.put("StDetVal", 0.0);
             mResults.put("HeartRateVal", Double.NaN);
             warmingUp = false;
         }
