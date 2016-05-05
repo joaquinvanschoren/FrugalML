@@ -462,12 +462,15 @@ cleanMissingItems <- function(p.separate_evaluations) {
     return (separate_evaluations) 
 }
 
-createHugeMatrixFromImputedMeasures <- function(evaluations, p.w, p.normalize) {
+createHugeMatrixFromImputedMeasures <- function(evaluations, p.w, p.normalize, p.newFormula = FALSE) {
     pAUC <- evaluations[[1]] 
     pTime <- evaluations[[2]] 
     
     pAUC <- imputeEmptyVals(pAUC) 
     pTime <- imputeEmptyVals(pTime) 
+
+    # change imputed values 
+    pTime[pTime < 2] <- 2  
     
     if (p.normalize) {
         sMatrix <- pAUC - p.w * log10(pTime + 1)  
@@ -478,11 +481,10 @@ createHugeMatrixFromImputedMeasures <- function(evaluations, p.w, p.normalize) {
         }
         hugeMatrix <- sMatrix 
     } else { 
-        oldFormula <- FALSE 
-        if (oldFormula) {
-            hugeMatrix <- pAUC - p.w * log10(pTime) 
+        if (p.newFormula) {
+            hugeMatrix <- pAUC - p.w * (1 / (1 + exp(-pTime)) )      
         } else {
-            hugeMatrix <- pAUC - p.w * (1 / (1 + exp(-pTime)) )           
+            hugeMatrix <- pAUC - p.w * log10(pTime)    
         }
 
     } 

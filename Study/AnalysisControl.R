@@ -25,7 +25,7 @@ if (createHugeMatrixFromFunction) {
         # get the data from a local directory and clean it 
         cleanedEvaluations <- getCleanMeasures(p.throwMissingValues = throwMissingValuesVariable, p.emptyAlgResults = thresholdForEmptyAlgsResults) 
         
-        hugeMatrix <- createHugeMatrixFromImputedMeasures(evaluations = cleanedEvaluations, p.w = w, p.normalize = normalize) 
+        hugeMatrix <- createHugeMatrixFromImputedMeasures(evaluations = cleanedEvaluations, p.w = w, p.normalize = normalize, p.newFormula = FALSE)  
     } else {
         # get the data from a local directory 
         evaluations <- loadEvaluations() 
@@ -57,7 +57,11 @@ if (clustersFromAnalysis) {
 }  
 table(clusters) 
 
-additionalProcessing(clustersProperties$meaningfullFeatures) 
+# create plots for clusters of data sets  
+makePlotsClusters <- FALSE 
+if (makePlotsClusters) {
+    additionalProcessing(clustersProperties$meaningfullFeatures)     
+}
 
 # create files with a Pareto front for every data set and every cluster
 selectedAlgorithms <- makeClustering(p.clusters = clusters, p.plots = TRUE, p.simplify = FALSE)  
