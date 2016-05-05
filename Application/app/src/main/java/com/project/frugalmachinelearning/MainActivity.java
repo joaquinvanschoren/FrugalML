@@ -1,6 +1,5 @@
 package com.project.frugalmachinelearning;
 
-import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -11,6 +10,8 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
@@ -22,16 +23,14 @@ import com.project.frugalmachinelearning.classifiers.ActivityType;
 import com.project.frugalmachinelearning.classifiers.ActivityWindow;
 import com.project.frugalmachinelearning.classifiers.FactoryClassifiers;
 import com.project.frugalmachinelearning.tools.FileOperations;
-import com.project.frugalmachinelearning.tools.InstancesSaved;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.ref.WeakReference;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -60,8 +59,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     private boolean needTitle = true;
 
-    private AbstractClassifier selectedClassifier = null;
-    private DenseInstance[] instances = new DenseInstance[3];
+    private AbstractClassifier selectedClassifier;
+    private DenseInstance[] instances = new DenseInstance[1];
     private int posInstance;
     private boolean warmingUp;
     private int performingActivity;
@@ -72,15 +71,47 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     private PrintWriter pw;
 
+
+    boolean firstRun = true;
+
+
+
+    /** Custom 'what' for Message sent to Handler. */
+    private static final int MSG_UPDATE_SCREEN = 0;
+
+    /** Milliseconds between updates based on state. */
+    private static final long ACTIVE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(1);
+    private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(900);
+
+    /** Tracks latest ambient details, such as burnin offsets, etc. */
+    private Bundle mAmbientDetails;
+
+    private final Handler mActiveModeUpdateHandler = new UpdateHandler(this);
+
+    private volatile int mDrawCount = 0;
+
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
-    private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(1);
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
+
+        // activate constant visibility for the activity
+        setAmbientEnabled();
+
+        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent ambientStateIntent = new Intent(getApplicationContext(), MainActivity.class);
+
+        mAmbientStatePendingIntent = PendingIntent.getActivity(
+                getApplicationContext(),
+                0 /* requestCode */,
+                ambientStateIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+
+
         final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
         stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
             @Override
@@ -88,55 +119,15 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 mActivityTextView = (TextView) stub.findViewById(R.id.mActivityTextView);
                 mTime = (TextView) stub.findViewById(R.id.mTime);
                 mNewActivity = (TextView) stub.findViewById(R.id.mNewActivity);
+
+                refreshDisplayAndSetNextUpdate();
             }
         });
 
-        // activate constant visibility for the activity
-        setAmbientEnabled();
+        Log.i(TAG, "onCreate()");
+    }
 
-        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-
-        mAmbientStatePendingIntent = PendingIntent.getActivity(
-                getApplicationContext(),
-                1,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
-        try {
-            Random random = new Random();
-            int fileNumber = random.nextInt(100);
-            final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
-            FileOperations.deleteFile(sensorDataName);
-            final File sensorData = new File(sensorDataName);
-
-            pw = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
-
-            Log.i(TAG, sensorDataName);
-
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // clean old files with random results
-        FileOperations.deleteFile("/storage/emulated/0/myfile_nbp.txt");
-        FileOperations.deleteFile("myfile_nbp.txt");
-
-        // create classifier from a file
-        String selectedClassifierName = "RandomSubSpace";
-        FactoryClassifiers fc = new FactoryClassifiers();
-        String modelFileName = fc.getModelFile(selectedClassifierName);
-        InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
-        selectedClassifier = fc.getModel(selectedClassifierName, ins);
-
-        posInstance = 0;
-        warmingUp = true;
-        setSensors();
-
-        performingActivity = 6;
-
+    private void launchCollectingInformation() {
         t = new Thread() {
 
             @Override
@@ -205,8 +196,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             }
         };
 
-//        t.start();
+        t.start();
+    }
 
+    private void launchingRecognitionActivities() {
         tClassifyActivity = new Thread() {
 
             @Override
@@ -218,77 +211,33 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                             @Override
                             public void run() {
-                                if (!isAmbient()) {
-                                    DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
+                                DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
 
-                                    instances[posInstance] = instance;
-                                    posInstance++;
-                                    if (posInstance == instances.length) {
-                                        posInstance = 0;
-                                    }
-
-                                    ArrayList<Attribute> attributes = getNewAttributes();
-                                    Instances data = ActivityWindow.constructInstances(attributes, instances);
-                                    String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
-
-                                    Button empButton = (Button) findViewById(R.id.button7);
-                                    if (empButton.getVisibility() != View.VISIBLE) {
-                                        mActivityTextView.setText("Activity is " + activityFullName);
-                                        mActivityTextView.setTextSize(12);
-                                        mTime.setTextSize(10);
-                                        mNewActivity.setVisibility(View.INVISIBLE);
-                                    } else {
-                                        mActivityTextView.setText("is " + activityFullName);
-
-                                    }
-
-                                    Date current = new Date();
-                                    mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
-
-                                    Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
-                                    Log.i(TAG, activityFullName);
-
-                                } else {
-/*
-                                    long timeMs = System.currentTimeMillis();
-                                    long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
-                                    long triggerTimeMs = timeMs + delayMs;
-
-                                    mAmbientStateAlarmManager.setExact(
-                                            AlarmManager.RTC_WAKEUP,
-                                            triggerTimeMs,
-                                            mAmbientStatePendingIntent);
-*/
-
-                                    DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
-
-                                    instances[posInstance] = instance;
-                                    posInstance++;
-                                    if (posInstance == instances.length) {
-                                        posInstance = 0;
-                                    }
-
-                                    ArrayList<Attribute> attributes = getNewAttributes();
-                                    Instances data = ActivityWindow.constructInstances(attributes, instances);
-                                    String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
-
-                                    Button empButton = (Button) findViewById(R.id.button7);
-                                    if (empButton.getVisibility() != View.VISIBLE) {
-                                        mActivityTextView.setText("Activity is " + activityFullName);
-                                        mActivityTextView.setTextSize(12);
-                                        mTime.setTextSize(10);
-                                        mNewActivity.setVisibility(View.INVISIBLE);
-                                    } else {
-                                        mActivityTextView.setText("is " + activityFullName);
-
-                                    }
-
-                                    Date current = new Date();
-                                    mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
-
-                                    Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
-                                    Log.i(TAG, activityFullName);
+                                instances[posInstance] = instance;
+                                posInstance++;
+                                if (posInstance == instances.length) {
+                                    posInstance = 0;
                                 }
+
+                                ArrayList<Attribute> attributes = getNewAttributes();
+                                Instances data = ActivityWindow.constructInstances(attributes, instances);
+                                String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
+
+                                Button empButton = (Button) findViewById(R.id.button7);
+                                if (empButton.getVisibility() != View.VISIBLE) {
+                                    mActivityTextView.setText("Activity is " + activityFullName + " ambient is " + isAmbient());
+                                    mActivityTextView.setTextSize(12);
+                                    mTime.setTextSize(10);
+                                    mNewActivity.setVisibility(View.INVISIBLE);
+                                } else {
+                                    mActivityTextView.setText("is " + activityFullName);
+
+                                }
+
+                                Date current = new Date();
+                                mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
+
+                                Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
                             }
 
                         });
@@ -306,24 +255,45 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     protected void onDestroy() {
         super.onDestroy();
 
-        t.interrupt();
-        tClassifyActivity.interrupt();
+        if (t != null) {
+            t.interrupt();
+        }
+        if (tClassifyActivity != null) {
+            tClassifyActivity.interrupt();
+        }
 
         pw.close();
 
         mSensorManager = null;
 
+        mActiveModeUpdateHandler.removeMessages(MSG_UPDATE_SCREEN);
+        mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
+
         Log.i(TAG, "Activity was stopped");
+
     }
 
     @Override
     public void onAccuracyChanged(Sensor arg0, int arg1) {
-
+        Log.i(TAG, "onAccuracyChanged()");
     }
 
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
+
+        /**
+         * In this sample, we aren't using the ambient details bundle (EXTRA_BURN_IN_PROTECTION or
+         * EXTRA_LOWBIT_AMBIENT), but if you need them, you can pull them from the local variable
+         * set here.
+         */
+        mAmbientDetails = ambientDetails;
+
+        /** Clears Handler queue (only needed for updates in active mode). */
+        mActiveModeUpdateHandler.removeMessages(MSG_UPDATE_SCREEN);
+
+        refreshDisplayAndSetNextUpdate();
+        Log.d(TAG, "onEnterAmbient()");
 
     }
 
@@ -331,9 +301,118 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     public void onExitAmbient() {
         super.onExitAmbient();
 
-/*
         mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
-*/
+        Log.d(TAG, "onExitAmbient()");
+
+        refreshDisplayAndSetNextUpdate();
+    }
+
+    @Override
+    public void onUpdateAmbient() {
+        super.onUpdateAmbient();
+
+        refreshDisplayAndSetNextUpdate();
+    }
+
+
+    /**
+     * Updates display based on Ambient state. If you need to pull data, you should do it here.
+     */
+    private void loadDataAndUpdateScreen() {
+
+        mDrawCount += 1;
+        long currentTimeMs = System.currentTimeMillis();
+        Log.d(TAG, "loadDataAndUpdateScreen(): " + currentTimeMs + "(" + isAmbient() + ")");
+
+        if (firstRun) {
+            try {
+                Random random = new Random();
+                int fileNumber = random.nextInt(100);
+                final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
+                FileOperations.deleteFile(sensorDataName);
+                final File sensorData = new File(sensorDataName);
+
+                pw = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
+
+                Log.i(TAG, sensorDataName);
+
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // clean old files with random results
+            FileOperations.deleteFile("/storage/emulated/0/myfile_nbp.txt");
+            FileOperations.deleteFile("myfile_nbp.txt");
+
+            // create classifier from a file
+            String selectedClassifierName = "HyperPipes";
+            FactoryClassifiers fc = new FactoryClassifiers();
+            String modelFileName = fc.getModelFile(selectedClassifierName);
+            InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
+            selectedClassifier = fc.getModel(selectedClassifierName, ins);
+
+            posInstance = 0;
+            warmingUp = true;
+            setSensors();
+
+            performingActivity = 6;
+
+//            launchCollectingInformation();
+
+            launchingRecognitionActivities();
+
+            firstRun = false;
+
+            Log.i(TAG, "First run is still active");
+        }
+
+        if (isAmbient()) {
+
+        } else {
+
+        }
+    }
+
+
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        setIntent(intent);
+        Log.d(TAG, "onNewIntent(): " + intent);
+
+        // Described in the following section
+        refreshDisplayAndSetNextUpdate();
+    }
+
+    private void refreshDisplayAndSetNextUpdate() {
+
+        loadDataAndUpdateScreen();
+        long timeMs = System.currentTimeMillis();
+
+        // this condition is true when called from ambient mode and can be used with timer value
+        if (isAmbient()) {
+
+            long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
+            long triggerTimeMs = timeMs + delayMs;
+
+            mAmbientStateAlarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTimeMs,
+                    mAmbientStatePendingIntent);
+
+        } else {
+
+            long delayMs = ACTIVE_INTERVAL_MS - (timeMs % ACTIVE_INTERVAL_MS);
+
+            mActiveModeUpdateHandler.removeMessages(MSG_UPDATE_SCREEN);
+            mActiveModeUpdateHandler.sendEmptyMessageDelayed(MSG_UPDATE_SCREEN, delayMs);
+
+
+
+        }
 
     }
 
@@ -517,6 +596,31 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     public void onEmpty(View view) {
         performingActivity = 6;
         mNewActivity.setText("New activity is empty");
+    }
+
+
+    /**
+     * Handler separated into static class to avoid memory leaks.
+     */
+    private static class UpdateHandler extends Handler {
+        private final WeakReference<MainActivity> mMainActivityWeakReference;
+
+        public UpdateHandler(MainActivity reference) {
+            mMainActivityWeakReference = new WeakReference<MainActivity>(reference);
+        }
+
+        @Override
+        public void handleMessage(Message message) {
+            MainActivity mainActivity = mMainActivityWeakReference.get();
+
+            if (mainActivity != null) {
+                switch (message.what) {
+                    case MSG_UPDATE_SCREEN:
+                        mainActivity.refreshDisplayAndSetNextUpdate();
+                        break;
+                }
+            }
+        }
     }
 
     public boolean isExternalStorageWritable() {
