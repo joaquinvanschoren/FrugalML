@@ -1,0 +1,22 @@
+.Rproj.user
+.Rhistory
+.RData
+Slides from WU/*
+anaconda/*
+articles/*
+.ipynb_checkpoints/*
+Tips/*
+data/*
+external/*
+codes/*
+plots/*
+processed/*
+reports/*
+objects/*
+# files by extension
+*.csv
+*.arff
+*.Rproj
+*~
+# single files
+ConnectOML.R

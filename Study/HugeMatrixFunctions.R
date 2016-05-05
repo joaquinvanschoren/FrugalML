@@ -1,4 +1,4 @@
-
+ 
 createHugeMatrix <- function(originData, splitFactor, p.w = 0.1, p.normalize = TRUE, p.matrixEmptyValuesThrow = FALSE) {
     separate_evaluations <- split(originData, originData[splitFactor])
     
@@ -198,7 +198,7 @@ computeTimeAUC <- function(dataSet) {
     
     # store highest value for AUC in this particular data set
     highestAUC <- max(dataSet$auroc)
-
+    
     if (highestAUC <= 0 | highestAUC > 1 | is.na(highestAUC)) { 
         return (NA)        
     } 
@@ -214,18 +214,22 @@ computeTimeAUC <- function(dataSet) {
     dataSet$training_millis <- abs(dataSet$training_millis)
     
     dataSet <- dataSet[!is.na(dataSet$testing_millis),]
-    dataSet$testing_millis <- abs(dataSet$testing_millis)
+    dataSet$testing_millis <- abs(dataSet$testing_millis) 
+    
+    # increase time up to 1 ms for lower values 
+    dataSet$training_millis[dataSet$training_millis < 1] <- 1 
+    dataSet$testing_millis[dataSet$testing_millis < 1] <- 1 
     
     # caclulate combined time for each algorithm
     dataSet$combineTime <-
         dataSet$training_millis + dataSet$testing_millis
     
     # find the lowest combined time in this data set
-    lowestTime <- min(dataSet$combineTime + 1) 
+    lowestTime <- min(dataSet$combineTime) 
     
     if (is.na(lowestTime)) {
         return (NA)  
-    }
+    } 
     
     # filter columns and save AUC, training time and name of algorithm
     dataSet <-
@@ -474,7 +478,13 @@ createHugeMatrixFromImputedMeasures <- function(evaluations, p.w, p.normalize) {
         }
         hugeMatrix <- sMatrix 
     } else { 
-        hugeMatrix <- pAUC - p.w * (1 / (1 + exp(1) ^ (-(pTime + 1))) ) 
+        oldFormula <- FALSE 
+        if (oldFormula) {
+            hugeMatrix <- pAUC - p.w * log10(pTime) 
+        } else {
+            hugeMatrix <- pAUC - p.w * (1 / (1 + exp(-pTime)) )           
+        }
+
     } 
     
     return (hugeMatrix) 

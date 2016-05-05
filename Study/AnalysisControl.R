@@ -57,11 +57,19 @@ if (clustersFromAnalysis) {
 }  
 table(clusters) 
 
-# create files with a Pareto front for every data set and every cluster
-selectedAlgorithms <- makeClustering(p.clusters = clusters, p.plots = FALSE) 
+additionalProcessing(clustersProperties$meaningfullFeatures) 
 
-# manual change in the order of algorithms for new plots 
-selectedAlgorithms <- c(selectedAlgorithms[1], selectedAlgorithms[15:17], selectedAlgorithms[2:8], selectedAlgorithms[18], selectedAlgorithms[9:14]) 
+# create files with a Pareto front for every data set and every cluster
+selectedAlgorithms <- makeClustering(p.clusters = clusters, p.plots = TRUE, p.simplify = FALSE)  
+aggregatedAUC <- data.frame(tapply(selectedAlgorithms$AUC, selectedAlgorithms$Algorithm, mean)) 
+aggregatedAUC <- data.frame(aggregatedAUC[order(as.numeric(aggregatedAUC[, 1]), decreasing = TRUE), ])   
+selectedAlgorithms <- rownames(aggregatedAUC) 
+
+manualOrder <- FALSE 
+if (manualOrder) {
+    # manual change in the order of algorithms for new plots 
+    selectedAlgorithms <- c(selectedAlgorithms[1], selectedAlgorithms[15:17], selectedAlgorithms[2:8], selectedAlgorithms[18], selectedAlgorithms[9:14]) 
+}
 
 # split the main matrix to clusters 
 hugeMatrixFirst <- hugeMatrix[clusters == 1, ] 

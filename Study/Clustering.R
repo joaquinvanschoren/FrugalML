@@ -8,9 +8,9 @@ oldwd <- getwd()
 # set your own directory 
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
 
-makeClustering <- function(p.clusters, p.plots = FALSE) {
+makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) { 
     # control for grouping different values of hyper parameters to a one value  
-    simplify = FALSE  
+    simplify = p.simplify  
     
     # create images for Pareto Front 
     showParetoFront <- TRUE 
@@ -19,7 +19,7 @@ makeClustering <- function(p.clusters, p.plots = FALSE) {
     filterOutlierValues <- TRUE 
     
     # present results for an example algorithm 
-    removeBaselineAlgorithm <- TRUE 
+    removeSomeAlgorithms <- TRUE 
     
     # load original data for consistency
     evaluations <- loadEvaluations() 
@@ -48,7 +48,7 @@ makeClustering <- function(p.clusters, p.plots = FALSE) {
                 
                 smallX <- computeTimeAUC(x) 
                 
-                smallX$CombineTime <- log10(smallX$CombineTime + 1) 
+                smallX$CombineTime <- log10(smallX$CombineTime) 
                 
                 smallX$AUC <- smallX$AUC * -1
                 
@@ -101,9 +101,10 @@ makeClustering <- function(p.clusters, p.plots = FALSE) {
         } 
         
         # remove an example for other algorithms  
-        if (removeBaselineAlgorithm) {
+        if (removeSomeAlgorithms) {
             zrIndex <- grep("ZeroR", rownames(aggregatedValues))[1]  
-            aggregatedValues <- aggregatedValues[-zrIndex, ] 
+            fcIndex <- grep("FilteredClassif", rownames(aggregatedValues))
+            aggregatedValues <- aggregatedValues[-c(zrIndex, fcIndex), ] 
         }  
         
         if (simplify == TRUE) {  
@@ -166,9 +167,7 @@ makeClustering <- function(p.clusters, p.plots = FALSE) {
         }
     } 
     
-    algorithmsToCheck <- unique(selectedAlgorithms$Algorithm) 
-    
-    return (algorithmsToCheck) 
+    return (selectedAlgorithms) 
 }
  
 setwd(oldwd) 
