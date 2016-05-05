@@ -1,6 +1,10 @@
 package com.project.frugalmachinelearning;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -11,6 +15,7 @@ import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.project.frugalmachinelearning.classifiers.ActivityType;
@@ -35,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import weka.classifiers.AbstractClassifier;
 import weka.core.Attribute;
@@ -55,7 +61,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private boolean needTitle = true;
 
     private AbstractClassifier selectedClassifier = null;
-    private DenseInstance[] instances = new DenseInstance[AMOUNT_OF_ATTRIBUTES + 2];
+    private DenseInstance[] instances = new DenseInstance[3];
     private int posInstance;
     private boolean warmingUp;
     private int performingActivity;
@@ -65,6 +71,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private TextView mNewActivity;
 
     private PrintWriter pw;
+
+    private AlarmManager mAmbientStateAlarmManager;
+    private PendingIntent mAmbientStatePendingIntent;
+    private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(1);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +91,18 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             }
         });
 
+        // activate constant visibility for the activity
         setAmbientEnabled();
+
+        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+
+        mAmbientStatePendingIntent = PendingIntent.getActivity(
+                getApplicationContext(),
+                1,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
         try {
             Random random = new Random();
@@ -103,7 +125,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         FileOperations.deleteFile("myfile_nbp.txt");
 
         // create classifier from a file
-        String selectedClassifierName = "HyperPipes";
+        String selectedClassifierName = "RandomSubSpace";
         FactoryClassifiers fc = new FactoryClassifiers();
         String modelFileName = fc.getModelFile(selectedClassifierName);
         InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
@@ -134,8 +156,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                         Date current = new Date();
                                         allSensorsData.append(df.format(current)).append(",");
 
-                                        mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
-
                                         if (needTitle) {
                                             StringBuilder title = new StringBuilder();
                                             title.append("Time,");
@@ -164,17 +184,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
 
 /*
-                                        DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
-
-                                        instances[posInstance] = instance;
-                                        posInstance++;
-                                        if (posInstance == instances.length) {
-                                            posInstance = 0;
-                                        }
-*/
-
-
-/*
                                         InputStream insValues = getResources().openRawResource(getResources().getIdentifier("measurements",
                                                 "raw", getPackageName()));
 
@@ -196,7 +205,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             }
         };
 
-        t.start();
+//        t.start();
 
         tClassifyActivity = new Thread() {
 
@@ -209,14 +218,77 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                             @Override
                             public void run() {
-                                ArrayList<Attribute> attributes = getNewAttributes();
-                                Instances data = ActivityWindow.constructInstances(attributes, instances);
-                                String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
+                                if (!isAmbient()) {
+                                    DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
 
-                                mActivityTextView.setText("is " + activityFullName);
+                                    instances[posInstance] = instance;
+                                    posInstance++;
+                                    if (posInstance == instances.length) {
+                                        posInstance = 0;
+                                    }
 
-                                Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
-                                Log.i(TAG, activityFullName);
+                                    ArrayList<Attribute> attributes = getNewAttributes();
+                                    Instances data = ActivityWindow.constructInstances(attributes, instances);
+                                    String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
+
+                                    Button empButton = (Button) findViewById(R.id.button7);
+                                    if (empButton.getVisibility() != View.VISIBLE) {
+                                        mActivityTextView.setText("Activity is " + activityFullName);
+                                        mActivityTextView.setTextSize(12);
+                                        mTime.setTextSize(10);
+                                        mNewActivity.setVisibility(View.INVISIBLE);
+                                    } else {
+                                        mActivityTextView.setText("is " + activityFullName);
+
+                                    }
+
+                                    Date current = new Date();
+                                    mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
+
+                                    Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
+                                    Log.i(TAG, activityFullName);
+
+                                } else {
+/*
+                                    long timeMs = System.currentTimeMillis();
+                                    long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
+                                    long triggerTimeMs = timeMs + delayMs;
+
+                                    mAmbientStateAlarmManager.setExact(
+                                            AlarmManager.RTC_WAKEUP,
+                                            triggerTimeMs,
+                                            mAmbientStatePendingIntent);
+*/
+
+                                    DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
+
+                                    instances[posInstance] = instance;
+                                    posInstance++;
+                                    if (posInstance == instances.length) {
+                                        posInstance = 0;
+                                    }
+
+                                    ArrayList<Attribute> attributes = getNewAttributes();
+                                    Instances data = ActivityWindow.constructInstances(attributes, instances);
+                                    String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
+
+                                    Button empButton = (Button) findViewById(R.id.button7);
+                                    if (empButton.getVisibility() != View.VISIBLE) {
+                                        mActivityTextView.setText("Activity is " + activityFullName);
+                                        mActivityTextView.setTextSize(12);
+                                        mTime.setTextSize(10);
+                                        mNewActivity.setVisibility(View.INVISIBLE);
+                                    } else {
+                                        mActivityTextView.setText("is " + activityFullName);
+
+                                    }
+
+                                    Date current = new Date();
+                                    mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
+
+                                    Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
+                                    Log.i(TAG, activityFullName);
+                                }
                             }
 
                         });
@@ -227,7 +299,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             }
         };
 
-//         tClassifyActivity.start();
+        tClassifyActivity.start();
     }
 
     @Override
@@ -258,6 +330,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     @Override
     public void onExitAmbient() {
         super.onExitAmbient();
+
+/*
+        mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
+*/
 
     }
 
@@ -409,31 +485,32 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     public void onWalking(View view) {
-        performingActivity = 0;
+        performingActivity = ActivityType.valueOf("WALKING").ordinal();
         mNewActivity.setText("New activity is walking");
     }
 
     public void onUpstairs(View view) {
-        performingActivity = 1;
-        mNewActivity.setText("New activity is upstairs");}
+        performingActivity = ActivityType.valueOf("WALKING_UPSTAIRS").ordinal();
+        mNewActivity.setText("New activity is upstairs");
+    }
 
     public void onDownstairs(View view) {
-        performingActivity = 2;
+        performingActivity = ActivityType.valueOf("WALKING_DOWNSTAIRS").ordinal();
         mNewActivity.setText("New activity is downstairs");
     }
 
     public void onSitting(View view) {
-        performingActivity = 3;
+        performingActivity = ActivityType.valueOf("SITTING").ordinal();
         mNewActivity.setText("New activity is sitting");
     }
 
     public void onStanding(View view) {
-        performingActivity = 4;
+        performingActivity = ActivityType.valueOf("STANDING").ordinal();
         mNewActivity.setText("New activity is standing");
     }
 
     public void onLaying(View view) {
-        performingActivity = 5;
+        performingActivity = ActivityType.valueOf("LAYING").ordinal();
         mNewActivity.setText("New activity is laying");
     }
 

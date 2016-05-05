@@ -10,6 +10,7 @@ import weka.classifiers.AbstractClassifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.misc.HyperPipes;
 import weka.classifiers.meta.RandomSubSpace;
+import weka.classifiers.trees.RandomForest;
 
 /**
  * Created by Mikhail on 02.05.2016.
@@ -23,8 +24,8 @@ public class FactoryClassifiers {
             return "hpnumeric";
         } else if (modelName.equals("RandomSubSpace")) {
             return "rssnumeric";
-        } else if (modelName.equals("NaiveBayes")) {
-            return "nbnumeric";
+        } else if (modelName.equals("RandomForest")) {
+            return "rfnumeric";
         } else
             return null;
     }
@@ -36,8 +37,8 @@ public class FactoryClassifiers {
                 model = (HyperPipes) (new ObjectInputStream(ins)).readObject();
             } else if (modelName.equals("RandomSubSpace")) {
                 model = (RandomSubSpace) new ObjectInputStream(ins).readObject();
-            } else if (modelName.equals("NaiveBayes")) {
-                model = (NaiveBayes) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("RandomForest")) {
+                model = (RandomForest) new ObjectInputStream(ins).readObject();
             }
 
             return model;
