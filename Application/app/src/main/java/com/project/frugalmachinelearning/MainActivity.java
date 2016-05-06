@@ -1,8 +1,10 @@
 package com.project.frugalmachinelearning;
 
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -18,6 +20,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.project.frugalmachinelearning.classifiers.ActivityType;
 import com.project.frugalmachinelearning.classifiers.ActivityWindow;
@@ -288,9 +291,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                         } else {
                                             mActivityTextView.setVisibility(View.INVISIBLE);
                                         }
-
-                                        Log.d(TAG, "Continue working");
-
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -426,9 +426,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             try {
                 timeChangeActivityUpdateMs = System.currentTimeMillis();
 
-                if (performingActivity == 6) {
-                    mNewActivity.setText("New activity is empty");
-                }
+                performingActivity = 6;
 
                 if (APP_STATE == 1) {
                     bWalking.setVisibility(View.INVISIBLE);
@@ -439,6 +437,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                     bLaying.setVisibility(View.INVISIBLE);
                     bEmpty.setVisibility(View.INVISIBLE);
                 } else {
+                    mNewActivity.setText("New activity is empty");
+
                     Random random = new Random();
                     int fileNumber = random.nextInt(100);
                     final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
@@ -469,8 +469,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             posInstance = 0;
             warmingUp = true;
             setSensors();
-
-            performingActivity = 6;
 
             if (APP_STATE == 0) {
                 launchCollectingInformation();
@@ -1114,6 +1112,31 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("Activity", values, numAttrib));
 
         return attributes;
+    }
+
+    private void doExit() {
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(
+                MainActivity.this);
+
+        alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+
+        alertDialog.setNegativeButton("No", null);
+
+        alertDialog.setMessage("Do you want to exit?");
+        alertDialog.setTitle("AppTitle");
+        alertDialog.show();
+    }
+
+    @Override
+    public void onBackPressed() {
+        doExit();
     }
 
     public DenseInstance getDenseInstances(int numOfAttributes, int pos) {
