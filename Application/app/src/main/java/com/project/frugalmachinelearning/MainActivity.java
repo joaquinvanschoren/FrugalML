@@ -24,6 +24,10 @@ import com.project.frugalmachinelearning.classifiers.ActivityWindow;
 import com.project.frugalmachinelearning.classifiers.FactoryClassifiers;
 import com.project.frugalmachinelearning.tools.FileOperations;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -51,8 +55,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private static final String TAG = "MainActivity";
     private static final int AMOUNT_OF_ATTRIBUTES = 23;
 
+    private static final int UPDATES_PER_SECOND = 16;
+
     private SensorManager mSensorManager;
-    private Map<String, Double> mResults = new LinkedHashMap<String, Double>();
+    private Map<String, Float> mResults = new LinkedHashMap<String, Float>();
 
     private Thread t;
     private Thread tClassifyActivity;
@@ -60,7 +66,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private boolean needTitle = true;
 
     private AbstractClassifier selectedClassifier;
-    private DenseInstance[] instances = new DenseInstance[1];
+    private DenseInstance[] instances = new DenseInstance[2 * UPDATES_PER_SECOND];
     private int posInstance;
     private boolean warmingUp;
     private int performingActivity;
@@ -70,10 +76,26 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private TextView mNewActivity;
 
     private PrintWriter pw;
+    private DateFormat df = new SimpleDateFormat("HH:mm:ss.SSS dd/MM/yyyy");
 
+    private boolean firstRun = true;
 
-    boolean firstRun = true;
+    private long timeChangeActivityUpdateMs;
 
+    private float[] accelerometerFilter = new float[3];
+
+    private double[] accFrameX = new double[2 * UPDATES_PER_SECOND];
+    private double[] accFrameY = new double[2 * UPDATES_PER_SECOND];
+    private double[] accFrameZ = new double[2 * UPDATES_PER_SECOND];
+    private double accFrameXMean;
+    private double accFrameYMean;
+    private double accFrameZMean;
+    private double accFrameXStd;
+    private double accFrameYStd;
+    private double accFrameZStd;
+
+    StandardDeviation stDev = new StandardDeviation();
+    Mean mean = new Mean();
 
 
     /** Custom 'what' for Message sent to Handler. */
@@ -134,7 +156,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             public void run() {
                 try {
                     while (!isInterrupted()) {
-                        Thread.sleep(1000/16);
+                        Thread.sleep(1000 / UPDATES_PER_SECOND);
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -143,7 +165,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                                         StringBuilder allSensorsData = new StringBuilder();
 
-                                        DateFormat df = new SimpleDateFormat("HH:mm:ss.SSS dd/MM/yyyy");
                                         Date current = new Date();
                                         allSensorsData.append(df.format(current)).append(",");
 
@@ -151,7 +172,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                             StringBuilder title = new StringBuilder();
                                             title.append("Time,");
 
-                                            for (Map.Entry<String, Double> entry : mResults.entrySet()) {
+                                            for (Map.Entry<String, Float> entry : mResults.entrySet()) {
                                                 title.append(entry.getKey()).append(",");
                                             }
 
@@ -164,15 +185,28 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                             }
                                         }
 
-                                        for (Map.Entry<String, Double> sensorValue : mResults.entrySet()) {
+                                        for (Map.Entry<String, Float> sensorValue : mResults.entrySet()) {
                                             allSensorsData.append(sensorValue.getValue());
                                             allSensorsData.append(",");
                                         }
 
                                         allSensorsData.append(performingActivity);
-                                        pw.println(allSensorsData.toString());
+
+                                        // pause data collection after activity change for a short period
+                                        long currentTimeMs = System.currentTimeMillis();
+                                        if (currentTimeMs - timeChangeActivityUpdateMs >= 3000) {
+                                            pw.println(allSensorsData.toString());
+                                        }
 
 
+
+                                        Button empButton = (Button) findViewById(R.id.button7);
+                                        if (empButton.getVisibility() != View.VISIBLE) {
+                                            mTime.setTextSize(10);
+                                            mNewActivity.setVisibility(View.INVISIBLE);
+                                        } else {
+                                            mActivityTextView.setVisibility(View.INVISIBLE);
+                                        }
 
 /*
                                         InputStream insValues = getResources().openRawResource(getResources().getIdentifier("measurements",
@@ -182,6 +216,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                         Log.i(TAG, String.valueOf(stableValue));
 */
 
+                                        Log.d(TAG, "Continue working");
 
                                     }
                                 } catch (Exception e) {
@@ -211,6 +246,16 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                             @Override
                             public void run() {
+                                accFrameX[posInstance] = mResults.get("AccelX");
+                                accFrameY[posInstance] = mResults.get("AccelY");
+                                accFrameZ[posInstance] = mResults.get("AccelZ");
+                                accFrameXMean = mean.evaluate(accFrameX);
+                                accFrameYMean = mean.evaluate(accFrameY);
+                                accFrameZMean = mean.evaluate(accFrameZ);
+                                accFrameXStd = stDev.evaluate(accFrameX);
+                                accFrameXStd = stDev.evaluate(accFrameX);
+                                accFrameXStd = stDev.evaluate(accFrameX);
+
                                 DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
 
                                 instances[posInstance] = instance;
@@ -234,9 +279,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                                 }
 
-                                Date current = new Date();
-                                mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
-
                                 Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
                             }
 
@@ -253,10 +295,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
 
         if (t != null) {
             t.interrupt();
+
         }
         if (tClassifyActivity != null) {
             tClassifyActivity.interrupt();
@@ -269,9 +311,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mActiveModeUpdateHandler.removeMessages(MSG_UPDATE_SCREEN);
         mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
 
-        Log.i(TAG, "Activity was stopped");
-
-    }
+        super.onDestroy();
+  }
 
     @Override
     public void onAccuracyChanged(Sensor arg0, int arg1) {
@@ -314,7 +355,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         refreshDisplayAndSetNextUpdate();
     }
 
-
     /**
      * Updates display based on Ambient state. If you need to pull data, you should do it here.
      */
@@ -323,6 +363,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mDrawCount += 1;
         long currentTimeMs = System.currentTimeMillis();
         Log.d(TAG, "loadDataAndUpdateScreen(): " + currentTimeMs + "(" + isAmbient() + ")");
+
+        Date current = new Date();
+        mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
 
         if (firstRun) {
             try {
@@ -333,6 +376,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 final File sensorData = new File(sensorDataName);
 
                 pw = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
+
+                timeChangeActivityUpdateMs = System.currentTimeMillis();
 
                 Log.i(TAG, sensorDataName);
 
@@ -374,8 +419,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
     }
 
-
-
     @Override
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -394,7 +437,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         // this condition is true when called from ambient mode and can be used with timer value
         if (isAmbient()) {
-
             long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
             long triggerTimeMs = timeMs + delayMs;
 
@@ -404,14 +446,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                     mAmbientStatePendingIntent);
 
         } else {
-
             long delayMs = ACTIVE_INTERVAL_MS - (timeMs % ACTIVE_INTERVAL_MS);
 
             mActiveModeUpdateHandler.removeMessages(MSG_UPDATE_SCREEN);
             mActiveModeUpdateHandler.sendEmptyMessageDelayed(MSG_UPDATE_SCREEN, delayMs);
-
-
-
         }
 
     }
@@ -468,9 +506,22 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            double ax = Math.round(event.values[0] * 100000) / 100000.0;
-            double ay = Math.round(event.values[1] * 100000) / 100000.0;
-            double az = Math.round(event.values[2] * 100000) / 100000.0;
+
+            // In this example, alpha is calculated as t / (t + dT),
+            // where t is the low-pass filter's time-constant and
+            // dT is the event delivery rate.
+
+            final float alpha = 0.1f;
+
+            // Isolate the force of gravity with the low-pass filter.
+            accelerometerFilter[0] = alpha * accelerometerFilter[0] + (1 - alpha) * event.values[0];
+            accelerometerFilter[1] = alpha * accelerometerFilter[1] + (1 - alpha) * event.values[1];
+            accelerometerFilter[2] = alpha * accelerometerFilter[2] + (1 - alpha) * event.values[2];
+
+            // Remove the gravity contribution with the high-pass filter.
+            float ax = event.values[0] - accelerometerFilter[0];
+            float ay = event.values[1] - accelerometerFilter[1];
+            float az = event.values[2] - accelerometerFilter[2];
 
             mResults.put("AccelX", ax);
             mResults.put("AccelY", ay);
@@ -478,9 +529,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
-            double ax = Math.round(event.values[0] * 1000) / 1000.0;
-            double ay = Math.round(event.values[1] * 1000) / 1000.0;
-            double az = Math.round(event.values[2] * 1000) / 1000.0;
+            float ax = event.values[0];
+            float ay = event.values[1];
+            float az = event.values[2];
 
             mResults.put("GyroX", ax);
             mResults.put("GyroY", ay);
@@ -488,9 +539,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         if (event.sensor.getType() == Sensor.TYPE_GRAVITY){
-            double ax = Math.round(event.values[0] * 100000) / 100000.0;
-            double ay = Math.round(event.values[1] * 100000) / 100000.0;
-            double az = Math.round(event.values[2] * 100000) / 100000.0;
+            float ax = event.values[0];
+            float ay = event.values[1];
+            float az = event.values[2];
 
             mResults.put("GravityX", ax);
             mResults.put("GravityY", ay);
@@ -498,9 +549,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
-            double ax = Math.round(event.values[0] * 1000) / 1000.0;
-            double ay = Math.round(event.values[1] * 1000) / 1000.0;
-            double az = Math.round(event.values[2] * 1000) / 1000.0;
+            float ax = event.values[0];
+            float ay = event.values[1];
+            float az = event.values[2];
 
             mResults.put("LinAccelX", ax);
             mResults.put("LinAccelY", ay);
@@ -508,10 +559,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR){
-            double ax = Math.round(event.values[0] * 100000) / 100000.0;
-            double ay = Math.round(event.values[1] * 100000) / 100000.0;
-            double az = Math.round(event.values[2] * 100000) / 100000.0;
-            double as = Math.round(event.values[2] * 100000) / 100000.0;
+            float ax = event.values[0];
+            float ay = event.values[1];
+            float az = event.values[2];
+            float as = event.values[2];
 
             mResults.put("RotVecX", ax);
             mResults.put("RotVecY", ay);
@@ -520,21 +571,21 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         if (event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
-            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+            float ax = event.values[0];
 
             mResults.put("StDetVal", ax);
         }
 
         if (event.sensor.getType() == Sensor.TYPE_PRESSURE) {
-            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+            float ax = event.values[0];
 
             mResults.put("AiPreVal", ax);
         }
 
         if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-            double ax = Math.round(event.values[0] * 100000) / 100000.0;
-            double ay = Math.round(event.values[1] * 100000) / 100000.0;
-            double az = Math.round(event.values[2] * 100000) / 100000.0;
+            float ax = event.values[0];
+            float ay = event.values[1];
+            float az = event.values[2];
 
             mResults.put("MagFielX", ax);
             mResults.put("MagFielY", ay);
@@ -542,18 +593,17 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         if (event.sensor.getType() == Sensor.TYPE_HEART_RATE){
-            double ax = Math.round(event.values[0] * 100000) / 100000.0;
+            float ax = event.values[0];
 
             mResults.put("HeartRateVal", ax);
         }
 
         if (warmingUp) {
-            mResults.put("StDetVal", 0.0);
-            mResults.put("HeartRateVal", Double.NaN);
+            mResults.put("StDetVal", 0.0f);
+            mResults.put("HeartRateVal", Float.NaN);
             warmingUp = false;
         }
     }
-
 
     /**
      * Handles the button press to finish this activity and take the user back to the Home.
@@ -566,38 +616,44 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     public void onWalking(View view) {
         performingActivity = ActivityType.valueOf("WALKING").ordinal();
         mNewActivity.setText("New activity is walking");
+        timeChangeActivityUpdateMs = System.currentTimeMillis();
     }
 
     public void onUpstairs(View view) {
         performingActivity = ActivityType.valueOf("WALKING_UPSTAIRS").ordinal();
         mNewActivity.setText("New activity is upstairs");
+        timeChangeActivityUpdateMs = System.currentTimeMillis();
     }
 
     public void onDownstairs(View view) {
         performingActivity = ActivityType.valueOf("WALKING_DOWNSTAIRS").ordinal();
         mNewActivity.setText("New activity is downstairs");
+        timeChangeActivityUpdateMs = System.currentTimeMillis();
     }
 
     public void onSitting(View view) {
         performingActivity = ActivityType.valueOf("SITTING").ordinal();
         mNewActivity.setText("New activity is sitting");
+        timeChangeActivityUpdateMs = System.currentTimeMillis();
     }
 
     public void onStanding(View view) {
         performingActivity = ActivityType.valueOf("STANDING").ordinal();
         mNewActivity.setText("New activity is standing");
+        timeChangeActivityUpdateMs = System.currentTimeMillis();
     }
 
     public void onLaying(View view) {
         performingActivity = ActivityType.valueOf("LAYING").ordinal();
         mNewActivity.setText("New activity is laying");
+        timeChangeActivityUpdateMs = System.currentTimeMillis();
     }
 
     public void onEmpty(View view) {
         performingActivity = 6;
         mNewActivity.setText("New activity is empty");
+        timeChangeActivityUpdateMs = System.currentTimeMillis();
     }
-
 
     /**
      * Handler separated into static class to avoid memory leaks.
@@ -638,7 +694,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         if (mResults.size() != 0) {
 
-            for (Map.Entry<String, Double> entry : mResults.entrySet()) {
+            for (Map.Entry<String, Float> entry : mResults.entrySet()) {
                 String key = entry.getKey();
                 attributes.add(new Attribute(key, numAttrib));
                 numAttrib++;
@@ -658,8 +714,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         int currentAttNumber = 0;
 
-        for (Map.Entry<String, Double> entry : mResults.entrySet()) {
-            Double value = entry.getValue();
+        for (Map.Entry<String, Float> entry : mResults.entrySet()) {
+            Float value = entry.getValue();
 
             attributeValues[currentAttNumber] = value;
             currentAttNumber++;
