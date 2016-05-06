@@ -22,9 +22,9 @@ import android.widget.TextView;
 import com.project.frugalmachinelearning.classifiers.ActivityType;
 import com.project.frugalmachinelearning.classifiers.ActivityWindow;
 import com.project.frugalmachinelearning.classifiers.FactoryClassifiers;
+import com.project.frugalmachinelearning.tools.ApplicationStates;
 import com.project.frugalmachinelearning.tools.FileOperations;
 
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
@@ -57,6 +57,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     private static final int UPDATES_PER_SECOND = 16;
 
+    private static final int FRAME_SIZE = UPDATES_PER_SECOND * 2;
+
     private SensorManager mSensorManager;
     private Map<String, Float> mResults = new LinkedHashMap<String, Float>();
 
@@ -66,7 +68,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private boolean needTitle = true;
 
     private AbstractClassifier selectedClassifier;
-    private DenseInstance[] instances = new DenseInstance[2 * UPDATES_PER_SECOND];
+    private DenseInstance[] instances = new DenseInstance[FRAME_SIZE];
     private int posInstance;
     private boolean warmingUp;
     private int performingActivity;
@@ -74,6 +76,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private TextView mActivityTextView;
     private TextView mTime;
     private TextView mNewActivity;
+
+    private Button bWalking;
+    private Button bWalkingUpstairs;
+    private Button bWalkingDownstairs;
+    private Button bSitting;
+    private Button bStanding;
+    private Button bLaying;
+    private Button bEmpty;
 
     private PrintWriter pw;
     private DateFormat df = new SimpleDateFormat("HH:mm:ss.SSS dd/MM/yyyy");
@@ -84,18 +94,85 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     private float[] accelerometerFilter = new float[3];
 
-    private double[] accFrameX = new double[2 * UPDATES_PER_SECOND];
-    private double[] accFrameY = new double[2 * UPDATES_PER_SECOND];
-    private double[] accFrameZ = new double[2 * UPDATES_PER_SECOND];
-    private double accFrameXMean;
-    private double accFrameYMean;
-    private double accFrameZMean;
-    private double accFrameXStd;
-    private double accFrameYStd;
-    private double accFrameZStd;
+    private double[] accelXArray = new double[FRAME_SIZE];
+    private double[] accelYArray = new double[FRAME_SIZE];
+    private double[] accelZArray = new double[FRAME_SIZE];
+    private double[] accelXMean = new double[FRAME_SIZE];
+    private double[] accelYMean = new double[FRAME_SIZE];
+    private double[] accelZMean = new double[FRAME_SIZE];
+    private double[] accelXStd = new double[FRAME_SIZE];
+    private double[] accelYStd = new double[FRAME_SIZE];
+    private double[] accelZStd = new double[FRAME_SIZE];
+
+    private double[] gyroXArray = new double[FRAME_SIZE];
+    private double[] gyroYArray = new double[FRAME_SIZE];
+    private double[] gyroZArray = new double[FRAME_SIZE];
+    private double[] gyroXMean = new double[FRAME_SIZE];
+    private double[] gyroYMean = new double[FRAME_SIZE];
+    private double[] gyroZMean = new double[FRAME_SIZE];
+    private double[] gyroXStd = new double[FRAME_SIZE];
+    private double[] gyroYStd = new double[FRAME_SIZE];
+    private double[] gyroZStd = new double[FRAME_SIZE];
+
+    private double[] gravityXArray = new double[FRAME_SIZE];
+    private double[] gravityYArray = new double[FRAME_SIZE];
+    private double[] gravityZArray = new double[FRAME_SIZE];
+    private double[] gravityXMean = new double[FRAME_SIZE];
+    private double[] gravityYMean = new double[FRAME_SIZE];
+    private double[] gravityZMean = new double[FRAME_SIZE];
+    private double[] gravityXStd = new double[FRAME_SIZE];
+    private double[] gravityYStd = new double[FRAME_SIZE];
+    private double[] gravityZStd = new double[FRAME_SIZE];
+
+    private double[] linAccelXArray = new double[FRAME_SIZE];
+    private double[] linAccelYArray = new double[FRAME_SIZE];
+    private double[] linAccelZArray = new double[FRAME_SIZE];
+    private double[] linAccelXMean = new double[FRAME_SIZE];
+    private double[] linAccelYMean = new double[FRAME_SIZE];
+    private double[] linAccelZMean = new double[FRAME_SIZE];
+    private double[] linAccelXStd = new double[FRAME_SIZE];
+    private double[] linAccelYStd = new double[FRAME_SIZE];
+    private double[] linAccelZStd = new double[FRAME_SIZE];
+
+    private double[] rotVecXArray = new double[FRAME_SIZE];
+    private double[] rotVecYArray = new double[FRAME_SIZE];
+    private double[] rotVecZArray = new double[FRAME_SIZE];
+    private double[] rotVecSArray = new double[FRAME_SIZE];
+    private double[] rotVecXMean = new double[FRAME_SIZE];
+    private double[] rotVecYMean = new double[FRAME_SIZE];
+    private double[] rotVecZMean = new double[FRAME_SIZE];
+    private double[] rotVecSMean = new double[FRAME_SIZE];
+    private double[] rotVecXStd = new double[FRAME_SIZE];
+    private double[] rotVecYStd = new double[FRAME_SIZE];
+    private double[] rotVecZStd = new double[FRAME_SIZE];
+    private double[] rotVecSStd = new double[FRAME_SIZE];
+
+    private double[] stDetValArray = new double[FRAME_SIZE];
+
+    private double[] aiPreValArray = new double[FRAME_SIZE];
+    private double[] aiPreValMean = new double[FRAME_SIZE];
+    private double[] aiPreValStd = new double[FRAME_SIZE];
+
+    private double[] magFielXArray = new double[FRAME_SIZE];
+    private double[] magFielYArray = new double[FRAME_SIZE];
+    private double[] magFielZArray = new double[FRAME_SIZE];
+    private double[] magFielXMean = new double[FRAME_SIZE];
+    private double[] magFielYMean = new double[FRAME_SIZE];
+    private double[] magFielZMean = new double[FRAME_SIZE];
+    private double[] magFielXStd = new double[FRAME_SIZE];
+    private double[] magFielYStd = new double[FRAME_SIZE];
+    private double[] magFielZStd = new double[FRAME_SIZE];
+
+    private double[] heartRateValArray = new double[FRAME_SIZE];
+    private double[] heartRateValMean = new double[FRAME_SIZE];
+    private double[] heartRateValStd = new double[FRAME_SIZE];
+
 
     StandardDeviation stDev = new StandardDeviation();
     Mean mean = new Mean();
+
+    private static final int APP_STATE = ApplicationStates.valueOf("COLLECT_DATA").ordinal();
+    boolean computeComplexFeatures = false;
 
 
     /** Custom 'what' for Message sent to Handler. */
@@ -142,6 +219,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 mTime = (TextView) stub.findViewById(R.id.mTime);
                 mNewActivity = (TextView) stub.findViewById(R.id.mNewActivity);
 
+                bWalking = (Button) stub.findViewById(R.id.button);
+                bWalkingUpstairs = (Button) stub.findViewById(R.id.button2);
+                bWalkingDownstairs = (Button) stub.findViewById(R.id.button3);
+                bSitting = (Button) stub.findViewById(R.id.button4);
+                bStanding = (Button) stub.findViewById(R.id.button5);
+                bLaying = (Button) stub.findViewById(R.id.button6);
+                bEmpty = (Button) stub.findViewById(R.id.button7);
+
                 refreshDisplayAndSetNextUpdate();
             }
         });
@@ -163,43 +248,39 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                 try {
                                     if (isExternalStorageWritable() && mResults.size() >= AMOUNT_OF_ATTRIBUTES - 1) {
 
-                                        StringBuilder allSensorsData = new StringBuilder();
-
-                                        Date current = new Date();
-                                        allSensorsData.append(df.format(current)).append(",");
-
                                         if (needTitle) {
-                                            StringBuilder title = new StringBuilder();
-                                            title.append("Time,");
-
-                                            for (Map.Entry<String, Float> entry : mResults.entrySet()) {
-                                                title.append(entry.getKey()).append(",");
-                                            }
-
-                                            title.append("Activity");
-                                            pw.println(title.toString());
+                                            pw.println(createTitle());
                                             needTitle = false;
+                                        }
 
-                                            if (performingActivity == 6) {
-                                                mNewActivity.setText("New activity is empty");
+                                        // computing features
+                                        sensorsAndComplexFeaturesToArrays(posInstance);
+
+                                        if (APP_STATE == 0) {
+                                            if (computeComplexFeatures) {
+
+                                                // convert all information to string
+                                                String allSensorsData = arraysToString(posInstance);
+
+                                                // pause data collection after activity change for a short period
+                                                long currentTimeMs = System.currentTimeMillis();
+                                                if (currentTimeMs - timeChangeActivityUpdateMs >= 5000) {
+                                                    pw.println(allSensorsData);
+                                                }
                                             }
+                                        } else {
+                                            DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES * 3 - 4, posInstance);
+                                            instances[posInstance] = instance;
                                         }
 
-                                        for (Map.Entry<String, Float> sensorValue : mResults.entrySet()) {
-                                            allSensorsData.append(sensorValue.getValue());
-                                            allSensorsData.append(",");
-                                        }
-
-                                        allSensorsData.append(performingActivity);
-
-                                        // pause data collection after activity change for a short period
-                                        long currentTimeMs = System.currentTimeMillis();
-                                        if (currentTimeMs - timeChangeActivityUpdateMs >= 3000) {
-                                            pw.println(allSensorsData.toString());
+                                        posInstance++;
+                                        if (posInstance == 2 * UPDATES_PER_SECOND) {
+                                            posInstance = 0;
+                                            computeComplexFeatures = true;
                                         }
 
 
-
+                                        // adjust visual style
                                         Button empButton = (Button) findViewById(R.id.button7);
                                         if (empButton.getVisibility() != View.VISIBLE) {
                                             mTime.setTextSize(10);
@@ -207,14 +288,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                         } else {
                                             mActivityTextView.setVisibility(View.INVISIBLE);
                                         }
-
-/*
-                                        InputStream insValues = getResources().openRawResource(getResources().getIdentifier("measurements",
-                                                "raw", getPackageName()));
-
-                                        int stableValue = InstancesSaved.getLabelFromSavedFirstInstances(insValues, selectedClassifier);
-                                        Log.i(TAG, String.valueOf(stableValue));
-*/
 
                                         Log.d(TAG, "Continue working");
 
@@ -246,24 +319,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                             @Override
                             public void run() {
-                                accFrameX[posInstance] = mResults.get("AccelX");
-                                accFrameY[posInstance] = mResults.get("AccelY");
-                                accFrameZ[posInstance] = mResults.get("AccelZ");
-                                accFrameXMean = mean.evaluate(accFrameX);
-                                accFrameYMean = mean.evaluate(accFrameY);
-                                accFrameZMean = mean.evaluate(accFrameZ);
-                                accFrameXStd = stDev.evaluate(accFrameX);
-                                accFrameXStd = stDev.evaluate(accFrameX);
-                                accFrameXStd = stDev.evaluate(accFrameX);
-
-                                DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES);
-
-                                instances[posInstance] = instance;
-                                posInstance++;
-                                if (posInstance == instances.length) {
-                                    posInstance = 0;
-                                }
-
                                 ArrayList<Attribute> attributes = getNewAttributes();
                                 Instances data = ActivityWindow.constructInstances(attributes, instances);
                                 String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
@@ -312,7 +367,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
 
         super.onDestroy();
-  }
+    }
 
     @Override
     public void onAccuracyChanged(Sensor arg0, int arg1) {
@@ -369,18 +424,32 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         if (firstRun) {
             try {
-                Random random = new Random();
-                int fileNumber = random.nextInt(100);
-                final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
-                FileOperations.deleteFile(sensorDataName);
-                final File sensorData = new File(sensorDataName);
-
-                pw = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
-
                 timeChangeActivityUpdateMs = System.currentTimeMillis();
 
-                Log.i(TAG, sensorDataName);
+                if (performingActivity == 6) {
+                    mNewActivity.setText("New activity is empty");
+                }
 
+                if (APP_STATE == 1) {
+                    bWalking.setVisibility(View.INVISIBLE);
+                    bWalkingUpstairs.setVisibility(View.INVISIBLE);
+                    bWalkingDownstairs.setVisibility(View.INVISIBLE);
+                    bSitting.setVisibility(View.INVISIBLE);
+                    bStanding.setVisibility(View.INVISIBLE);
+                    bLaying.setVisibility(View.INVISIBLE);
+                    bEmpty.setVisibility(View.INVISIBLE);
+                } else {
+                    Random random = new Random();
+                    int fileNumber = random.nextInt(100);
+                    final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
+                    FileOperations.deleteFile(sensorDataName);
+                    final File sensorData = new File(sensorDataName);
+
+                    pw = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
+
+                    Log.i(TAG, sensorDataName);
+
+                }
             }
             catch (IOException e) {
                 e.printStackTrace();
@@ -391,7 +460,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             FileOperations.deleteFile("myfile_nbp.txt");
 
             // create classifier from a file
-            String selectedClassifierName = "HyperPipes";
+            String selectedClassifierName = "RandomForest";
             FactoryClassifiers fc = new FactoryClassifiers();
             String modelFileName = fc.getModelFile(selectedClassifierName);
             InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
@@ -403,9 +472,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
             performingActivity = 6;
 
-//            launchCollectingInformation();
-
-            launchingRecognitionActivities();
+            if (APP_STATE == 0) {
+                launchCollectingInformation();
+            } else {
+                launchCollectingInformation();
+                launchingRecognitionActivities();
+            }
 
             firstRun = false;
 
@@ -501,6 +573,266 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             Log.i(TAG, "\t" + i + " " + mList.get(i).toString());
         }
 
+    }
+
+    private void sensorsAndComplexFeaturesToArrays(int pos) {
+        accelXArray[pos] = mResults.get("AccelX");
+        accelYArray[pos] = mResults.get("AccelY");
+        accelZArray[pos] = mResults.get("AccelZ");
+        if (computeComplexFeatures) {
+            accelXMean[pos] = mean.evaluate(accelXArray);
+            accelYMean[pos] = mean.evaluate(accelYArray);
+            accelZMean[pos] = mean.evaluate(accelZArray);
+            accelXStd[pos] = stDev.evaluate(accelXArray);
+            accelYStd[pos] = stDev.evaluate(accelYArray);
+            accelZStd[pos] = stDev.evaluate(accelZArray);
+        }
+
+        gyroXArray[pos] = mResults.get("GyroX");
+        gyroYArray[pos] = mResults.get("GyroY");
+        gyroZArray[pos] = mResults.get("GyroZ");
+        if (computeComplexFeatures) {
+            gyroXMean[pos] = mean.evaluate(gyroXArray);
+            gyroYMean[pos] = mean.evaluate(gyroYArray);
+            gyroZMean[pos] = mean.evaluate(gyroZArray);
+            gyroXStd[pos] = stDev.evaluate(gyroXArray);
+            gyroYStd[pos] = stDev.evaluate(gyroYArray);
+            gyroZStd[pos] = stDev.evaluate(gyroZArray);
+        }
+
+        gravityXArray[pos] = mResults.get("GravityX");
+        gravityYArray[pos] = mResults.get("GravityY");
+        gravityZArray[pos] = mResults.get("GravityZ");
+        if (computeComplexFeatures) {
+            gravityXMean[pos] = mean.evaluate(gravityXArray);
+            gravityYMean[pos] = mean.evaluate(gravityYArray);
+            gravityZMean[pos] = mean.evaluate(gravityZArray);
+            gravityXStd[pos] = stDev.evaluate(gravityXArray);
+            gravityYStd[pos] = stDev.evaluate(gravityYArray);
+            gravityZStd[pos] = stDev.evaluate(gravityZArray);
+        }
+
+        linAccelXArray[pos] = mResults.get("LinAccelX");
+        linAccelYArray[pos] = mResults.get("LinAccelY");
+        linAccelZArray[pos] = mResults.get("LinAccelZ");
+        if (computeComplexFeatures) {
+            linAccelXMean[pos] = mean.evaluate(linAccelXArray);
+            linAccelYMean[pos] = mean.evaluate(linAccelYArray);
+            linAccelZMean[pos] = mean.evaluate(linAccelZArray);
+            linAccelXStd[pos] = stDev.evaluate(linAccelXArray);
+            linAccelYStd[pos] = stDev.evaluate(linAccelYArray);
+            linAccelZStd[pos] = stDev.evaluate(linAccelZArray);
+        }
+
+        rotVecXArray[pos] = mResults.get("RotVecX");
+        rotVecYArray[pos] = mResults.get("RotVecY");
+        rotVecZArray[pos] = mResults.get("RotVecZ");
+        rotVecSArray[pos] = mResults.get("RotVecS");
+        if (computeComplexFeatures) {
+            rotVecXMean[pos] = mean.evaluate(rotVecXArray);
+            rotVecYMean[pos] = mean.evaluate(rotVecYArray);
+            rotVecZMean[pos] = mean.evaluate(rotVecZArray);
+            rotVecSMean[pos] = mean.evaluate(rotVecSArray);
+            rotVecXStd[pos] = stDev.evaluate(rotVecXArray);
+            rotVecYStd[pos] = stDev.evaluate(rotVecYArray);
+            rotVecZStd[pos] = stDev.evaluate(rotVecZArray);
+            rotVecSStd[pos] = stDev.evaluate(rotVecSArray);
+        }
+
+        stDetValArray[pos] = mResults.get("StDetVal");
+
+        aiPreValArray[pos] = mResults.get("AiPreVal");
+        if (computeComplexFeatures) {
+            aiPreValMean[pos] = mean.evaluate(aiPreValArray);
+            aiPreValStd[pos] = stDev.evaluate(aiPreValArray);
+        }
+
+        magFielXArray[pos] = mResults.get("MagFielX");
+        magFielYArray[pos] = mResults.get("MagFielY");
+        magFielZArray[pos] = mResults.get("MagFielZ");
+        if (computeComplexFeatures) {
+            magFielXMean[pos] = mean.evaluate(magFielXArray);
+            magFielYMean[pos] = mean.evaluate(magFielYArray);
+            magFielZMean[pos] = mean.evaluate(magFielZArray);
+            magFielXStd[pos] = stDev.evaluate(magFielXArray);
+            magFielYStd[pos] = stDev.evaluate(magFielYArray);
+            magFielZStd[pos] = stDev.evaluate(magFielZArray);
+        }
+
+        heartRateValArray[pos] = mResults.get("HeartRateVal");
+        if (computeComplexFeatures) {
+            heartRateValMean[pos] = mean.evaluate(heartRateValArray);
+            heartRateValStd[pos] = stDev.evaluate(heartRateValArray);
+        }
+
+    }
+
+    private String arraysToString(int pos) {
+        StringBuilder allSensorsData = new StringBuilder();
+        long currentTime = System.currentTimeMillis();
+
+        allSensorsData.append(currentTime).append(",");
+
+        allSensorsData.append(accelXArray[pos]).append(",");
+        allSensorsData.append(accelYArray[pos]).append(",");
+        allSensorsData.append(accelZArray[pos]).append(",");
+        allSensorsData.append(accelXMean[pos]).append(",");
+        allSensorsData.append(accelYMean[pos]).append(",");
+        allSensorsData.append(accelZMean[pos]).append(",");
+        allSensorsData.append(accelXStd[pos]).append(",");
+        allSensorsData.append(accelYStd[pos]).append(",");
+        allSensorsData.append(accelZStd[pos]).append(",");
+
+        allSensorsData.append(gyroXArray[pos]).append(",");
+        allSensorsData.append(gyroYArray[pos]).append(",");
+        allSensorsData.append(gyroZArray[pos]).append(",");
+        allSensorsData.append(gyroXMean[pos]).append(",");
+        allSensorsData.append(gyroYMean[pos]).append(",");
+        allSensorsData.append(gyroZMean[pos]).append(",");
+        allSensorsData.append(gyroXStd[pos]).append(",");
+        allSensorsData.append(gyroYStd[pos]).append(",");
+        allSensorsData.append(gyroZStd[pos]).append(",");
+
+        allSensorsData.append(gravityXArray[pos]).append(",");
+        allSensorsData.append(gravityYArray[pos]).append(",");
+        allSensorsData.append(gravityZArray[pos]).append(",");
+        allSensorsData.append(gravityXMean[pos]).append(",");
+        allSensorsData.append(gravityYMean[pos]).append(",");
+        allSensorsData.append(gravityZMean[pos]).append(",");
+        allSensorsData.append(gravityXStd[pos]).append(",");
+        allSensorsData.append(gravityYStd[pos]).append(",");
+        allSensorsData.append(gravityZStd[pos]).append(",");
+
+        allSensorsData.append(linAccelXArray[pos]).append(",");
+        allSensorsData.append(linAccelYArray[pos]).append(",");
+        allSensorsData.append(linAccelZArray[pos]).append(",");
+        allSensorsData.append(linAccelXMean[pos]).append(",");
+        allSensorsData.append(linAccelYMean[pos]).append(",");
+        allSensorsData.append(linAccelZMean[pos]).append(",");
+        allSensorsData.append(linAccelXStd[pos]).append(",");
+        allSensorsData.append(linAccelYStd[pos]).append(",");
+        allSensorsData.append(linAccelZStd[pos]).append(",");
+
+        allSensorsData.append(rotVecXArray[pos]).append(",");
+        allSensorsData.append(rotVecYArray[pos]).append(",");
+        allSensorsData.append(rotVecZArray[pos]).append(",");
+        allSensorsData.append(rotVecZArray[pos]).append(",");
+        allSensorsData.append(rotVecXMean[pos]).append(",");
+        allSensorsData.append(rotVecYMean[pos]).append(",");
+        allSensorsData.append(rotVecZMean[pos]).append(",");
+        allSensorsData.append(rotVecZMean[pos]).append(",");
+        allSensorsData.append(rotVecXStd[pos]).append(",");
+        allSensorsData.append(rotVecYStd[pos]).append(",");
+        allSensorsData.append(rotVecZStd[pos]).append(",");
+        allSensorsData.append(rotVecZStd[pos]).append(",");
+
+        allSensorsData.append(stDetValArray[pos]).append(",");
+
+        allSensorsData.append(aiPreValArray[pos]).append(",");
+        allSensorsData.append(aiPreValMean[pos]).append(",");
+        allSensorsData.append(aiPreValStd[pos]).append(",");
+
+        allSensorsData.append(magFielXArray[pos]).append(",");
+        allSensorsData.append(magFielYArray[pos]).append(",");
+        allSensorsData.append(magFielZArray[pos]).append(",");
+        allSensorsData.append(magFielXMean[pos]).append(",");
+        allSensorsData.append(magFielYMean[pos]).append(",");
+        allSensorsData.append(magFielZMean[pos]).append(",");
+        allSensorsData.append(magFielXStd[pos]).append(",");
+        allSensorsData.append(magFielYStd[pos]).append(",");
+        allSensorsData.append(magFielZStd[pos]).append(",");
+
+        allSensorsData.append(heartRateValArray[pos]).append(",");
+        allSensorsData.append(heartRateValMean[pos]).append(",");
+        allSensorsData.append(heartRateValStd[pos]).append(",");
+
+
+
+        allSensorsData.append(performingActivity);
+
+        return allSensorsData.toString();
+    }
+
+    private String createTitle() {
+        StringBuilder title = new StringBuilder();
+        title.append("Timestamp ,");
+
+        title.append("AccelX, ");
+        title.append("AccelY, ");
+        title.append("AccelZ, ");
+        title.append("AccelXMean, ");
+        title.append("AccelYMean, ");
+        title.append("AccelZMean, ");
+        title.append("AccelXStd, ");
+        title.append("AccelYStd, ");
+        title.append("AccelZStd, ");
+
+        title.append("GyroX, ");
+        title.append("GyroY, ");
+        title.append("GyroZ, ");
+        title.append("GyroXMean, ");
+        title.append("GyroYMean, ");
+        title.append("GyroZMean, ");
+        title.append("GyroXStd, ");
+        title.append("GyroYStd, ");
+        title.append("GyroZStd, ");
+
+        title.append("GravityX, ");
+        title.append("GravityY, ");
+        title.append("GravityZ, ");
+        title.append("GravityXMean, ");
+        title.append("GravityYMean, ");
+        title.append("GravityZMean, ");
+        title.append("GravityXStd, ");
+        title.append("GravityYStd, ");
+        title.append("GravityZStd, ");
+
+        title.append("LinAccelX, ");
+        title.append("LinAccelY, ");
+        title.append("LinAccelZ, ");
+        title.append("LinAccelXMean, ");
+        title.append("LinAccelYMean, ");
+        title.append("LinAccelZMean, ");
+        title.append("LinAccelXStd, ");
+        title.append("LinAccelYStd, ");
+        title.append("LinAccelZStd, ");
+
+        title.append("RotVecX, ");
+        title.append("RotVecY, ");
+        title.append("RotVecZ, ");
+        title.append("RotVecS, ");
+        title.append("RotVecXMean, ");
+        title.append("RotVecYMean, ");
+        title.append("RotVecZMean, ");
+        title.append("RotVecSMean, ");
+        title.append("RotVecXStd, ");
+        title.append("RotVecYStd, ");
+        title.append("RotVecZStd, ");
+        title.append("RotVecSStd, ");
+
+        title.append("StDetVal, ");
+
+        title.append("AiPreVal, ");
+        title.append("AiPreValMean, ");
+        title.append("AiPreValStd, ");
+
+        title.append("MagFielX, ");
+        title.append("MagFielY, ");
+        title.append("MagFielZ, ");
+        title.append("MagFielXMean, ");
+        title.append("MagFielYMean, ");
+        title.append("MagFielZMean, ");
+        title.append("MagFielXStd, ");
+        title.append("MagFielYStd, ");
+        title.append("MagFielZStd, ");
+
+        title.append("HeartRateVal, ");
+        title.append("HeartRateValMean, ");
+        title.append("HeartRateValStd, ");
+
+        title.append("Activity");
+
+        return title.toString();
     }
 
     @Override
@@ -617,42 +949,56 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         performingActivity = ActivityType.valueOf("WALKING").ordinal();
         mNewActivity.setText("New activity is walking");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
     }
 
     public void onUpstairs(View view) {
         performingActivity = ActivityType.valueOf("WALKING_UPSTAIRS").ordinal();
         mNewActivity.setText("New activity is upstairs");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
     }
 
     public void onDownstairs(View view) {
         performingActivity = ActivityType.valueOf("WALKING_DOWNSTAIRS").ordinal();
         mNewActivity.setText("New activity is downstairs");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
     }
 
     public void onSitting(View view) {
         performingActivity = ActivityType.valueOf("SITTING").ordinal();
         mNewActivity.setText("New activity is sitting");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
     }
 
     public void onStanding(View view) {
         performingActivity = ActivityType.valueOf("STANDING").ordinal();
         mNewActivity.setText("New activity is standing");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
     }
 
     public void onLaying(View view) {
         performingActivity = ActivityType.valueOf("LAYING").ordinal();
         mNewActivity.setText("New activity is laying");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
     }
 
     public void onEmpty(View view) {
         performingActivity = 6;
         mNewActivity.setText("New activity is empty");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
     }
 
     /**
@@ -688,43 +1034,171 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     public ArrayList<Attribute> getNewAttributes() {
-        int numOfAttributes = mResults.size();
+        ArrayList<Attribute> attributes = new ArrayList<Attribute>();
         int numAttrib = 0;
-        ArrayList<Attribute> attributes = new ArrayList<Attribute>(numOfAttributes + 1);
 
-        if (mResults.size() != 0) {
+        attributes.add(new Attribute("AccelX", numAttrib++));
+        attributes.add(new Attribute("AccelY", numAttrib++));
+        attributes.add(new Attribute("AccelZ", numAttrib++));
+        attributes.add(new Attribute("AccelXMean", numAttrib++));
+        attributes.add(new Attribute("AccelYMean", numAttrib++));
+        attributes.add(new Attribute("AccelZMean", numAttrib++));
+        attributes.add(new Attribute("AccelXStd", numAttrib++));
+        attributes.add(new Attribute("AccelYStd", numAttrib++));
+        attributes.add(new Attribute("AccelZStd", numAttrib++));
 
-            for (Map.Entry<String, Float> entry : mResults.entrySet()) {
-                String key = entry.getKey();
-                attributes.add(new Attribute(key, numAttrib));
-                numAttrib++;
-            }
+        attributes.add(new Attribute("GyroX", numAttrib++));
+        attributes.add(new Attribute("GyroY", numAttrib++));
+        attributes.add(new Attribute("GyroZ", numAttrib++));
+        attributes.add(new Attribute("GyroXMean", numAttrib++));
+        attributes.add(new Attribute("GyroYMean", numAttrib++));
+        attributes.add(new Attribute("GyroZMean", numAttrib++));
+        attributes.add(new Attribute("GyroXStd", numAttrib++));
+        attributes.add(new Attribute("GyroYStd", numAttrib++));
+        attributes.add(new Attribute("GyroZStd", numAttrib++));
 
-            List<String> values = getActivityValues();
-            String key = "Activity";
+        attributes.add(new Attribute("GravityX", numAttrib++));
+        attributes.add(new Attribute("GravityY", numAttrib++));
+        attributes.add(new Attribute("GravityZ", numAttrib++));
+        attributes.add(new Attribute("GravityXMean", numAttrib++));
+        attributes.add(new Attribute("GravityYMean", numAttrib++));
+        attributes.add(new Attribute("GravityZMean", numAttrib++));
+        attributes.add(new Attribute("GravityXStd", numAttrib++));
+        attributes.add(new Attribute("GravityYStd", numAttrib++));
+        attributes.add(new Attribute("GravityZStd", numAttrib++));
 
-            attributes.add(new Attribute(key, values, numAttrib));
-        }
+        attributes.add(new Attribute("LinAccelX", numAttrib++));
+        attributes.add(new Attribute("LinAccelY", numAttrib++));
+        attributes.add(new Attribute("LinAccelZ", numAttrib++));
+        attributes.add(new Attribute("LinAccelXMean", numAttrib++));
+        attributes.add(new Attribute("LinAccelYMean", numAttrib++));
+        attributes.add(new Attribute("LinAccelZMean", numAttrib++));
+        attributes.add(new Attribute("LinAccelXStd", numAttrib++));
+        attributes.add(new Attribute("LinAccelYStd", numAttrib++));
+        attributes.add(new Attribute("LinAccelZStd", numAttrib++));
+
+        attributes.add(new Attribute("RotVecX", numAttrib++));
+        attributes.add(new Attribute("RotVecY", numAttrib++));
+        attributes.add(new Attribute("RotVecZ", numAttrib++));
+        attributes.add(new Attribute("RotVecS", numAttrib++));
+        attributes.add(new Attribute("RotVecXMean", numAttrib++));
+        attributes.add(new Attribute("RotVecYMean", numAttrib++));
+        attributes.add(new Attribute("RotVecZMean", numAttrib++));
+        attributes.add(new Attribute("RotVecSMean", numAttrib++));
+        attributes.add(new Attribute("RotVecXStd", numAttrib++));
+        attributes.add(new Attribute("RotVecYStd", numAttrib++));
+        attributes.add(new Attribute("RotVecZStd", numAttrib++));
+        attributes.add(new Attribute("RotVecSStd", numAttrib++));
+
+        attributes.add(new Attribute("StDetVal", numAttrib++));
+
+        attributes.add(new Attribute("AiPreVal", numAttrib++));
+        attributes.add(new Attribute("AiPreValMean", numAttrib++));
+        attributes.add(new Attribute("AiPreValStd", numAttrib++));
+
+        attributes.add(new Attribute("MagFielX", numAttrib++));
+        attributes.add(new Attribute("MagFielY", numAttrib++));
+        attributes.add(new Attribute("MagFielZ", numAttrib++));
+        attributes.add(new Attribute("MagFielXMean", numAttrib++));
+        attributes.add(new Attribute("MagFielYMean", numAttrib++));
+        attributes.add(new Attribute("MagFielZMean", numAttrib++));
+        attributes.add(new Attribute("MagFielXStd", numAttrib++));
+        attributes.add(new Attribute("MagFielYStd", numAttrib++));
+        attributes.add(new Attribute("MagFielZStd", numAttrib++));
+
+        attributes.add(new Attribute("HeartRateVal", numAttrib++));
+        attributes.add(new Attribute("HeartRateValMean", numAttrib++));
+        attributes.add(new Attribute("HeartRateValStd", numAttrib++));
+
+        List<String> values = getActivityValues();
+        attributes.add(new Attribute("Activity", values, numAttrib));
 
         return attributes;
     }
 
-    public DenseInstance getDenseInstances(int numOfAttributes) {
+    public DenseInstance getDenseInstances(int numOfAttributes, int pos) {
         double[] attributeValues = new double[numOfAttributes];
-
         int currentAttNumber = 0;
 
-        for (Map.Entry<String, Float> entry : mResults.entrySet()) {
-            Float value = entry.getValue();
+        if (computeComplexFeatures) {
+            attributeValues[currentAttNumber++] = accelXArray[pos];
+            attributeValues[currentAttNumber++] = accelYArray[pos];
+            attributeValues[currentAttNumber++] = accelZArray[pos];
+            attributeValues[currentAttNumber++] = accelXMean[pos];
+            attributeValues[currentAttNumber++] = accelYMean[pos];
+            attributeValues[currentAttNumber++] = accelZMean[pos];
+            attributeValues[currentAttNumber++] = accelXStd[pos];
+            attributeValues[currentAttNumber++] = accelYStd[pos];
+            attributeValues[currentAttNumber++] = accelZStd[pos];
 
-            attributeValues[currentAttNumber] = value;
-            currentAttNumber++;
+            attributeValues[currentAttNumber++] = gyroXArray[pos];
+            attributeValues[currentAttNumber++] = gyroYArray[pos];
+            attributeValues[currentAttNumber++] = gyroZArray[pos];
+            attributeValues[currentAttNumber++] = gyroXMean[pos];
+            attributeValues[currentAttNumber++] = gyroYMean[pos];
+            attributeValues[currentAttNumber++] = gyroZMean[pos];
+            attributeValues[currentAttNumber++] = gyroXStd[pos];
+            attributeValues[currentAttNumber++] = gyroYStd[pos];
+            attributeValues[currentAttNumber++] = gyroZStd[pos];
+
+            attributeValues[currentAttNumber++] = gravityXArray[pos];
+            attributeValues[currentAttNumber++] = gravityYArray[pos];
+            attributeValues[currentAttNumber++] = gravityZArray[pos];
+            attributeValues[currentAttNumber++] = gravityXMean[pos];
+            attributeValues[currentAttNumber++] = gravityYMean[pos];
+            attributeValues[currentAttNumber++] = gravityZMean[pos];
+            attributeValues[currentAttNumber++] = gravityXStd[pos];
+            attributeValues[currentAttNumber++] = gravityYStd[pos];
+            attributeValues[currentAttNumber++] = gravityZStd[pos];
+
+            attributeValues[currentAttNumber++] = linAccelXArray[pos];
+            attributeValues[currentAttNumber++] = linAccelYArray[pos];
+            attributeValues[currentAttNumber++] = linAccelZArray[pos];
+            attributeValues[currentAttNumber++] = linAccelXMean[pos];
+            attributeValues[currentAttNumber++] = linAccelYMean[pos];
+            attributeValues[currentAttNumber++] = linAccelZMean[pos];
+            attributeValues[currentAttNumber++] = linAccelXStd[pos];
+            attributeValues[currentAttNumber++] = linAccelYStd[pos];
+            attributeValues[currentAttNumber++] = linAccelZStd[pos];
+
+            attributeValues[currentAttNumber++] = rotVecXArray[pos];
+            attributeValues[currentAttNumber++] = rotVecYArray[pos];
+            attributeValues[currentAttNumber++] = rotVecZArray[pos];
+            attributeValues[currentAttNumber++] = rotVecSArray[pos];
+            attributeValues[currentAttNumber++] = rotVecXMean[pos];
+            attributeValues[currentAttNumber++] = rotVecYMean[pos];
+            attributeValues[currentAttNumber++] = rotVecZMean[pos];
+            attributeValues[currentAttNumber++] = rotVecSMean[pos];
+            attributeValues[currentAttNumber++] = rotVecXStd[pos];
+            attributeValues[currentAttNumber++] = rotVecYStd[pos];
+            attributeValues[currentAttNumber++] = rotVecZStd[pos];
+            attributeValues[currentAttNumber++] = rotVecSStd[pos];
+
+            attributeValues[currentAttNumber++] = stDetValArray[pos];
+
+            attributeValues[currentAttNumber++] = aiPreValArray[pos];
+            attributeValues[currentAttNumber++] = aiPreValMean[pos];
+            attributeValues[currentAttNumber++] = aiPreValStd[pos];
+
+            attributeValues[currentAttNumber++] = magFielXArray[pos];
+            attributeValues[currentAttNumber++] = magFielYArray[pos];
+            attributeValues[currentAttNumber++] = magFielZArray[pos];
+            attributeValues[currentAttNumber++] = magFielXMean[pos];
+            attributeValues[currentAttNumber++] = magFielYMean[pos];
+            attributeValues[currentAttNumber++] = magFielZMean[pos];
+            attributeValues[currentAttNumber++] = magFielXStd[pos];
+            attributeValues[currentAttNumber++] = magFielYStd[pos];
+            attributeValues[currentAttNumber++] = magFielZStd[pos];
+
+            attributeValues[currentAttNumber++] = heartRateValArray[pos];
+            attributeValues[currentAttNumber++] = heartRateValMean[pos];
+            attributeValues[currentAttNumber++] = heartRateValStd[pos];
+
+            List<String> activityValues = getActivityValues();
+            attributeValues[currentAttNumber] = activityValues.indexOf(activityValues.get(performingActivity));
         }
 
-        List<String> activityValues = getActivityValues();
-        attributeValues[currentAttNumber] = activityValues.indexOf(activityValues.get(performingActivity));
-
-        return  new DenseInstance(1.0, attributeValues);
+        return new DenseInstance(1.0, attributeValues);
     }
 
     private List<String> getActivityValues() {
