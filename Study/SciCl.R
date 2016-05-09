@@ -329,7 +329,7 @@ getRows <- function(p.selectedAlgorithms, p.cleanedEvaluations) {
 
     # prepare a matrix for heat maps with selected algorithms 
     p.aMatrix <- p.matrix[, p.selectedAlgorithms] 
-    decomposedAlgsMatrix <- makeSVDanalysis(resMatrix = p.aMatrix, p.numLatent = 10) 
+    decomposedAlgsMatrix <- makeSVDanalysis(resMatrix = p.aMatrix, p.numLatent = 5) 
     resAlgsMatrixDecomposed_d <- decomposedAlgsMatrix$u
     resAlgsMatrixDecomposed_a <- t(decomposedAlgsMatrix$v) 
     

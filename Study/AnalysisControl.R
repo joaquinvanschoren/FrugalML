@@ -80,13 +80,13 @@ hugeMatrixFirst <- hugeMatrix[clusters == 1, ]
 hugeMatrixSecond <- hugeMatrix[clusters == 2, ] 
 
 # identify a limited number of data sets for detailed analysis 
-selectedDataSets <- getMedoids(p.matrix = hugeMatrixFirst, p.numMedoids = 9) 
+selectedDataSets <- getMedoids(p.matrix = hugeMatrixFirst, p.numMedoids = 9)  
 selectedDataSets <- c(selectedDataSets, getMedoids(p.matrix = hugeMatrixSecond, p.numMedoids = 1)) 
 
 # set permanent structure for data sets for analysis 
 lowDimSets <- getRows(p.selectedAlgorithms = selectedAlgorithms, p.cleanedEvaluations = cleanedEvaluations) 
 aMatrix <- hugeMatrix[lowDimSets, selectedAlgorithms]  
-decomposedAlgsMatrix <- makeSVDanalysis(resMatrix = aMatrix, p.numLatent = 10) 
+decomposedAlgsMatrix <- makeSVDanalysis(resMatrix = aMatrix, p.numLatent = 5) 
 resAlgsMatrixDecomposed_d <- decomposedAlgsMatrix$u 
 resAlgsMatrixDecomposed_a <- t(decomposedAlgsMatrix$v) 
 
