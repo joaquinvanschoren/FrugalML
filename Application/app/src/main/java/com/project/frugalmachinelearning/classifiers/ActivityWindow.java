@@ -47,8 +47,7 @@ public class ActivityWindow {
         data.setClassIndex(data.numAttributes() - 1);
 
         int posNextInstance = 0;
-        while(posNextInstance < instances.length &&
-                instances[posNextInstance] != null ) {
+        while(posNextInstance < instances.length && instances[posNextInstance] != null ) {
             data.add(instances[posNextInstance]);
             posNextInstance++;
         }

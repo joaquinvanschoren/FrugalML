@@ -1,5 +1,7 @@
 package com.project.frugalmachinelearning.tools;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,4 +40,14 @@ public class InstancesSaved {
         return value;
     }
 
+    public static void main(String[] args) {
+
+/*        InputStream insValues = getResources().openRawResource(getResources().getIdentifier("measurements",
+                "raw", getPackageName()));
+
+        int stableValue = InstancesSaved.getLabelFromSavedFirstInstances(insValues, selectedClassifier);
+        Log.i(TAG, String.valueOf(stableValue));
+*/
+
+    }
 }
