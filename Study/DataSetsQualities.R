@@ -143,6 +143,7 @@ getOriginalClusters <- function() {
         imputeData <- imputeData[, selectedValues] 
     } 
     
+    imputeData <- as.data.frame(imputeData) 
     cleanData <- as.data.frame(scale(imputeData)) 
     
     # use cluster analysis 
@@ -154,23 +155,25 @@ getOriginalClusters <- function() {
     clusters <- getkMeansClusters(p.matrix = cleanData, p.numClusters = numDataSets) 
     table(clusters) 
 
-    return (list(dsClusters = clusters, numDataSetsOverall = numDataSets, meaningfullFeatures = cleanData)) 
+    return (list(dsClusters = clusters, numDataSetsOverall = numDataSets, meaningfullFeatures = imputeData)) 
 } 
   
-additionalProcessing <- function(p.cleanData) { 
+additionalProcessing <- function() { 
     clusters <- getOriginalClusters()  
+    
+    imputeData <- clusters$meaningfullFeatures 
     clusters <- as.integer(clusters$dsClusters) 
     
     # usage of PCA visualization method   
-    pcaPlots(p.cleanData, p.clusters = clusters) 
+    pcaPlots(imputeData, p.clusters = clusters) 
        
     # study visualization received with t-SNE method and resistance against noise
-    tsnePlot(p.matrix = p.cleanData, p.names = rownames(p.cleanData), noiseLevel = 1, 
+    tsnePlot(p.matrix = imputeData, p.names = rownames(imputeData), noiseLevel = 1, 
              p.clusters = clusters, clusterAsFactor = TRUE, addName = TRUE)  
     
     p.cleanData <- cbind(imputeData, clusters)  
-    p.cleanData <- split(x = p.cleanData, f = as.factor(cleanData$clusters))  
-    commonData <- computeInformationForClusters(p.values = p.cleanData, p.function = median, p.showPlots = FALSE) 
+    p.cleanData <- split(x = p.cleanData, f = as.factor(p.cleanData$clusters))  
+    commonData <- computeInformationForClusters(p.values = p.cleanData, p.function = mean, p.showPlots = FALSE) 
 
     commonData <- commonData[-nrow(commonData), ] 
     

@@ -181,7 +181,7 @@ getCleanMeasures <- function(p.throwMissingValues = TRUE, p.emptyAlgResults) {
             print(paste("The next data set is skipped ", as.character(dataSet[1, 2]), ", id = ", i, sep = "")) 
         } 
     } 
-    
+
     matrixAUC <- cleanEmptyColumns(matrixAUC, p.emptyAlgResults) 
     matrixTime <- cleanEmptyColumns(matrixTime, p.emptyAlgResults) 
     

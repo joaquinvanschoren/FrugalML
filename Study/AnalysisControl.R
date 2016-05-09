@@ -60,7 +60,7 @@ table(clusters)
 # create plots for clusters of data sets  
 makePlotsClusters <- FALSE 
 if (makePlotsClusters) {
-    additionalProcessing(clustersProperties$meaningfullFeatures)     
+    additionalProcessing()     
 }
 
 # create files with a Pareto front for every data set and every cluster
