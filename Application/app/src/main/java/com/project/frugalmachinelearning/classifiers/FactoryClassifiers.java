@@ -22,8 +22,8 @@ public class FactoryClassifiers {
     public String getModelFile(String modelName) {
         if(modelName.equals("HyperPipes")) {
             return "hpnumeric";
-        } else if (modelName.equals("RandomSubSpace")) {
-            return "rssnumeric";
+        } else if (modelName.equals("NaiveBayes")) {
+            return "nbnumeric";
         } else if (modelName.equals("RandomForest")) {
             return "rfnumeric";
         } else
@@ -35,8 +35,8 @@ public class FactoryClassifiers {
             AbstractClassifier model = null;
             if (modelName.equals("HyperPipes")) {
                 model = (HyperPipes) (new ObjectInputStream(ins)).readObject();
-            } else if (modelName.equals("RandomSubSpace")) {
-                model = (RandomSubSpace) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("NaiveBayes")) {
+                model = (NaiveBayes) new ObjectInputStream(ins).readObject();
             } else if (modelName.equals("RandomForest")) {
                 model = (RandomForest) new ObjectInputStream(ins).readObject();
             }
