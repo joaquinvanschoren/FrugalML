@@ -6,10 +6,12 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -20,7 +22,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.project.frugalmachinelearning.classifiers.ActivityType;
 import com.project.frugalmachinelearning.classifiers.ActivityWindow;
@@ -170,11 +171,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] heartRateValMean = new double[FRAME_SIZE];
     private double[] heartRateValStd = new double[FRAME_SIZE];
 
+    private long previousBatteryUpdate;
 
     StandardDeviation stDev = new StandardDeviation();
     Mean mean = new Mean();
 
-    private static final int APP_STATE = ApplicationStates.valueOf("COLLECT_DATA").ordinal();
+    private static final int APP_STATE = ApplicationStates.valueOf("RECOGNIZE_ACTIVITY").ordinal();
     boolean computeComplexFeatures = false;
 
 
@@ -251,7 +253,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                 try {
                                     if (isExternalStorageWritable() && mResults.size() >= AMOUNT_OF_ATTRIBUTES - 1) {
 
-                                        if (needTitle) {
+                                        if (needTitle && APP_STATE == 0) {
                                             pw.println(createTitle());
                                             needTitle = false;
                                         }
@@ -322,6 +324,22 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                 ArrayList<Attribute> attributes = getNewAttributes();
                                 Instances data = ActivityWindow.constructInstances(attributes, instances);
                                 String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
+
+                                long currentTimeMs = System.currentTimeMillis();
+                                if (currentTimeMs - previousBatteryUpdate > 29555) {
+                                    StringBuilder bInfo = new StringBuilder();
+                                    bInfo.append(currentTimeMs).append(",");
+                                    bInfo.append(selectedClassifier.getClass()).append(",");
+                                    bInfo.append(getBatteryLevel());
+                                    String bInfoString = bInfo.toString();
+                                    pw.println(bInfoString);
+                                    pw.flush();
+
+                                    previousBatteryUpdate = currentTimeMs;
+
+                                    Log.i(TAG, bInfoString);
+
+                                }
 
                                 Button empButton = (Button) findViewById(R.id.button7);
                                 if (empButton.getVisibility() != View.VISIBLE) {
@@ -428,6 +446,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                 performingActivity = 6;
 
+                Random random = new Random();
+                int fileNumber = random.nextInt(100);
+
                 if (APP_STATE == 1) {
                     bWalking.setVisibility(View.INVISIBLE);
                     bWalkingUpstairs.setVisibility(View.INVISIBLE);
@@ -436,11 +457,20 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                     bStanding.setVisibility(View.INVISIBLE);
                     bLaying.setVisibility(View.INVISIBLE);
                     bEmpty.setVisibility(View.INVISIBLE);
+
+                    final String batteryLevelName = FileOperations.getSensorStorageDir("SensorsInformation") + "/batteryInfo" + fileNumber + ".txt";
+                    FileOperations.deleteFile(batteryLevelName);
+                    final File batteryData = new File(batteryLevelName);
+
+                    previousBatteryUpdate = System.currentTimeMillis();
+
+                    pw = new PrintWriter(new BufferedWriter(new FileWriter(batteryData, true)));
+
+                    Log.i(TAG, batteryLevelName);
+
                 } else {
                     mNewActivity.setText("New activity is empty");
 
-                    Random random = new Random();
-                    int fileNumber = random.nextInt(100);
                     final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
                     FileOperations.deleteFile(sensorDataName);
                     final File sensorData = new File(sensorDataName);
@@ -460,7 +490,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             FileOperations.deleteFile("myfile_nbp.txt");
 
             // create classifier from a file
-            String selectedClassifierName = "RandomForest";
+            String selectedClassifierName = "HyperPipes";
             FactoryClassifiers fc = new FactoryClassifiers();
             String modelFileName = fc.getModelFile(selectedClassifierName);
             InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
@@ -1222,6 +1252,19 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         return new DenseInstance(1.0, attributeValues);
+    }
+
+    public float getBatteryLevel() {
+        Intent batteryIntent = getApplicationContext().registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+        // Error checking that probably isn't needed but I added just in case.
+        if(level == -1 || scale == -1) {
+            return 50.0f;
+        }
+
+        return ((float)level / (float)scale) * 100.0f;
     }
 
     private List<String> getActivityValues() {
