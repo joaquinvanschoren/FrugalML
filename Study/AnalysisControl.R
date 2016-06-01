@@ -25,7 +25,7 @@ if (createHugeMatrixFromFunction) {
         # get the data from a local directory and clean it 
         cleanedEvaluations <- getCleanMeasures(p.throwMissingValues = throwMissingValuesVariable, p.emptyAlgResults = thresholdForEmptyAlgsResults) 
         
-        hugeMatrix <- createHugeMatrixFromImputedMeasures(evaluations = cleanedEvaluations, p.w = w, p.normalize = normalize, p.newFormula = FALSE)  
+        hugeMatrix <- createHugeMatrixFromImputedMeasures(evaluations = cleanedEvaluations, p.w = w, p.normalize = normalize, p.newFormula = TRUE)  
     } else {
         # get the data from a local directory 
         evaluations <- loadEvaluations() 
@@ -63,7 +63,7 @@ if (makePlotsClusters) {
     additionalProcessing()     
 }
 
-# create files with a Pareto front for every data set and every cluster
+# create files with a Pareto front for every data set and every cluster 
 selectedAlgorithms <- makeClustering(p.clusters = clusters, p.plots = TRUE, p.simplify = FALSE)  
 aggregatedAUC <- data.frame(tapply(selectedAlgorithms$AUC, selectedAlgorithms$Algorithm, mean)) 
 aggregatedAUC <- data.frame(aggregatedAUC[order(as.numeric(aggregatedAUC[, 1]), decreasing = TRUE), ])   
@@ -105,6 +105,6 @@ tsnePlot(p.matrix = resMatrixDecomposed_d, p.names = rownames(hugeMatrix), noise
 
 # create a plot with index w and Frugality score values
 if (plotAlgorithmsIndex) {
-    makeLinearPLots(p.algorithms = selectedAlgorithms, p.datasets = selectedDataSets, p.normalize = normalize, w.start = 0, w.finish = 2, p.cleanedEvaluations = cleanedEvaluations)  
+    makeLinearPLots(p.algorithms = selectedAlgorithms, p.datasets = selectedDataSets, p.normalize = normalize, w.start = 0, w.finish = 1, p.cleanedEvaluations = cleanedEvaluations)  
 } 
    

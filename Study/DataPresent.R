@@ -1,8 +1,13 @@
 oldwd <- getwd() 
-setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
+setwd("/home/mikhail/Desktop/GitProjects/FrugalML/Study") 
 files <- list.files() 
 
+evaluations <- read.csv("data/openml_evaluations_all.csv") 
+separate_evaluations <- split(evaluations, evaluations$task_id) 
+
 set.seed(101) 
+
+separate_evaluations <- separate_evaluations[-75] 
 
 for (i in 1: length(separate_evaluations)) { 
     
@@ -27,12 +32,15 @@ for (i in 1: length(separate_evaluations)) {
     
     # save on disk in png format    
     png(filename= paste("plots/items/", xName, ".png", sep = ""), width = 640, height = 480) 
-    plot(paretoFront[,1:2], col = as.factor(paretoFront$Algorithm), xlim=c(min(paretoFront$AUC), 0), ylim=c(0, max(paretoFront$CombineTime)), pch = 20, cex = 1.5) 
-    title(main = xName)
+
+    plot(paretoFront[,1:2], col = as.factor(paretoFront$Algorithm), xaxt = "n", xlim=c(-1, 0), ylim=c(0, max(paretoFront$CombineTime)), pch = 20, cex = 1.5) 
+    axis(1, at = seq(-1, 0, 1/5),  labels = -1 * seq(-1, 0, 1/5))   
+    title(main = xName) 
+    
     legend("topright", legend = strtrim(paretoFront$Algorithm, 70), col = as.factor(paretoFront$Algorithm), pch = 20, lty = 1, cex = 0.8, pt.cex = 1.2)  
     dev.off() 
 } 
-
+         
 # store in arff format for external processing  
 writeArff <- FALSE 
 if (writeArff) {

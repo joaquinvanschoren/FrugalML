@@ -389,7 +389,7 @@ drawPlot <- function(p.matrix, fileName,
                      p.savePath = "plots/", 
                      p.cellNote = FALSE, p.keysize = 0.3, 
                      p.lmat = NULL, p.lhei = NULL, p.lwid = NULL, 
-                     p.cexRow = 0.9, p.cexCol = 2, p.margins = c(50, 50)) {
+                     p.cexRow = 0.9, p.cexCol = 5, p.margins = c(70, 70)) {
 
     # define source palette for scaling 
     getPalette = colorRampPalette(brewer.pal(9, "YlOrRd")) 
@@ -482,7 +482,7 @@ createHugeMatrixFromImputedMeasures <- function(evaluations, p.w, p.normalize, p
         hugeMatrix <- sMatrix 
     } else { 
         if (p.newFormula) {
-            hugeMatrix <- pAUC - p.w * (1 / (1 + exp(-log10(pTime))) )      
+            hugeMatrix <- pAUC - p.w / (1 + 1 / pTime )      
         } else {
             hugeMatrix <- pAUC - p.w * log10(pTime)    
         }

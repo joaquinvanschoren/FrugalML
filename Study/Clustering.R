@@ -6,7 +6,7 @@ source("DataSetsQualities.R")
 oldwd <- getwd()
 
 # set your own directory 
-setwd("/home/mikhail/Desktop/GitProjects/FrugalML") 
+setwd("/home/mikhail/Desktop/GitProjects/FrugalML/Study") 
 
 makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) { 
     # control for grouping different values of hyper parameters to a one value  
@@ -140,13 +140,14 @@ makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) {
             if (showParetoFront == TRUE) { 
                 numOfAlgs <- nrow(paretoFront) 
                 png(filename= paste("plots/cluster_Pareto_", i, ".png", sep = ""), width = 800, height = 600)    
-                plot(paretoFront[,1:2], col = rainbow(numOfAlgs) , xlim=c(min(paretoFront$AUC), max(paretoFront$AUC)), ylim=c(0, max(paretoFront$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
-                
+                plot(paretoFront[,1:2], col = rainbow(numOfAlgs) , xaxt = "n", xlim=c(min(paretoFront$AUC), max(paretoFront$AUC)), ylim=c(0, max(paretoFront$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+                axis(1, at = seq(min(paretoFront$AUC), max(paretoFront$AUC), abs(min(paretoFront$AUC) - max(paretoFront$AUC))/5),  labels = -1 * round(seq(min(paretoFront$AUC), max(paretoFront$AUC), abs(min(paretoFront$AUC) - max(paretoFront$AUC))/5), 2))   
+
                 if (simplify == TRUE) { 
-                    legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.9, pt.cex = 1.8) 
+                    legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 1.1, pt.cex = 1.8) 
                     text(paretoFront[,1:2], labels = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
                 } else { 
-                    legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.7, pt.cex = 1.8) 
+                    legend("topright", legend = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), col =  rainbow(numOfAlgs) , pch = 20, lty = 1, cex = 0.8, pt.cex = 1.8) 
                     text(paretoFront[,1:2], labels = paste(paretoFront[, 3], paretoFront[, 4], sep = "_"), cex = 0.7, pos = 3 ) 
                 }
                 dev.off() 
@@ -154,7 +155,8 @@ makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) {
             
             sizeOfAlgs <- nrow(aggregatedValues) 
             png(filename= paste("plots/cluster_", i, ".png", sep = ""), width = 1600, height = 1200)     
-            plot(aggregatedValues[,1:2], col = rainbow(sizeOfAlgs) , xlim=c(min(aggregatedValues$AUC), max(aggregatedValues$AUC)), ylim=c(0, max(aggregatedValues$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+            plot(aggregatedValues[,1:2], col = rainbow(sizeOfAlgs) , xaxt = "n", xlim=c(min(aggregatedValues$AUC), max(aggregatedValues$AUC)), ylim=c(0, max(aggregatedValues$CombineTime)), pch = 20, cex = 2.9, main = paste("Size of cluster num ", i, " is ", setCount)) 
+            axis(1, at = seq(min(aggregatedValues$AUC), max(aggregatedValues$AUC), abs(min(aggregatedValues$AUC) - max(aggregatedValues$AUC))/5),  labels = -1 * round(seq(min(aggregatedValues$AUC), max(aggregatedValues$AUC), abs(min(aggregatedValues$AUC) - max(aggregatedValues$AUC))/5), 2)) 
             
             if (simplify == TRUE) {
                 legend("topright", legend = paste(aggregatedValues[, 3], aggregatedValues[, 4], sep = "_"), col =  rainbow(sizeOfAlgs) , pch = 20, lty = 1, cex = 0.9, pt.cex = 1.8) 

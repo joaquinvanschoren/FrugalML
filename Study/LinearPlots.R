@@ -13,7 +13,7 @@ makeLinearPLots <- function(p.algorithms, p.datasets, p.normalize,
     hugeMatrixSequence <- c() 
     
     for (w in wOptions) { 
-        nextMatrix <- createHugeMatrixFromImputedMeasures(evaluations = p.cleanedEvaluations, p.w = w, p.normalize = p.normalize) 
+        nextMatrix <- createHugeMatrixFromImputedMeasures(evaluations = p.cleanedEvaluations, p.w = w, p.normalize = p.normalize, p.newFormula = TRUE) 
 
         nextMatrix <- as.data.frame(nextMatrix[p.datasets, p.algorithms])   
         hugeMatrixSequence <- append(hugeMatrixSequence, nextMatrix) 
@@ -28,9 +28,9 @@ makeLinearPLots <- function(p.algorithms, p.datasets, p.normalize,
     
     if (p.printFast) { 
         algQn <- length(p.algorithms) 
-        matplot(dfValues, type = c("b"), pch=1, col = 1:algQn, ylim = c(0, 1), ylab = "Frugality score", xlab = "Index w", axes = F) #plot  
-        legend("topright", legend = colnames(dfValues)[1:algQn] , col=1:algQn, cex = 0.55, pch=1) # optional legend  
-        axis(2) 
+        matplot(dfValues, type = c("l"), pch=1, col = rainbow(algQn), ylim = c(0.0, 1.0), ylab = "Frugality score", xlab = "Index w", lwd = 2, lty = c(1, 2, 3), axes = F) #plot  
+        legend("topright", legend = colnames(dfValues)[1:algQn], col = rainbow(algQn), cex = 1.15, pch = 1.5, lty = c(1, 2, 3)) # optional legend  
+        axis(2)  
         axis(side = 1, at = 1:nrow(dfValues), labels = rownames(dfValues)) 
     } else { 
         dfValues$w <- wOptions  
