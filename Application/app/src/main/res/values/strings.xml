@@ -10,7 +10,7 @@
     <string name="sitting">Sitting</string>
     <string name="standing">Standing</string>
     <string name="laying">Laying</string>
-    <string name="empty">Empty</string>
+    <string name="pause">Pause</string>
     <string name="new_activity">New activity is</string>
 </resources>
 

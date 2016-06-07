@@ -4,8 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.project.frugalmachinelearning.MainActivity"
-    tools:deviceIds="wear_round"
-    android:onClick="onFinishActivity">
+    tools:deviceIds="wear_round">
 
     <TextView
         android:layout_width="wrap_content"
@@ -13,25 +12,16 @@
         android:id="@+id/mActivityTextView"
         android:text="@string/activity_name"
         android:textSize="12sp"
-        android:layout_centerVertical="true"
-        android:layout_alignEnd="@+id/mTime" />
+        android:layout_below="@+id/button"
+        android:layout_toEndOf="@+id/button3" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/new_activity"
         android:id="@+id/mNewActivity"
-        android:textSize="8sp"
-        android:layout_above="@+id/button6"
-        android:layout_toEndOf="@+id/button3" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/time"
-        android:id="@+id/mTime"
-        android:textSize="12sp"
-        android:layout_below="@+id/button"
+        android:textSize="16sp"
+        android:layout_centerVertical="true"
         android:layout_toEndOf="@+id/button3" />
 
     <Button
@@ -82,10 +72,10 @@
         android:id="@+id/button3"
         android:textSize="6sp"
         android:layout_gravity="left"
-        android:layout_above="@+id/button6"
-        android:layout_alignParentStart="true"
         android:onClick="onSitting"
-        android:visibility="visible" />
+        android:visibility="visible"
+        android:layout_above="@+id/button6"
+        android:layout_alignParentStart="true" />
 
     <Button
         style="?android:attr/buttonStyleSmall"
@@ -130,13 +120,14 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/empty"
+        android:text="@string/pause"
         android:id="@+id/button7"
         android:textSize="6sp"
         android:layout_gravity="center|left"
-        android:onClick="onEmpty"
+        android:onClick="onPause"
         android:layout_below="@+id/finishActivity"
         android:layout_alignEnd="@+id/button2"
-        android:visibility="visible" />
+        android:visibility="visible"
+        android:background="@android:color/holo_orange_dark" />
 
 </RelativeLayout>
