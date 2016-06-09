@@ -4,130 +4,62 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.project.frugalmachinelearning.MainActivity"
-    tools:deviceIds="wear_round">
+    tools:deviceIds="wear_round"
+    android:id="@+id/mBackRelativeLayout">
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/mActivityTextView"
+        android:id="@+id/mTheoreticalActivity"
         android:text="@string/activity_name"
         android:textSize="12sp"
-        android:layout_below="@+id/button"
-        android:layout_toEndOf="@+id/button3" />
+        android:layout_above="@+id/mGenericActivity"
+        android:layout_marginBottom="19dp"
+        android:textAlignment="center" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/new_activity"
-        android:id="@+id/mNewActivity"
+        android:id="@+id/mGenericActivity"
         android:textSize="16sp"
-        android:layout_centerVertical="true"
-        android:layout_toEndOf="@+id/button3" />
+        android:layout_marginLeft="65dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="32dp"
+        android:textAlignment="center" />
 
     <Button
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Stop"
-        android:id="@+id/finishActivity"
+        android:id="@+id/finishActivities"
         android:enabled="true"
-        android:textSize="7sp"
+        android:textSize="10sp"
         android:focusable="false"
         android:onClick="onFinishActivity"
-        android:layout_centerVertical="true"
-        android:layout_alignParentEnd="true"
-        android:singleLine="false" />
-
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/walking_upstairs"
-        android:id="@+id/button"
-        android:textSize="6sp"
-        android:layout_gravity="left"
-        android:layout_above="@+id/button3"
-        android:layout_toStartOf="@+id/button4"
-        android:onClick="onUpstairs"
-        android:visibility="visible" />
-
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/walking_downstairs"
-        android:id="@+id/button2"
-        android:textSize="6sp"
-        android:layout_gravity="right"
-        android:layout_above="@+id/finishActivity"
-        android:layout_toEndOf="@+id/button4"
-        android:onClick="onDownstairs"
-        android:visibility="visible" />
-
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/sitting"
-        android:id="@+id/button3"
-        android:textSize="6sp"
-        android:layout_gravity="left"
-        android:onClick="onSitting"
+        android:singleLine="false"
         android:visibility="visible"
-        android:layout_above="@+id/button6"
-        android:layout_alignParentStart="true" />
-
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/walking"
-        android:id="@+id/button4"
-        android:textSize="6sp"
-        android:layout_gravity="right"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:onClick="onWalking"
-        android:visibility="visible" />
-
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/standing"
-        android:id="@+id/button5"
-        android:textSize="6sp"
-        android:layout_gravity="center|left"
-        android:layout_alignParentBottom="true"
-        android:layout_toEndOf="@+id/button6"
-        android:onClick="onStanding"
-        android:visibility="visible" />
-
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/laying"
-        android:id="@+id/button6"
-        android:textSize="6sp"
-        android:layout_gravity="right"
-        android:onClick="onLaying"
-        android:layout_alignTop="@+id/button7"
-        android:layout_alignStart="@+id/button"
-        android:visibility="visible" />
+        android:background="#7986cb"
+        android:layout_alignTop="@+id/pauseActivities"
+        android:layout_alignEnd="@+id/mGenericActivity" />
 
     <Button
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/pause"
-        android:id="@+id/button7"
-        android:textSize="6sp"
+        android:id="@+id/pauseActivities"
+        android:textSize="10sp"
         android:layout_gravity="center|left"
         android:onClick="onPause"
-        android:layout_below="@+id/finishActivity"
-        android:layout_alignEnd="@+id/button2"
         android:visibility="visible"
-        android:background="@android:color/holo_orange_dark" />
+        android:enabled="true"
+        android:layout_marginBottom="27dp"
+        android:background="#7986cb"
+        android:layout_above="@+id/mTheoreticalActivity"
+        android:layout_alignStart="@+id/mGenericActivity"
+        android:alpha="0.8" />
 
 </RelativeLayout>

@@ -1,13 +1,15 @@
 package com.project.frugalmachinelearning;
 
-import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -20,17 +22,27 @@ import android.os.Message;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton;
+import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu;
+import com.oguzdev.circularfloatingactionmenu.library.SubActionButton;
 import com.project.frugalmachinelearning.classifiers.ActivityType;
 import com.project.frugalmachinelearning.classifiers.ActivityWindow;
 import com.project.frugalmachinelearning.classifiers.FactoryClassifiers;
 import com.project.frugalmachinelearning.external.MathStuff;
 import com.project.frugalmachinelearning.tools.ApplicationStates;
 import com.project.frugalmachinelearning.tools.FileOperations;
+import com.project.frugalmachinelearning.tools.FloatingActionButtonFlexibleActions;
 
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
@@ -46,9 +58,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import weka.classifiers.AbstractClassifier;
@@ -111,16 +121,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private boolean warmingUp;
     private int performingActivity;
 
-    private TextView mActivityTextView;
-    private TextView mNewActivity;
+    private TextView mTheoreticalActivity;
+    private TextView mGenericActivity;
 
-    private Button bWalking;
-    private Button bWalkingUpstairs;
-    private Button bWalkingDownstairs;
-    private Button bSitting;
-    private Button bStanding;
-    private Button bLaying;
     private Button bPause;
+
+    private Button bStop;
+
+    private RelativeLayout fBackground;
 
     private PrintWriter pw;
     private DateFormat df = new SimpleDateFormat("HH:mm:ss.SSS dd/MM/yyyy");
@@ -216,7 +224,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private long pTime;
     private long nTime;
 
-    private static final int APP_STATE = ApplicationStates.valueOf("RECOGNIZE_ACTIVITY").ordinal();
+    private FloatingActionButtonFlexibleActions leftCenterButton;
+
+    private static int appState;
     boolean computeComplexFeatures = false;
 
 
@@ -243,6 +253,23 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         setContentView(R.layout.activity_main);
 
+        final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
+        stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
+            @Override
+            public void onLayoutInflated(WatchViewStub stub) {
+                mTheoreticalActivity = (TextView) stub.findViewById(R.id.mTheoreticalActivity);
+                mGenericActivity = (TextView) stub.findViewById(R.id.mGenericActivity);
+
+                bPause = (Button) stub.findViewById(R.id.pauseActivities);
+
+                bStop = (Button) stub.findViewById(R.id.finishActivities);
+
+                fBackground = (RelativeLayout) stub.findViewById(R.id.mBackRelativeLayout);
+
+                refreshDisplayAndSetNextUpdate();
+            }
+        });
+
         // activate constant visibility for the activity
         setAmbientEnabled();
 
@@ -257,26 +284,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 0 /* requestCode */,
                 ambientStateIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
-
-
-        final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
-        stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
-            @Override
-            public void onLayoutInflated(WatchViewStub stub) {
-                mActivityTextView = (TextView) stub.findViewById(R.id.mActivityTextView);
-                mNewActivity = (TextView) stub.findViewById(R.id.mNewActivity);
-
-                bWalking = (Button) stub.findViewById(R.id.button);
-                bWalkingUpstairs = (Button) stub.findViewById(R.id.button2);
-                bWalkingDownstairs = (Button) stub.findViewById(R.id.button3);
-                bSitting = (Button) stub.findViewById(R.id.button4);
-                bStanding = (Button) stub.findViewById(R.id.button5);
-                bLaying = (Button) stub.findViewById(R.id.button6);
-                bPause = (Button) stub.findViewById(R.id.button7);
-
-                refreshDisplayAndSetNextUpdate();
-            }
-        });
 
         Log.i(TAG, "onCreate()");
     }
@@ -295,7 +302,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                 try {
                                     if (isExternalStorageWritable()) {
 
-                                        if (needTitle && APP_STATE == 0) {
+                                        if (needTitle && appState == 0) {
                                             pw.println(createTitle());
                                             needTitle = false;
                                         }
@@ -303,7 +310,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                         // computing features
                                         sensorsAndComplexFeaturesToArrays(posInstance);
 
-                                        if (APP_STATE == 0) {
+                                        if (appState == 0) {
                                             if (computeComplexFeatures && performingActivity != 6) {
 
                                                 // pause data collection after activity change for a short period and wait for computed values
@@ -372,7 +379,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                                 }
 
-                                mActivityTextView.setText("Activity is " + activityFullName + " ambient is " + isAmbient());
+                                mTheoreticalActivity.setText("Activity is " + activityFullName + " \n ambient is " + isAmbient());
 
                                 Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
                             }
@@ -479,13 +486,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 SimpleDateFormat shortName = new SimpleDateFormat("dd,HHmmss");
                 String fileNumber = shortName.format(new Date());
 
-                if (APP_STATE == 1) {
-                    bWalking.setVisibility(View.INVISIBLE);
-                    bWalkingUpstairs.setVisibility(View.INVISIBLE);
-                    bWalkingDownstairs.setVisibility(View.INVISIBLE);
-                    bSitting.setVisibility(View.INVISIBLE);
-                    bStanding.setVisibility(View.INVISIBLE);
-                    bLaying.setVisibility(View.INVISIBLE);
+                Intent intent = getIntent();
+                String stateFromIntent = intent.getStringExtra("APP STATE");
+                appState = ApplicationStates.valueOf(stateFromIntent).ordinal();
+
+                String hexColor = "#" +  intent.getStringExtra("background");
+                fBackground.setBackgroundColor(Color.parseColor(hexColor));
+
+                if (appState == 1) {
                     bPause.setVisibility(View.INVISIBLE);
 
                     final String batteryLevelName = FileOperations.getSensorStorageDir("SensorsInformation") + "/batteryInfo" + fileNumber + ".txt";
@@ -499,7 +507,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                     Log.i(TAG, batteryLevelName);
 
                 } else {
-                    mNewActivity.setText("Pause");
+
+                    createCircleMenu();
+
+                    mGenericActivity.setText("Pause");
 
                     final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
                     FileOperations.deleteFile(sensorDataName);
@@ -513,12 +524,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                 }
 
-
                 // adjust visual style
                 if (bPause.getVisibility() != View.VISIBLE) {
-                    mNewActivity.setVisibility(View.INVISIBLE);
+                    mGenericActivity.setVisibility(View.INVISIBLE);
                 } else {
-                    mActivityTextView.setVisibility(View.INVISIBLE);
+                    mTheoreticalActivity.setVisibility(View.INVISIBLE);
                 }
             }
             catch (IOException e) {
@@ -540,7 +550,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             warmingUp = true;
             setSensors();
 
-            if (APP_STATE == 0) {
+            if (appState == 0) {
                 launchCollectingInformation();
             } else {
                 launchCollectingInformation();
@@ -991,53 +1001,52 @@ public class MainActivity extends WearableActivity implements SensorEventListene
      * Handles the button press to finish this activity and take the user back to the Home.
      */
     public void onFinishActivity(View view) {
-        setResult(RESULT_OK);
-        finish();
+        showCustomDialog(view);
     }
 
-    public void onWalking(View view) {
+    public void onWalking() {
         performingActivity = 0;                                                      // ActivityType.valueOf("WALKING").ordinal();
-        mNewActivity.setText("Walking");
+        mGenericActivity.setText("Walking");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
         posInstance = 0;
         computeComplexFeatures = false;
     }
 
-    public void onUpstairs(View view) {
+    public void onUpstairs() {
         performingActivity = 1;                                                      // ActivityType.valueOf("WALKING_UPSTAIRS").ordinal();
-        mNewActivity.setText("Upstairs");
+        mGenericActivity.setText("Upstairs");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
         posInstance = 0;
         computeComplexFeatures = false;
     }
 
-    public void onDownstairs(View view) {
+    public void onDownstairs() {
         performingActivity = 2;                                                      // ActivityType.valueOf("WALKING_DOWNSTAIRS").ordinal();
-        mNewActivity.setText("Downstairs");
+        mGenericActivity.setText("Downstairs");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
         posInstance = 0;
         computeComplexFeatures = false;
     }
 
-    public void onSitting(View view) {
+    public void onSitting() {
         performingActivity = 3;                                                      // ActivityType.valueOf("SITTING").ordinal();
-        mNewActivity.setText("Sitting");
+        mGenericActivity.setText("Sitting");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
         posInstance = 0;
         computeComplexFeatures = false;
     }
 
-    public void onStanding(View view) {
+    public void onStanding() {
         performingActivity = 4;                                                      // ActivityType.valueOf("STANDING").ordinal();
-        mNewActivity.setText("Standing");
+        mGenericActivity.setText("Standing");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
         posInstance = 0;
         computeComplexFeatures = false;
     }
 
-    public void onLaying(View view) {
+    public void onLaying() {
         performingActivity = 5;                                                      // ActivityType.valueOf("LAYING").ordinal();
-        mNewActivity.setText("Laying");
+        mGenericActivity.setText("Laying");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
         posInstance = 0;
         computeComplexFeatures = false;
@@ -1045,7 +1054,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     public void onPause(View view) {
         performingActivity = 6;
-        mNewActivity.setText("Pause");
+        mGenericActivity.setText("Pause");
         timeChangeActivityUpdateMs = System.currentTimeMillis();
         posInstance = 0;
         computeComplexFeatures = false;
@@ -1073,6 +1082,250 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 }
             }
         }
+    }
+
+    public void createCircleMenu() {
+
+        // Set up the large red button on the center right side
+        // With custom button and content sizes and margins
+        int redActionButtonSize = getResources().getDimensionPixelSize(R.dimen.red_action_button_size);
+        int redActionButtonMargin = getResources().getDimensionPixelOffset(R.dimen.action_button_margin);
+        int redActionButtonContentSize = getResources().getDimensionPixelSize(R.dimen.red_action_button_content_size);
+        int redActionButtonContentMargin = getResources().getDimensionPixelSize(R.dimen.red_action_button_content_margin);
+        int redActionMenuRadius = getResources().getDimensionPixelSize(R.dimen.red_action_menu_radius);
+        int blueSubActionButtonSize = getResources().getDimensionPixelSize(R.dimen.blue_sub_action_button_size);
+        int blueSubActionButtonContentMargin = getResources().getDimensionPixelSize(R.dimen.blue_sub_action_button_content_margin);
+
+        ImageView fabIconStar = new ImageView(this);
+        fabIconStar.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_important));
+
+        FloatingActionButton.LayoutParams starParams = new FloatingActionButton.LayoutParams(redActionButtonSize, redActionButtonSize);
+        starParams.setMargins(redActionButtonMargin,
+                redActionButtonMargin,
+                redActionButtonMargin,
+                redActionButtonMargin);
+        fabIconStar.setLayoutParams(starParams);
+
+        FloatingActionButton.LayoutParams fabIconStarParams = new FloatingActionButton.LayoutParams(redActionButtonContentSize,
+                redActionButtonContentSize);
+        fabIconStarParams.setMargins(redActionButtonContentMargin,
+                redActionButtonContentMargin,
+                redActionButtonContentMargin,
+                redActionButtonContentMargin);
+
+        leftCenterButton = new FloatingActionButtonFlexibleActions.Builder(this)
+                .setContentView(fabIconStar, fabIconStarParams)
+                .setBackgroundDrawable(R.drawable.button_action_red_selector)
+                .setPosition(FloatingActionButtonFlexibleActions.POSITION_CENTER)
+                .setLayoutParams(starParams)
+                .build();
+
+        leftCenterButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+
+                if (mGenericActivity.getVisibility() == View.VISIBLE){
+                    bPause.setVisibility(View.INVISIBLE);
+                    bStop.setVisibility(View.INVISIBLE);
+                    mGenericActivity.setVisibility(View.INVISIBLE);
+                } else {
+                    bPause.setVisibility(View.VISIBLE);
+                    bStop.setVisibility(View.VISIBLE);
+                    mGenericActivity.setVisibility(View.VISIBLE);
+                }
+
+
+/*
+                    t.interrupt();
+*/
+
+                }
+                return false;
+            }
+        });
+
+        // Set up customized SubActionButtons for the right center menu
+        SubActionButton.Builder lCSubBuilder = new SubActionButton.Builder(this);
+        lCSubBuilder.setBackgroundDrawable(getResources().getDrawable(R.drawable.button_action_blue_selector));
+
+        FrameLayout.LayoutParams blueContentParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT);
+        blueContentParams.setMargins(blueSubActionButtonContentMargin,
+                blueSubActionButtonContentMargin,
+                blueSubActionButtonContentMargin,
+                blueSubActionButtonContentMargin);
+        lCSubBuilder.setLayoutParams(blueContentParams);
+        // Set custom layout params
+        FrameLayout.LayoutParams blueParams = new FrameLayout.LayoutParams(blueSubActionButtonSize, blueSubActionButtonSize);
+        lCSubBuilder.setLayoutParams(blueParams);
+
+        ImageView lcIcon1 = new ImageView(this);
+        ImageView lcIcon2 = new ImageView(this);
+        ImageView lcIcon3 = new ImageView(this);
+        ImageView lcIcon4 = new ImageView(this);
+        ImageView lcIcon5 = new ImageView(this);
+        ImageView lcIcon6 = new ImageView(this);
+
+        lcIcon1.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_camera));
+        lcIcon2.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_picture));
+        lcIcon3.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_video));
+        lcIcon4.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_location_found));
+        lcIcon5.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_headphones));
+        lcIcon6.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_picture));
+
+        SubActionButton buttonOnWalking = lCSubBuilder.setContentView(lcIcon1, blueContentParams).build();
+        buttonOnWalking.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                leftCenterButton.performClick();
+
+                bPause.setVisibility(View.VISIBLE);
+                bStop.setVisibility(View.VISIBLE);
+                mGenericActivity.setVisibility(View.VISIBLE);
+
+                onWalking();
+                Toast toast = Toast.makeText(MainActivity.this, "Walking", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
+
+        SubActionButton buttonOnWalkingUpstairs = lCSubBuilder.setContentView(lcIcon2, blueContentParams).build();
+        buttonOnWalkingUpstairs.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                leftCenterButton.performClick();
+
+                bPause.setVisibility(View.VISIBLE);
+                bStop.setVisibility(View.VISIBLE);
+                mGenericActivity.setVisibility(View.VISIBLE);
+
+                onUpstairs();
+                Toast toast = Toast.makeText(MainActivity.this, "Walking upstairs", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
+
+        SubActionButton buttonOnWalkingDownstairs = lCSubBuilder.setContentView(lcIcon3, blueContentParams).build();
+        buttonOnWalkingDownstairs.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                leftCenterButton.performClick();
+
+                bPause.setVisibility(View.VISIBLE);
+                bStop.setVisibility(View.VISIBLE);
+                mGenericActivity.setVisibility(View.VISIBLE);
+
+                onDownstairs();
+                Toast toast = Toast.makeText(MainActivity.this, "Waking downstairs", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
+
+        SubActionButton buttonOnSitting = lCSubBuilder.setContentView(lcIcon4, blueContentParams).build();
+        buttonOnSitting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                leftCenterButton.performClick();
+
+                bPause.setVisibility(View.VISIBLE);
+                bStop.setVisibility(View.VISIBLE);
+                mGenericActivity.setVisibility(View.VISIBLE);
+
+                onSitting();
+                Toast toast = Toast.makeText(MainActivity.this, "Sitting", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
+
+        SubActionButton buttonOnStanding = lCSubBuilder.setContentView(lcIcon5, blueContentParams).build();
+        buttonOnStanding.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                leftCenterButton.performClick();
+
+                bPause.setVisibility(View.VISIBLE);
+                bStop.setVisibility(View.VISIBLE);
+                mGenericActivity.setVisibility(View.VISIBLE);
+
+                onStanding();
+                Toast toast = Toast.makeText(MainActivity.this, "Standing", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
+
+        SubActionButton buttonOnLaying = lCSubBuilder.setContentView(lcIcon6, blueContentParams).build();
+        buttonOnLaying.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                leftCenterButton.performClick();
+
+                bPause.setVisibility(View.VISIBLE);
+                bStop.setVisibility(View.VISIBLE);
+                mGenericActivity.setVisibility(View.VISIBLE);
+
+                onLaying();
+                Toast toast = Toast.makeText(MainActivity.this, "Laying", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
+
+        // Build another menu with custom options
+        final FloatingActionMenu leftCenterMenu = new FloatingActionMenu.Builder(this)
+                .addSubActionView(buttonOnWalking)
+                .addSubActionView(buttonOnWalkingUpstairs)
+                .addSubActionView(buttonOnWalkingDownstairs)
+                .addSubActionView(buttonOnSitting)
+                .addSubActionView(buttonOnStanding)
+                .addSubActionView(buttonOnLaying)
+                .setRadius(redActionMenuRadius)
+                .setStartAngle(0)
+                .setEndAngle(360)
+                .attachTo(leftCenterButton)
+                .build();
+
+    }
+
+    public void showCustomDialog(View view) {
+        final Dialog dialog = new Dialog(MainActivity.this);
+        dialog.setContentView(R.layout.dialog);
+
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+
+        // set the custom dialog components - text, image and button
+        TextView text = (TextView) dialog.findViewById(R.id.text);
+        text.setText(getResources().getString(R.string.dialog_title));
+
+        Button bCancel = (Button) dialog.findViewById(R.id.cancel);
+        // close dialog when this button is pressed
+
+        bCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.cancel();
+            }
+        });
+
+        Button bExit = (Button) dialog.findViewById(R.id.exit);
+        // if button is clicked, go to browser to display content
+
+        bExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final Toast toast = Toast.makeText(MainActivity.this, "Have a nice day, my wonderful friend", Toast.LENGTH_SHORT);
+
+                // center text in toast message
+                TextView tView = (TextView) toast.getView().findViewById(android.R.id.message);
+                if( tView != null) tView.setGravity(Gravity.CENTER);
+
+                toast.show();
+
+                setResult(RESULT_OK);
+                finish();
+            }
+        });
+
+        dialog.show();
     }
 
     public boolean isExternalStorageWritable() {

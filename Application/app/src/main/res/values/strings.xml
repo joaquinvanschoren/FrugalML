@@ -12,5 +12,6 @@
     <string name="laying">Laying</string>
     <string name="pause">Pause</string>
     <string name="new_activity">New activity is</string>
+    <string name="dialog_title">Are you sure that you want to quit this activity</string>
 </resources>
 
