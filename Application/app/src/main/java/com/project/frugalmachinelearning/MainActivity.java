@@ -22,12 +22,14 @@ import android.os.Message;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -109,7 +111,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private float heartRateVal;
 
 
-
     private Thread t;
     private Thread tClassifyActivity;
 
@@ -124,9 +125,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private TextView mTheoreticalActivity;
     private TextView mGenericActivity;
 
-    private Button bPause;
+    private ImageButton bPause;
 
-    private Button bStop;
+    private ImageButton bStop;
 
     private RelativeLayout fBackground;
 
@@ -230,14 +231,20 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     boolean computeComplexFeatures = false;
 
 
-    /** Custom 'what' for Message sent to Handler. */
+    /**
+     * Custom 'what' for Message sent to Handler.
+     */
     private static final int MSG_UPDATE_SCREEN = 0;
 
-    /** Milliseconds between updates based on state. */
+    /**
+     * Milliseconds between updates based on state.
+     */
     private static final long ACTIVE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(1);
     private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(900);
 
-    /** Tracks latest ambient details, such as burnin offsets, etc. */
+    /**
+     * Tracks latest ambient details, such as burnin offsets, etc.
+     */
     private Bundle mAmbientDetails;
 
     private final Handler mActiveModeUpdateHandler = new UpdateHandler(this);
@@ -260,9 +267,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 mTheoreticalActivity = (TextView) stub.findViewById(R.id.mTheoreticalActivity);
                 mGenericActivity = (TextView) stub.findViewById(R.id.mGenericActivity);
 
-                bPause = (Button) stub.findViewById(R.id.pauseActivities);
+                bPause = (ImageButton) stub.findViewById(R.id.pauseActivities);
 
-                bStop = (Button) stub.findViewById(R.id.finishActivities);
+                bStop = (ImageButton) stub.findViewById(R.id.finishActivities);
 
                 fBackground = (RelativeLayout) stub.findViewById(R.id.mBackRelativeLayout);
 
@@ -379,7 +386,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                                 }
 
-                                mTheoreticalActivity.setText("Activity is " + activityFullName + " \n ambient is " + isAmbient());
+                                mTheoreticalActivity.setText("Activity is " + activityFullName);
 
                                 Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
                             }
@@ -483,18 +490,18 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 /*    Random random = new Random();
                 int fileNumber = random.nextInt(100);   */
 
-                SimpleDateFormat shortName = new SimpleDateFormat("dd,HHmmss");
-                String fileNumber = shortName.format(new Date());
-
                 Intent intent = getIntent();
                 String stateFromIntent = intent.getStringExtra("APP STATE");
                 appState = ApplicationStates.valueOf(stateFromIntent).ordinal();
 
-                String hexColor = "#" +  intent.getStringExtra("background");
-                fBackground.setBackgroundColor(Color.parseColor(hexColor));
+/*                String hexColor = "#" + intent.getStringExtra("background");
+                fBackground.setBackgroundColor(Color.parseColor(hexColor)); */
 
+                SimpleDateFormat shortName = new SimpleDateFormat("dd,HHmmss");
+                String fileNumber = shortName.format(new Date());
+
+                // change an interface and prepare tools for the assignment
                 if (appState == 1) {
-                    bPause.setVisibility(View.INVISIBLE);
 
                     final String batteryLevelName = FileOperations.getSensorStorageDir("SensorsInformation") + "/batteryInfo" + fileNumber + ".txt";
                     FileOperations.deleteFile(batteryLevelName);
@@ -504,13 +511,15 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                     pw = new PrintWriter(new BufferedWriter(new FileWriter(batteryData, true)));
 
+                    mGenericActivity.setVisibility(View.INVISIBLE);
+
+                    bPause.setVisibility(View.INVISIBLE);
+
                     Log.i(TAG, batteryLevelName);
 
                 } else {
 
                     createCircleMenu();
-
-                    mGenericActivity.setText("Pause");
 
                     final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/measurements" + fileNumber + ".txt";
                     FileOperations.deleteFile(sensorDataName);
@@ -520,18 +529,16 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                     stringOfSensors = new StringBuilder();
 
+                    mTheoreticalActivity.setVisibility(View.INVISIBLE);
+                    mGenericActivity.setVisibility(View.INVISIBLE);
+
+                    bPause.setVisibility(View.INVISIBLE);
+
                     Log.i(TAG, sensorDataName);
 
                 }
 
-                // adjust visual style
-                if (bPause.getVisibility() != View.VISIBLE) {
-                    mGenericActivity.setVisibility(View.INVISIBLE);
-                } else {
-                    mTheoreticalActivity.setVisibility(View.INVISIBLE);
-                }
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 
@@ -751,8 +758,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         if (pTime == 0) {
             pTime = currentTime;
-        }
-        else {
+        } else {
             pTime = nTime;
             nTime = currentTime;
 
@@ -765,8 +771,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         if (allSensorsData != null) {
             allSensorsData.setLength(0);
-        }
-        else {
+        } else {
             allSensorsData = new StringBuilder();
         }
 
@@ -897,7 +902,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 
             // In this example, alpha is calculated as t / (t + dT),
             // where t is the low-pass filter's time-constant and
@@ -920,7 +925,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             accelZ = az;
         }
 
-        if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
+        if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
             float ax = event.values[0];
             float ay = event.values[1];
             float az = event.values[2];
@@ -930,7 +935,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             gyroZ = az;
         }
 
-        if (event.sensor.getType() == Sensor.TYPE_GRAVITY){
+        if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
             float ax = event.values[0];
             float ay = event.values[1];
             float az = event.values[2];
@@ -940,7 +945,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             gravityZ = az;
         }
 
-        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
+        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             float ax = event.values[0];
             float ay = event.values[1];
             float az = event.values[2];
@@ -950,7 +955,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             linAccelZ = az;
         }
 
-        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR){
+        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             float ax = event.values[0];
             float ay = event.values[1];
             float az = event.values[2];
@@ -984,7 +989,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             magFielZ = az;
         }
 
-        if (event.sensor.getType() == Sensor.TYPE_HEART_RATE){
+        if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
             float ax = event.values[0];
 
             heartRateVal = ax;
@@ -1058,6 +1063,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         timeChangeActivityUpdateMs = System.currentTimeMillis();
         posInstance = 0;
         computeComplexFeatures = false;
+
+        leftCenterButton.setVisibility(View.VISIBLE);
+        bPause.setVisibility(View.INVISIBLE);
+        bStop.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -1097,7 +1106,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         int blueSubActionButtonContentMargin = getResources().getDimensionPixelSize(R.dimen.blue_sub_action_button_content_margin);
 
         ImageView fabIconStar = new ImageView(this);
-        fabIconStar.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_important));
+        fabIconStar.setImageDrawable(getResources().getDrawable(R.drawable.ic_touch_app_white_24dp));
 
         FloatingActionButton.LayoutParams starParams = new FloatingActionButton.LayoutParams(redActionButtonSize, redActionButtonSize);
         starParams.setMargins(redActionButtonMargin,
@@ -1120,28 +1129,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 .setLayoutParams(starParams)
                 .build();
 
+        final GestureDetector gestureDetector = new GestureDetector(this, new MyGestureDetector());
+
         leftCenterButton.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
 
-                if (mGenericActivity.getVisibility() == View.VISIBLE){
-                    bPause.setVisibility(View.INVISIBLE);
-                    bStop.setVisibility(View.INVISIBLE);
-                    mGenericActivity.setVisibility(View.INVISIBLE);
-                } else {
-                    bPause.setVisibility(View.VISIBLE);
-                    bStop.setVisibility(View.VISIBLE);
-                    mGenericActivity.setVisibility(View.VISIBLE);
-                }
+                return gestureDetector.onTouchEvent(event);
 
-
-/*
-                    t.interrupt();
-*/
-
-                }
-                return false;
             }
         });
 
@@ -1167,12 +1162,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         ImageView lcIcon5 = new ImageView(this);
         ImageView lcIcon6 = new ImageView(this);
 
-        lcIcon1.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_camera));
-        lcIcon2.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_picture));
-        lcIcon3.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_video));
-        lcIcon4.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_location_found));
-        lcIcon5.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_headphones));
-        lcIcon6.setImageDrawable(getResources().getDrawable(R.drawable.ic_action_picture));
+        lcIcon1.setImageDrawable(getResources().getDrawable(R.drawable.ic_directions_walk_white_24dp));
+        lcIcon2.setImageDrawable(getResources().getDrawable(R.drawable.ic_trending_up_white_24dp));
+        lcIcon3.setImageDrawable(getResources().getDrawable(R.drawable.ic_trending_down_white_24dp));
+        lcIcon4.setImageDrawable(getResources().getDrawable(R.drawable.ic_airline_seat_recline_normal_white_24dp));
+        lcIcon5.setImageDrawable(getResources().getDrawable(R.drawable.ic_accessibility_white_24dp));
+        lcIcon6.setImageDrawable(getResources().getDrawable(R.drawable.ic_local_hotel_white_24dp));
 
         SubActionButton buttonOnWalking = lCSubBuilder.setContentView(lcIcon1, blueContentParams).build();
         buttonOnWalking.setOnClickListener(new View.OnClickListener() {
@@ -1181,8 +1176,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 leftCenterButton.performClick();
 
                 bPause.setVisibility(View.VISIBLE);
-                bStop.setVisibility(View.VISIBLE);
+
                 mGenericActivity.setVisibility(View.VISIBLE);
+
+                leftCenterButton.setVisibility(View.INVISIBLE);
 
                 onWalking();
                 Toast toast = Toast.makeText(MainActivity.this, "Walking", Toast.LENGTH_SHORT);
@@ -1197,8 +1194,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 leftCenterButton.performClick();
 
                 bPause.setVisibility(View.VISIBLE);
-                bStop.setVisibility(View.VISIBLE);
+
                 mGenericActivity.setVisibility(View.VISIBLE);
+
+                leftCenterButton.setVisibility(View.INVISIBLE);
 
                 onUpstairs();
                 Toast toast = Toast.makeText(MainActivity.this, "Walking upstairs", Toast.LENGTH_SHORT);
@@ -1213,8 +1212,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 leftCenterButton.performClick();
 
                 bPause.setVisibility(View.VISIBLE);
-                bStop.setVisibility(View.VISIBLE);
+
                 mGenericActivity.setVisibility(View.VISIBLE);
+
+                leftCenterButton.setVisibility(View.INVISIBLE);
 
                 onDownstairs();
                 Toast toast = Toast.makeText(MainActivity.this, "Waking downstairs", Toast.LENGTH_SHORT);
@@ -1229,8 +1230,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 leftCenterButton.performClick();
 
                 bPause.setVisibility(View.VISIBLE);
-                bStop.setVisibility(View.VISIBLE);
+
                 mGenericActivity.setVisibility(View.VISIBLE);
+
+                leftCenterButton.setVisibility(View.INVISIBLE);
 
                 onSitting();
                 Toast toast = Toast.makeText(MainActivity.this, "Sitting", Toast.LENGTH_SHORT);
@@ -1248,6 +1251,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 bStop.setVisibility(View.VISIBLE);
                 mGenericActivity.setVisibility(View.VISIBLE);
 
+                leftCenterButton.setVisibility(View.INVISIBLE);
+
                 onStanding();
                 Toast toast = Toast.makeText(MainActivity.this, "Standing", Toast.LENGTH_SHORT);
                 toast.show();
@@ -1261,8 +1266,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 leftCenterButton.performClick();
 
                 bPause.setVisibility(View.VISIBLE);
-                bStop.setVisibility(View.VISIBLE);
+
                 mGenericActivity.setVisibility(View.VISIBLE);
+
+                leftCenterButton.setVisibility(View.INVISIBLE);
 
                 onLaying();
                 Toast toast = Toast.makeText(MainActivity.this, "Laying", Toast.LENGTH_SHORT);
@@ -1316,7 +1323,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                 // center text in toast message
                 TextView tView = (TextView) toast.getView().findViewById(android.R.id.message);
-                if( tView != null) tView.setGravity(Gravity.CENTER);
+                if (tView != null) tView.setGravity(Gravity.CENTER);
 
                 toast.show();
 
@@ -1535,11 +1542,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
 
         // Error checking that probably isn't needed but I added just in case.
-        if(level == -1 || scale == -1) {
+        if (level == -1 || scale == -1) {
             return 50.0f;
         }
 
-        return ((float)level / (float)scale) * 100.0f;
+        return ((float) level / (float) scale) * 100.0f;
     }
 
     private List<String> getActivityValues() {
@@ -1553,6 +1560,32 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         values.add("NA");
 
         return values;
+    }
+
+    private class MyGestureDetector extends GestureDetector.SimpleOnGestureListener {
+
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent event) {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+
+                if (bStop.getVisibility() == View.VISIBLE) {
+                    mGenericActivity.setVisibility(View.INVISIBLE);
+                    bStop.setVisibility(View.INVISIBLE);
+                } else {
+                    if (!(mGenericActivity.getText().toString().equals(getResources().getString(R.string.new_activity)))) {
+                        mGenericActivity.setVisibility(View.VISIBLE);
+                    }
+                    bStop.setVisibility(View.VISIBLE);
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent event) {
+            showCustomDialog(bStop);
+        }
+
     }
 
 }
