@@ -28,6 +28,7 @@
             android:padding="1sp"
             android:background="#64b5f6"
             android:elegantTextHeight="true" />
+
     </FrameLayout>
 
     <FrameLayout

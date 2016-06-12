@@ -5,61 +5,60 @@
     android:layout_height="match_parent"
     tools:context="com.project.frugalmachinelearning.MainActivity"
     tools:deviceIds="wear_round"
-    android:id="@+id/mBackRelativeLayout">
+    android:id="@+id/mBackRelativeLayout"
+    android:background="#ffffff">
 
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/mTheoreticalActivity"
         android:text="@string/activity_name"
-        android:textSize="12sp"
-        android:layout_above="@+id/mGenericActivity"
-        android:layout_marginBottom="19dp"
-        android:textAlignment="center" />
+        android:textSize="20sp"
+        android:textAlignment="center"
+        android:textColor="@color/common_google_signin_btn_text_light"
+        android:layout_marginTop="21dp"
+        android:layout_below="@+id/mGenericActivity"
+        android:layout_centerHorizontal="true" />
 
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/new_activity"
         android:id="@+id/mGenericActivity"
-        android:textSize="16sp"
-        android:layout_marginLeft="65dp"
-        android:layout_alignParentBottom="true"
+        android:textSize="20sp"
+        android:textAlignment="center"
+        android:textColor="@color/common_google_signin_btn_text_light"
+        android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="32dp"
-        android:textAlignment="center" />
+        android:layout_marginTop="20dp" />
 
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stop"
+    <ImageButton
         android:id="@+id/finishActivities"
-        android:enabled="true"
-        android:textSize="10sp"
-        android:focusable="false"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
+        android:layout_gravity="bottom|right"
+        android:background="@drawable/ripple"
+        android:stateListAnimator="@anim/anim"
+        android:src="@drawable/ic_power_settings_new_white_24dp"
+        android:elevation="4dp"
+        android:nestedScrollingEnabled="false"
         android:onClick="onFinishActivity"
-        android:singleLine="false"
-        android:visibility="visible"
-        android:background="#7986cb"
-        android:layout_alignTop="@+id/pauseActivities"
-        android:layout_alignEnd="@+id/mGenericActivity" />
+        android:layout_marginBottom="20dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/pauseActivities" />
 
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/pause"
+    <ImageButton
         android:id="@+id/pauseActivities"
-        android:textSize="10sp"
-        android:layout_gravity="center|left"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
+        android:layout_gravity="bottom|right"
+        android:background="@drawable/ripple"
+        android:stateListAnimator="@anim/anim"
+        android:src="@drawable/ic_pause_white_24dp"
+        android:elevation="4dp"
+        android:nestedScrollingEnabled="false"
         android:onClick="onPause"
-        android:visibility="visible"
-        android:enabled="true"
-        android:layout_marginBottom="27dp"
-        android:background="#7986cb"
-        android:layout_above="@+id/mTheoreticalActivity"
-        android:layout_alignStart="@+id/mGenericActivity"
-        android:alpha="0.8" />
+        android:layout_alignTop="@+id/finishActivities"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

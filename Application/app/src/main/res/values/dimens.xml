@@ -3,17 +3,26 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
 
-    <dimen name="red_action_button_size">54dp</dimen>
-    <dimen name="red_action_button_margin">24dp</dimen>
+    <dimen name="red_action_button_size">60dp</dimen>
+    <dimen name="red_action_button_margin">18dp</dimen>
 
-    <dimen name="red_action_button_content_size">8dp</dimen>
+    <dimen name="red_action_button_content_size">24dp</dimen>
     <dimen name="red_action_button_content_margin">18dp</dimen>
 
     <dimen name="red_action_menu_radius">72dp</dimen>
-    <dimen name="blue_sub_action_button_size">48dp</dimen>
-    <dimen name="blue_sub_action_button_content_margin">16dp</dimen>
+    <dimen name="blue_sub_action_button_size">60dp</dimen>
+    <dimen name="blue_sub_action_button_content_margin">18dp</dimen>
 
     <dimen name="radius_large">60dp</dimen>
     <dimen name="radius_small">15dp</dimen>
-    <dimen name="radius_medium">36dp</dimen>
+    <dimen name="radius_medium">36dp</dimen> 
+	
+    <dimen name="fab_size">36dp</dimen>
+
+    <dimen name="button_elevation">2dp</dimen>
+    <dimen name="button_press_elevation">4dp</dimen> 
+	
 </resources>
+
+
+
