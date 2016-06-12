@@ -1328,6 +1328,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 toast.show();
 
                 setResult(RESULT_OK);
+                dialog.dismiss();
                 finish();
             }
         });
