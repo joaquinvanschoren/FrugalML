@@ -20,6 +20,8 @@ dependencies {
     provided 'com.google.android.wearable:wearable:1.0.0'
     compile files('../libraries/hyperPipes.jar')
     compile files('../libraries/weka.jar')
+    compile files('C:/Users/Mikhail/Documents/GitHub/FrugalML/Application/libraries/AnDE.jar')
+    compile files('C:/Users/Mikhail/Documents/GitHub/FrugalML/Application/libraries/dagging.jar')
 }
 
 // The sample build uses multiple directories to

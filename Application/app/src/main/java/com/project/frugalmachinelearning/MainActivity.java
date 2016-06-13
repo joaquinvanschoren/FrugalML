@@ -547,7 +547,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             FileOperations.deleteFile("myfile_nbp.txt");
 
             // create classifier from a file
-            String selectedClassifierName = "NaiveBayes";
+            String selectedClassifierName = "A1DE";
             FactoryClassifiers fc = new FactoryClassifiers();
             String modelFileName = fc.getModelFile(selectedClassifierName);
             InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
