@@ -11,13 +11,16 @@ setwd("/home/mikhail/Desktop/GitProjects/FrugalML/Study")
 makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) { 
     # control for grouping different values of hyper parameters to a one value  
     simplify = p.simplify  
+
+    # choose algorithms for detailed evaluation 
+    compareProperties <- FALSE 
     
     # create images for Pareto Front 
     showParetoFront <- TRUE 
        
     # leave or delete outliers in results 
     filterOutlierValues <- TRUE 
-    
+
     # present results for an example algorithm 
     removeSomeAlgorithms <- TRUE 
     
@@ -78,7 +81,7 @@ makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) {
         
         # additional check for empty values    
         aggregatedValues <- aggregatedValues[!is.na(aggregatedValues$AUC), ] 
-        
+
         for (j in 1: nrow(aggregatedValues)) {
             if (unlist(gregexpr(pattern ='--', aggregatedValues[j, 3], fixed = TRUE)) != -1)
             {
@@ -128,7 +131,12 @@ makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) {
             
             aggregatedValues <- aggregatedValues[!is.na(aggregatedValues$AUC), ] 
         }
-        
+
+        if(compareProperties) { 
+            pickSpecialAlgorithms <- c(grep("1182", aggregatedValues[, 4]), grep("1195", aggregatedValues[, 4]))  
+            aggregatedValues <- aggregatedValues[pickSpecialAlgorithms, ] 
+        } 
+                
         aggregatedValues <- aggregatedValues[order(-aggregatedValues$AUC, aggregatedValues$CombineTime, decreasing = TRUE), ] 
         
         # calculate Pareto front

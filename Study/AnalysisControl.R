@@ -61,13 +61,16 @@ table(clusters)
 makePlotsClusters <- FALSE 
 if (makePlotsClusters) {
     additionalProcessing()     
-}
+} 
 
 # create files with a Pareto front for every data set and every cluster 
 selectedAlgorithms <- makeClustering(p.clusters = clusters, p.plots = TRUE, p.simplify = FALSE)  
 aggregatedAUC <- data.frame(tapply(selectedAlgorithms$AUC, selectedAlgorithms$Algorithm, mean)) 
 aggregatedAUC <- data.frame(aggregatedAUC[order(as.numeric(aggregatedAUC[, 1]), decreasing = TRUE), ])   
 selectedAlgorithms <- rownames(aggregatedAUC) 
+
+# include additional classifier for analysis 
+selectedAlgorithms <- c(selectedAlgorithms, "1182_AdaBoostM1.I10") 
 
 manualOrder <- FALSE 
 if (manualOrder) {

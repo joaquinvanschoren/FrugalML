@@ -130,6 +130,8 @@ drawSilhouette <- function(p.matrix, p.k = 25, scale = TRUE) {
     
     maxValue <- which.max(sil) 
     
+    print(paste("Value for silhouette is equal to ", max(sil), sep = "")) 
+    
     return(maxValue) 
 } 
 
