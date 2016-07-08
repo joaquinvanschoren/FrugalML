@@ -1,0 +1,6 @@
+<resources>
+    <style name="AppThemeDark.ActionBarStyle" parent="android:Widget.ActionBar">
+        <item name="android:background">@color/DarkActionBarColor</item>
+    </style>
+
+</resources>

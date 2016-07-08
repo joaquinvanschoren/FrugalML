@@ -7,7 +7,10 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 
 import weka.classifiers.AbstractClassifier;
+import weka.classifiers.bayes.AveragedNDependenceEstimators.A1DE;
 import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.meta.AdaBoostM1;
+import weka.classifiers.meta.Dagging;
 import weka.classifiers.misc.HyperPipes;
 import weka.classifiers.meta.RandomSubSpace;
 import weka.classifiers.trees.RandomForest;
@@ -26,7 +29,15 @@ public class FactoryClassifiers {
             return "nbnumeric";
         } else if (modelName.equals("RandomForest")) {
             return "rfnumeric";
-        } else
+        } else if (modelName.equals("A1DE")) {
+            return "a1denumeric";
+        } else if (modelName.equals("Dagging")) {
+            return "daggingnumeric";
+        } else if (modelName.equals("AdaBoostM1")) {
+            return "adaboostm1numeric";
+        }
+
+        else
             return null;
     }
 
@@ -39,6 +50,12 @@ public class FactoryClassifiers {
                 model = (NaiveBayes) new ObjectInputStream(ins).readObject();
             } else if (modelName.equals("RandomForest")) {
                 model = (RandomForest) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("A1DE")) {
+                model = (A1DE) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("Dagging")) {
+                model = (Dagging) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("AdaBoostM1")) {
+                model = (AdaBoostM1) new ObjectInputStream(ins).readObject();
             }
 
             return model;
