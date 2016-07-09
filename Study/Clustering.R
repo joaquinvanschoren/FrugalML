@@ -8,13 +8,16 @@ oldwd <- getwd()
 # set your own directory 
 setwd("/home/mikhail/Desktop/GitProjects/FrugalML/Study") 
 
-makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) { 
+makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE, p.compareProperties = FALSE, p.includeAdditionalThing = FALSE) { 
     # control for grouping different values of hyper parameters to a one value  
-    simplify = p.simplify  
+    simplify <- p.simplify  
 
     # choose algorithms for detailed evaluation 
-    compareProperties <- FALSE 
-    
+    compareProperties <- p.compareProperties 
+ 
+    # include algorithm for detailed analysis 
+    includeAdditionalThing <- p.includeAdditionalThing 
+       
     # create images for Pareto Front 
     showParetoFront <- TRUE 
        
@@ -141,6 +144,11 @@ makeClustering <- function(p.clusters, p.plots = FALSE, p.simplify = FALSE) {
         
         # calculate Pareto front
         paretoFront = aggregatedValues[which(!duplicated(cummin(aggregatedValues$CombineTime))),] 
+        
+        if (includeAdditionalThing & i == 1) { 
+            abIndex <- grep("AdaBoostM1.I10", rownames(aggregatedValues)) 
+            paretoFront <- rbind(paretoFront, aggregatedValues[abIndex, ])  
+        }  
         
         selectedAlgorithms <- rbind(selectedAlgorithms, cbind(i, paretoFront)) 
         
