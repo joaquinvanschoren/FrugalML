@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -49,11 +48,14 @@ import com.project.frugalmachinelearning.tools.FloatingActionButtonFlexibleActio
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.text.DateFormat;
@@ -64,9 +66,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import weka.classifiers.AbstractClassifier;
+import weka.classifiers.bayes.AveragedNDependenceEstimators.A1DE;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
+import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.converters.ArffLoader;
+import weka.core.converters.ConverterUtils;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Discretize;
 
 public class MainActivity extends WearableActivity implements SensorEventListener {
 
@@ -117,6 +125,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private boolean needTitle = true;
 
     private AbstractClassifier selectedClassifier;
+
     private DenseInstance[] instances = new DenseInstance[FRAME_SIZE];
     private int posInstance;
     private boolean warmingUp;
@@ -143,6 +152,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] accelXArray = new double[FRAME_SIZE];
     private double[] accelYArray = new double[FRAME_SIZE];
     private double[] accelZArray = new double[FRAME_SIZE];
+    private double[] accelXMin = new double[FRAME_SIZE];
+    private double[] accelYMin = new double[FRAME_SIZE];
+    private double[] accelZMin = new double[FRAME_SIZE];
+    private double[] accelXMax = new double[FRAME_SIZE];
+    private double[] accelYMax = new double[FRAME_SIZE];
+    private double[] accelZMax = new double[FRAME_SIZE];
     private double[] accelXMean = new double[FRAME_SIZE];
     private double[] accelYMean = new double[FRAME_SIZE];
     private double[] accelZMean = new double[FRAME_SIZE];
@@ -153,6 +168,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] gyroXArray = new double[FRAME_SIZE];
     private double[] gyroYArray = new double[FRAME_SIZE];
     private double[] gyroZArray = new double[FRAME_SIZE];
+    private double[] gyroXMin = new double[FRAME_SIZE];
+    private double[] gyroYMin = new double[FRAME_SIZE];
+    private double[] gyroZMin = new double[FRAME_SIZE];
+    private double[] gyroXMax = new double[FRAME_SIZE];
+    private double[] gyroYMax = new double[FRAME_SIZE];
+    private double[] gyroZMax = new double[FRAME_SIZE];
     private double[] gyroXMean = new double[FRAME_SIZE];
     private double[] gyroYMean = new double[FRAME_SIZE];
     private double[] gyroZMean = new double[FRAME_SIZE];
@@ -163,6 +184,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] gravityXArray = new double[FRAME_SIZE];
     private double[] gravityYArray = new double[FRAME_SIZE];
     private double[] gravityZArray = new double[FRAME_SIZE];
+    private double[] gravityXMin = new double[FRAME_SIZE];
+    private double[] gravityYMin = new double[FRAME_SIZE];
+    private double[] gravityZMin = new double[FRAME_SIZE];
+    private double[] gravityXMax = new double[FRAME_SIZE];
+    private double[] gravityYMax = new double[FRAME_SIZE];
+    private double[] gravityZMax = new double[FRAME_SIZE];
     private double[] gravityXMean = new double[FRAME_SIZE];
     private double[] gravityYMean = new double[FRAME_SIZE];
     private double[] gravityZMean = new double[FRAME_SIZE];
@@ -173,6 +200,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] linAccelXArray = new double[FRAME_SIZE];
     private double[] linAccelYArray = new double[FRAME_SIZE];
     private double[] linAccelZArray = new double[FRAME_SIZE];
+    private double[] linAccelXMin = new double[FRAME_SIZE];
+    private double[] linAccelYMin = new double[FRAME_SIZE];
+    private double[] linAccelZMin = new double[FRAME_SIZE];
+    private double[] linAccelXMax = new double[FRAME_SIZE];
+    private double[] linAccelYMax = new double[FRAME_SIZE];
+    private double[] linAccelZMax = new double[FRAME_SIZE];
     private double[] linAccelXMean = new double[FRAME_SIZE];
     private double[] linAccelYMean = new double[FRAME_SIZE];
     private double[] linAccelZMean = new double[FRAME_SIZE];
@@ -184,6 +217,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] rotVecYArray = new double[FRAME_SIZE];
     private double[] rotVecZArray = new double[FRAME_SIZE];
     private double[] rotVecSArray = new double[FRAME_SIZE];
+    private double[] rotVecXMin = new double[FRAME_SIZE];
+    private double[] rotVecYMin = new double[FRAME_SIZE];
+    private double[] rotVecZMin = new double[FRAME_SIZE];
+    private double[] rotVecSMin = new double[FRAME_SIZE];
+    private double[] rotVecXMax = new double[FRAME_SIZE];
+    private double[] rotVecYMax = new double[FRAME_SIZE];
+    private double[] rotVecZMax = new double[FRAME_SIZE];
+    private double[] rotVecSMax = new double[FRAME_SIZE];
     private double[] rotVecXMean = new double[FRAME_SIZE];
     private double[] rotVecYMean = new double[FRAME_SIZE];
     private double[] rotVecZMean = new double[FRAME_SIZE];
@@ -196,12 +237,20 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] stDetValArray = new double[FRAME_SIZE];
 
     private double[] aiPreValArray = new double[FRAME_SIZE];
+    private double[] aiPreValMin = new double[FRAME_SIZE];
+    private double[] aiPreValMax = new double[FRAME_SIZE];
     private double[] aiPreValMean = new double[FRAME_SIZE];
     private double[] aiPreValStd = new double[FRAME_SIZE];
 
     private double[] magFielXArray = new double[FRAME_SIZE];
     private double[] magFielYArray = new double[FRAME_SIZE];
     private double[] magFielZArray = new double[FRAME_SIZE];
+    private double[] magFielXMin = new double[FRAME_SIZE];
+    private double[] magFielYMin = new double[FRAME_SIZE];
+    private double[] magFielZMin = new double[FRAME_SIZE];
+    private double[] magFielXMax = new double[FRAME_SIZE];
+    private double[] magFielYMax = new double[FRAME_SIZE];
+    private double[] magFielZMax = new double[FRAME_SIZE];
     private double[] magFielXMean = new double[FRAME_SIZE];
     private double[] magFielYMean = new double[FRAME_SIZE];
     private double[] magFielZMean = new double[FRAME_SIZE];
@@ -210,6 +259,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] magFielZStd = new double[FRAME_SIZE];
 
     private double[] heartRateValArray = new double[FRAME_SIZE];
+    private double[] heartRateValMin = new double[FRAME_SIZE];
+    private double[] heartRateValMax = new double[FRAME_SIZE];
     private double[] heartRateValMean = new double[FRAME_SIZE];
     private double[] heartRateValStd = new double[FRAME_SIZE];
 
@@ -250,6 +301,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private final Handler mActiveModeUpdateHandler = new UpdateHandler(this);
 
     private volatile int mDrawCount = 0;
+
+    private boolean discretizeData = false;
+
+    private boolean initDiscretizeItem = true;
+
+    Discretize discretizeItems;
 
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
@@ -328,7 +385,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                                 }
                                             }
                                         } else {
-                                            DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES * 3 - 4, posInstance);
+                                            DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES * 5 - 8, posInstance);
                                             instances[posInstance] = instance;
                                         }
 
@@ -339,7 +396,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                         }
                                     }
                                 } catch (Exception e) {
-                                    e.printStackTrace();
+                                    Log.i(TAG, e.toString());
                                 }
                             }
                         });
@@ -360,14 +417,34 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             public void run() {
                 try {
                     while (!isInterrupted()) {
-                        Thread.sleep(1000);
+                        Thread.sleep(2000);
                         runOnUiThread(new Runnable() {
 
                             @Override
                             public void run() {
                                 ArrayList<Attribute> attributes = getNewAttributes();
                                 Instances data = ActivityWindow.constructInstances(attributes, instances);
-                                String activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
+
+                                Instances discretData = null;
+
+                                if (discretizeData && data.numInstances() == 32 && discretizeItems != null) {
+
+                                    try {
+                                        discretData = Filter.useFilter(data, discretizeItems);
+                                    } catch (Exception e) {
+                                        Log.i(TAG, e.toString());
+                                    }
+                                }
+
+                                String activityFullName = "BEING COMPUTED";
+
+                                if (discretData != null) {
+                                    activityFullName = ActivityWindow.getActivityName(selectedClassifier, discretData);
+                                } else  {
+                                    if (!discretizeData) {
+                                        activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
+                                    }
+                                }
 
                                 long currentTimeMs = System.currentTimeMillis();
                                 if (currentTimeMs - previousBatteryUpdate > 29555) {
@@ -388,13 +465,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                                 mTheoreticalActivity.setText("Activity is " + activityFullName);
 
-                                Log.i(TAG, String.valueOf(ActivityType.valueOf(activityFullName)));
+                                Log.i(TAG, activityFullName);
                             }
 
                         });
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    Log.i(TAG, e.toString());
                 }
             }
         };
@@ -539,7 +616,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.i(TAG, e.toString());
             }
 
             // clean old files with random results
@@ -548,9 +625,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
             // create classifier from a file
             String selectedClassifierName = "A1DE";
+            if (selectedClassifierName.equals("A1DE")) {
+                discretizeData = true;
+                initFilter();
+            }
             FactoryClassifiers fc = new FactoryClassifiers();
             String modelFileName = fc.getModelFile(selectedClassifierName);
             InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
+
             selectedClassifier = fc.getModel(selectedClassifierName, ins);
 
             posInstance = 0;
@@ -573,6 +655,35 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         } else {
 
+        }
+    }
+
+    private void initFilter() {
+        discretizeItems = new Discretize();
+
+        String[] options = new String[6];
+        options[0] = "-B";
+        options[1] = "2";
+        options[2] = "-M";
+        options[3] = "-1.0";
+        options[4] = "-R";
+        options[5] = "first-106";
+
+        try {
+
+//            InputStream ins = getResources().openRawResource(getResources().getIdentifier("margins", "raw", getPackageName()));
+
+            InputStream ins = getResources().openRawResource(getResources().getIdentifier("extended", "raw", getPackageName()));
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(ins, "UTF-8"));
+
+            Instances data = new Instances(br);
+            data.setClassIndex(data.numAttributes() - 1);
+
+            discretizeItems.setOptions(options);
+            discretizeItems.setInputFormat(data);
+        } catch (Exception e) {
+            Log.i(TAG, e.toString());
         }
     }
 
@@ -665,6 +776,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         accelYArray[pos] = accelY;
         accelZArray[pos] = accelZ;
         if (computeComplexFeatures) {
+            accelXMin[pos] = msf.getMin(accelXArray);
+            accelYMin[pos] = msf.getMin(accelYArray);
+            accelZMin[pos] = msf.getMin(accelZArray);
+            accelXMax[pos] = msf.getMax(accelXArray);
+            accelYMax[pos] = msf.getMax(accelYArray);
+            accelZMax[pos] = msf.getMax(accelZArray);
             accelXMean[pos] = msf.getMean(accelXArray);
             accelYMean[pos] = msf.getMean(accelYArray);
             accelZMean[pos] = msf.getMean(accelZArray);
@@ -677,6 +794,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         gyroYArray[pos] = gyroY;
         gyroZArray[pos] = gyroZ;
         if (computeComplexFeatures) {
+            gyroXMin[pos] = msf.getMin(gyroXArray);
+            gyroYMin[pos] = msf.getMin(gyroYArray);
+            gyroZMin[pos] = msf.getMin(gyroZArray);
+            gyroXMax[pos] = msf.getMax(gyroXArray);
+            gyroYMax[pos] = msf.getMax(gyroYArray);
+            gyroZMax[pos] = msf.getMax(gyroZArray);
             gyroXMean[pos] = msf.getMean(gyroXArray);
             gyroYMean[pos] = msf.getMean(gyroYArray);
             gyroZMean[pos] = msf.getMean(gyroZArray);
@@ -689,6 +812,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         gravityYArray[pos] = gravityY;
         gravityZArray[pos] = gravityZ;
         if (computeComplexFeatures) {
+            gravityXMin[pos] = msf.getMin(gravityXArray);
+            gravityYMin[pos] = msf.getMin(gravityYArray);
+            gravityZMin[pos] = msf.getMin(gravityZArray);
+            gravityXMax[pos] = msf.getMax(gravityXArray);
+            gravityYMax[pos] = msf.getMax(gravityYArray);
+            gravityZMax[pos] = msf.getMax(gravityZArray);
             gravityXMean[pos] = msf.getMean(gravityXArray);
             gravityYMean[pos] = msf.getMean(gravityYArray);
             gravityZMean[pos] = msf.getMean(gravityZArray);
@@ -701,6 +830,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         linAccelYArray[pos] = linAccelY;
         linAccelZArray[pos] = linAccelZ;
         if (computeComplexFeatures) {
+            linAccelXMin[pos] = msf.getMin(linAccelXArray);
+            linAccelYMin[pos] = msf.getMin(linAccelYArray);
+            linAccelZMin[pos] = msf.getMin(linAccelZArray);
+            linAccelXMax[pos] = msf.getMax(linAccelXArray);
+            linAccelYMax[pos] = msf.getMax(linAccelYArray);
+            linAccelZMax[pos] = msf.getMax(linAccelZArray);
             linAccelXMean[pos] = msf.getMean(linAccelXArray);
             linAccelYMean[pos] = msf.getMean(linAccelYArray);
             linAccelZMean[pos] = msf.getMean(linAccelZArray);
@@ -714,6 +849,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         rotVecZArray[pos] = rotVecZ;
         rotVecSArray[pos] = rotVecS;
         if (computeComplexFeatures) {
+            rotVecXMin[pos] = msf.getMin(rotVecXArray);
+            rotVecYMin[pos] = msf.getMin(rotVecYArray);
+            rotVecZMin[pos] = msf.getMin(rotVecZArray);
+            rotVecSMin[pos] = msf.getMin(rotVecSArray);
+            rotVecXMax[pos] = msf.getMax(rotVecXArray);
+            rotVecYMax[pos] = msf.getMax(rotVecYArray);
+            rotVecZMax[pos] = msf.getMax(rotVecZArray);
+            rotVecSMax[pos] = msf.getMax(rotVecSArray);
             rotVecXMean[pos] = msf.getMean(rotVecXArray);
             rotVecYMean[pos] = msf.getMean(rotVecYArray);
             rotVecZMean[pos] = msf.getMean(rotVecZArray);
@@ -728,6 +871,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         aiPreValArray[pos] = aiPreVal;
         if (computeComplexFeatures) {
+            aiPreValMin[pos] = msf.getMin(aiPreValArray);
+            aiPreValMax[pos] = msf.getMax(aiPreValArray);
             aiPreValMean[pos] = msf.getMean(aiPreValArray);
             aiPreValStd[pos] = msf.getStdDev(aiPreValArray);
         }
@@ -736,6 +881,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         magFielYArray[pos] = magFielY;
         magFielZArray[pos] = magFielZ;
         if (computeComplexFeatures) {
+            magFielXMin[pos] = msf.getMin(magFielXArray);
+            magFielYMin[pos] = msf.getMin(magFielYArray);
+            magFielZMin[pos] = msf.getMin(magFielZArray);
+            magFielXMax[pos] = msf.getMax(magFielXArray);
+            magFielYMax[pos] = msf.getMax(magFielYArray);
+            magFielZMax[pos] = msf.getMax(magFielZArray);
             magFielXMean[pos] = msf.getMean(magFielXArray);
             magFielYMean[pos] = msf.getMean(magFielYArray);
             magFielZMean[pos] = msf.getMean(magFielZArray);
@@ -746,6 +897,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         heartRateValArray[pos] = heartRateVal;
         if (computeComplexFeatures) {
+            heartRateValMin[pos] = msf.getMin(heartRateValArray);
+            heartRateValMax[pos] = msf.getMax(heartRateValArray);
             heartRateValMean[pos] = msf.getMean(heartRateValArray);
             heartRateValStd[pos] = msf.getStdDev(heartRateValArray);
         }
@@ -777,37 +930,53 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         allSensorsData.append(currentTime).append(",")
                 .append(accelXArray[pos]).append(",").append(accelYArray[pos]).append(",").append(accelZArray[pos]).append(",")
+                .append(accelXMin[pos]).append(",").append(accelYMin[pos]).append(",").append(accelZMin[pos]).append(",")
+                .append(accelXMax[pos]).append(",").append(accelYMax[pos]).append(",").append(accelZMax[pos]).append(",")
                 .append(accelXMean[pos]).append(",").append(accelYMean[pos]).append(",").append(accelZMean[pos]).append(",")
                 .append(accelXStd[pos]).append(",").append(accelYStd[pos]).append(",").append(accelZStd[pos]).append(",");
 
         allSensorsData.append(gyroXArray[pos]).append(",").append(gyroYArray[pos]).append(",").append(gyroZArray[pos]).append(",")
+                .append(gyroXMin[pos]).append(",").append(gyroYMin[pos]).append(",").append(gyroZMin[pos]).append(",")
+                .append(gyroXMax[pos]).append(",").append(gyroYMax[pos]).append(",").append(gyroZMax[pos]).append(",")
                 .append(gyroXMean[pos]).append(",").append(gyroYMean[pos]).append(",").append(gyroZMean[pos]).append(",")
                 .append(gyroXStd[pos]).append(",").append(gyroYStd[pos]).append(",").append(gyroZStd[pos]).append(",");
 
         allSensorsData.append(gravityXArray[pos]).append(",").append(gravityYArray[pos]).append(",").append(gravityZArray[pos]).append(",")
+                .append(gravityXMin[pos]).append(",").append(gravityYMin[pos]).append(",").append(gravityZMin[pos]).append(",")
+                .append(gravityXMax[pos]).append(",").append(gravityYMax[pos]).append(",").append(gravityZMax[pos]).append(",")
                 .append(gravityXMean[pos]).append(",").append(gravityYMean[pos]).append(",").append(gravityZMean[pos]).append(",")
                 .append(gravityXStd[pos]).append(",").append(gravityYStd[pos]).append(",").append(gravityZStd[pos]).append(",");
 
         allSensorsData.append(linAccelXArray[pos]).append(",").append(linAccelYArray[pos]).append(",").append(linAccelZArray[pos]).append(",")
+                .append(linAccelXMin[pos]).append(",").append(linAccelYMin[pos]).append(",").append(linAccelZMin[pos]).append(",")
+                .append(linAccelXMax[pos]).append(",").append(linAccelYMax[pos]).append(",").append(linAccelZMax[pos]).append(",")
                 .append(linAccelXMean[pos]).append(",").append(linAccelYMean[pos]).append(",").append(linAccelZMean[pos]).append(",")
                 .append(linAccelXStd[pos]).append(",").append(linAccelYStd[pos]).append(",").append(linAccelZStd[pos]).append(",");
 
         allSensorsData.append(rotVecXArray[pos]).append(",").append(rotVecYArray[pos]).append(",")
-                .append(rotVecZArray[pos]).append(",").append(rotVecZArray[pos]).append(",")
+                .append(rotVecZArray[pos]).append(",").append(rotVecSArray[pos]).append(",")
+                .append(rotVecXMin[pos]).append(",").append(rotVecYMin[pos]).append(",")
+                .append(rotVecZMin[pos]).append(",").append(rotVecSMin[pos]).append(",")
+                .append(rotVecXMax[pos]).append(",").append(rotVecYMax[pos]).append(",")
+                .append(rotVecZMax[pos]).append(",").append(rotVecSMax[pos]).append(",")
                 .append(rotVecXMean[pos]).append(",").append(rotVecYMean[pos]).append(",")
-                .append(rotVecZMean[pos]).append(",").append(rotVecZMean[pos]).append(",")
+                .append(rotVecZMean[pos]).append(",").append(rotVecSMean[pos]).append(",")
                 .append(rotVecXStd[pos]).append(",").append(rotVecYStd[pos]).append(",")
-                .append(rotVecZStd[pos]).append(",").append(rotVecZStd[pos]).append(",");
+                .append(rotVecZStd[pos]).append(",").append(rotVecSStd[pos]).append(",");
 
         allSensorsData.append(stDetValArray[pos]).append(",");
 
-        allSensorsData.append(aiPreValArray[pos]).append(",").append(aiPreValMean[pos]).append(",").append(aiPreValStd[pos]).append(",");
+        allSensorsData.append(aiPreValArray[pos]).append(",").append(aiPreValMin[pos]).append(",").append(aiPreValMax[pos]).append(",")
+                .append(aiPreValMean[pos]).append(",").append(aiPreValStd[pos]).append(",") ;
 
         allSensorsData.append(magFielXArray[pos]).append(",").append(magFielYArray[pos]).append(",").append(magFielZArray[pos]).append(",")
+                .append(magFielXMin[pos]).append(",").append(magFielYMin[pos]).append(",").append(magFielZMin[pos]).append(",")
+                .append(magFielXMax[pos]).append(",").append(magFielYMax[pos]).append(",").append(magFielZMax[pos]).append(",")
                 .append(magFielXMean[pos]).append(",").append(magFielYMean[pos]).append(",").append(magFielZMean[pos]).append(",")
                 .append(magFielXStd[pos]).append(",").append(magFielYStd[pos]).append(",").append(magFielZStd[pos]).append(",");
 
-        allSensorsData.append(heartRateValArray[pos]).append(",").append(heartRateValMean[pos]).append(",").append(heartRateValStd[pos]).append(",");
+        allSensorsData.append(heartRateValArray[pos]).append(",").append(heartRateValMin[pos]).append(",").append(heartRateValMax[pos]).append(",")
+                .append(heartRateValMean[pos]).append(",").append(heartRateValStd[pos]).append(",");
 
         allSensorsData.append(performingActivity);
 
@@ -821,6 +990,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         title.append("AccelX, ");
         title.append("AccelY, ");
         title.append("AccelZ, ");
+        title.append("AccelXMin, ");
+        title.append("AccelYMin, ");
+        title.append("AccelZMin, ");
+        title.append("AccelXMax, ");
+        title.append("AccelYMax, ");
+        title.append("AccelZMax, ");
         title.append("AccelXMean, ");
         title.append("AccelYMean, ");
         title.append("AccelZMean, ");
@@ -831,6 +1006,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         title.append("GyroX, ");
         title.append("GyroY, ");
         title.append("GyroZ, ");
+        title.append("GyroXMin, ");
+        title.append("GyroYMin, ");
+        title.append("GyroZMin, ");
+        title.append("GyroXMax, ");
+        title.append("GyroYMax, ");
+        title.append("GyroZMax, ");
         title.append("GyroXMean, ");
         title.append("GyroYMean, ");
         title.append("GyroZMean, ");
@@ -841,6 +1022,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         title.append("GravityX, ");
         title.append("GravityY, ");
         title.append("GravityZ, ");
+        title.append("GravityXMin, ");
+        title.append("GravityYMin, ");
+        title.append("GravityZMin, ");
+        title.append("GravityXMax, ");
+        title.append("GravityYMax, ");
+        title.append("GravityZMax, ");
         title.append("GravityXMean, ");
         title.append("GravityYMean, ");
         title.append("GravityZMean, ");
@@ -851,6 +1038,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         title.append("LinAccelX, ");
         title.append("LinAccelY, ");
         title.append("LinAccelZ, ");
+        title.append("LinAccelXMin, ");
+        title.append("LinAccelYMin, ");
+        title.append("LinAccelZMin, ");
+        title.append("LinAccelXMax, ");
+        title.append("LinAccelYMax, ");
+        title.append("LinAccelZMax, ");
         title.append("LinAccelXMean, ");
         title.append("LinAccelYMean, ");
         title.append("LinAccelZMean, ");
@@ -862,6 +1055,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         title.append("RotVecY, ");
         title.append("RotVecZ, ");
         title.append("RotVecS, ");
+        title.append("RotVecXMin, ");
+        title.append("RotVecYMin, ");
+        title.append("RotVecZMin, ");
+        title.append("RotVecSMin, ");
+        title.append("RotVecXMax, ");
+        title.append("RotVecYMax, ");
+        title.append("RotVecZMax, ");
+        title.append("RotVecSMax, ");
         title.append("RotVecXMean, ");
         title.append("RotVecYMean, ");
         title.append("RotVecZMean, ");
@@ -874,12 +1075,20 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         title.append("StDetVal, ");
 
         title.append("AiPreVal, ");
+        title.append("AiPreValMin, ");
+        title.append("AiPreValMax, ");
         title.append("AiPreValMean, ");
         title.append("AiPreValStd, ");
 
         title.append("MagFielX, ");
         title.append("MagFielY, ");
         title.append("MagFielZ, ");
+        title.append("MagFielXMin, ");
+        title.append("MagFielYMin, ");
+        title.append("MagFielZMin, ");
+        title.append("MagFielXMax, ");
+        title.append("MagFielYMax, ");
+        title.append("MagFielZMax, ");
         title.append("MagFielXMean, ");
         title.append("MagFielYMean, ");
         title.append("MagFielZMean, ");
@@ -888,6 +1097,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         title.append("MagFielZStd, ");
 
         title.append("HeartRateVal, ");
+        title.append("HeartRateValMin, ");
+        title.append("HeartRateValMax, ");
         title.append("HeartRateValMean, ");
         title.append("HeartRateValStd, ");
 
@@ -997,7 +1208,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         if (warmingUp) {
             stDetVal = 0.0f;
-            heartRateVal = Float.NaN;
+            heartRateVal = 0.0f;
             warmingUp = false;
         }
     }
@@ -1351,6 +1562,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("AccelX", numAttrib++));
         attributes.add(new Attribute("AccelY", numAttrib++));
         attributes.add(new Attribute("AccelZ", numAttrib++));
+        attributes.add(new Attribute("AccelXMin", numAttrib++));
+        attributes.add(new Attribute("AccelYMin", numAttrib++));
+        attributes.add(new Attribute("AccelZMin", numAttrib++));
+        attributes.add(new Attribute("AccelXMax", numAttrib++));
+        attributes.add(new Attribute("AccelYMax", numAttrib++));
+        attributes.add(new Attribute("AccelZMax", numAttrib++));
         attributes.add(new Attribute("AccelXMean", numAttrib++));
         attributes.add(new Attribute("AccelYMean", numAttrib++));
         attributes.add(new Attribute("AccelZMean", numAttrib++));
@@ -1361,6 +1578,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("GyroX", numAttrib++));
         attributes.add(new Attribute("GyroY", numAttrib++));
         attributes.add(new Attribute("GyroZ", numAttrib++));
+        attributes.add(new Attribute("GyroXMin", numAttrib++));
+        attributes.add(new Attribute("GyroYMin", numAttrib++));
+        attributes.add(new Attribute("GyroZMin", numAttrib++));
+        attributes.add(new Attribute("GyroXMax", numAttrib++));
+        attributes.add(new Attribute("GyroYMax", numAttrib++));
+        attributes.add(new Attribute("GyroZMax", numAttrib++));
         attributes.add(new Attribute("GyroXMean", numAttrib++));
         attributes.add(new Attribute("GyroYMean", numAttrib++));
         attributes.add(new Attribute("GyroZMean", numAttrib++));
@@ -1371,6 +1594,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("GravityX", numAttrib++));
         attributes.add(new Attribute("GravityY", numAttrib++));
         attributes.add(new Attribute("GravityZ", numAttrib++));
+        attributes.add(new Attribute("GravityXMin", numAttrib++));
+        attributes.add(new Attribute("GravityYMin", numAttrib++));
+        attributes.add(new Attribute("GravityZMin", numAttrib++));
+        attributes.add(new Attribute("GravityXMax", numAttrib++));
+        attributes.add(new Attribute("GravityYMax", numAttrib++));
+        attributes.add(new Attribute("GravityZMax", numAttrib++));
         attributes.add(new Attribute("GravityXMean", numAttrib++));
         attributes.add(new Attribute("GravityYMean", numAttrib++));
         attributes.add(new Attribute("GravityZMean", numAttrib++));
@@ -1381,6 +1610,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("LinAccelX", numAttrib++));
         attributes.add(new Attribute("LinAccelY", numAttrib++));
         attributes.add(new Attribute("LinAccelZ", numAttrib++));
+        attributes.add(new Attribute("LinAccelXMin", numAttrib++));
+        attributes.add(new Attribute("LinAccelYMin", numAttrib++));
+        attributes.add(new Attribute("LinAccelZMin", numAttrib++));
+        attributes.add(new Attribute("LinAccelXMax", numAttrib++));
+        attributes.add(new Attribute("LinAccelYMax", numAttrib++));
+        attributes.add(new Attribute("LinAccelZMax", numAttrib++));
         attributes.add(new Attribute("LinAccelXMean", numAttrib++));
         attributes.add(new Attribute("LinAccelYMean", numAttrib++));
         attributes.add(new Attribute("LinAccelZMean", numAttrib++));
@@ -1392,6 +1627,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("RotVecY", numAttrib++));
         attributes.add(new Attribute("RotVecZ", numAttrib++));
         attributes.add(new Attribute("RotVecS", numAttrib++));
+        attributes.add(new Attribute("RotVecXMin", numAttrib++));
+        attributes.add(new Attribute("RotVecYMin", numAttrib++));
+        attributes.add(new Attribute("RotVecZMin", numAttrib++));
+        attributes.add(new Attribute("RotVecSMin", numAttrib++));
+        attributes.add(new Attribute("RotVecXMax", numAttrib++));
+        attributes.add(new Attribute("RotVecYMax", numAttrib++));
+        attributes.add(new Attribute("RotVecZMax", numAttrib++));
+        attributes.add(new Attribute("RotVecSMax", numAttrib++));
         attributes.add(new Attribute("RotVecXMean", numAttrib++));
         attributes.add(new Attribute("RotVecYMean", numAttrib++));
         attributes.add(new Attribute("RotVecZMean", numAttrib++));
@@ -1404,12 +1647,20 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("StDetVal", numAttrib++));
 
         attributes.add(new Attribute("AiPreVal", numAttrib++));
+        attributes.add(new Attribute("AiPreValMin", numAttrib++));
+        attributes.add(new Attribute("AiPreValMax", numAttrib++));
         attributes.add(new Attribute("AiPreValMean", numAttrib++));
         attributes.add(new Attribute("AiPreValStd", numAttrib++));
 
         attributes.add(new Attribute("MagFielX", numAttrib++));
         attributes.add(new Attribute("MagFielY", numAttrib++));
         attributes.add(new Attribute("MagFielZ", numAttrib++));
+        attributes.add(new Attribute("MagFielXMin", numAttrib++));
+        attributes.add(new Attribute("MagFielYMin", numAttrib++));
+        attributes.add(new Attribute("MagFielZMin", numAttrib++));
+        attributes.add(new Attribute("MagFielXMax", numAttrib++));
+        attributes.add(new Attribute("MagFielYMax", numAttrib++));
+        attributes.add(new Attribute("MagFielZMax", numAttrib++));
         attributes.add(new Attribute("MagFielXMean", numAttrib++));
         attributes.add(new Attribute("MagFielYMean", numAttrib++));
         attributes.add(new Attribute("MagFielZMean", numAttrib++));
@@ -1418,6 +1669,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("MagFielZStd", numAttrib++));
 
         attributes.add(new Attribute("HeartRateVal", numAttrib++));
+        attributes.add(new Attribute("HeartRateValMin", numAttrib++));
+        attributes.add(new Attribute("HeartRateValMax", numAttrib++));
         attributes.add(new Attribute("HeartRateValMean", numAttrib++));
         attributes.add(new Attribute("HeartRateValStd", numAttrib++));
 
@@ -1460,6 +1713,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             attributeValues[currentAttNumber++] = accelXArray[pos];
             attributeValues[currentAttNumber++] = accelYArray[pos];
             attributeValues[currentAttNumber++] = accelZArray[pos];
+            attributeValues[currentAttNumber++] = accelXMin[pos];
+            attributeValues[currentAttNumber++] = accelYMin[pos];
+            attributeValues[currentAttNumber++] = accelZMin[pos];
+            attributeValues[currentAttNumber++] = accelXMax[pos];
+            attributeValues[currentAttNumber++] = accelYMax[pos];
+            attributeValues[currentAttNumber++] = accelZMax[pos];
             attributeValues[currentAttNumber++] = accelXMean[pos];
             attributeValues[currentAttNumber++] = accelYMean[pos];
             attributeValues[currentAttNumber++] = accelZMean[pos];
@@ -1470,6 +1729,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             attributeValues[currentAttNumber++] = gyroXArray[pos];
             attributeValues[currentAttNumber++] = gyroYArray[pos];
             attributeValues[currentAttNumber++] = gyroZArray[pos];
+            attributeValues[currentAttNumber++] = gyroXMin[pos];
+            attributeValues[currentAttNumber++] = gyroYMin[pos];
+            attributeValues[currentAttNumber++] = gyroZMin[pos];
+            attributeValues[currentAttNumber++] = gyroXMax[pos];
+            attributeValues[currentAttNumber++] = gyroYMax[pos];
+            attributeValues[currentAttNumber++] = gyroZMax[pos];
             attributeValues[currentAttNumber++] = gyroXMean[pos];
             attributeValues[currentAttNumber++] = gyroYMean[pos];
             attributeValues[currentAttNumber++] = gyroZMean[pos];
@@ -1480,6 +1745,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             attributeValues[currentAttNumber++] = gravityXArray[pos];
             attributeValues[currentAttNumber++] = gravityYArray[pos];
             attributeValues[currentAttNumber++] = gravityZArray[pos];
+            attributeValues[currentAttNumber++] = gravityXMin[pos];
+            attributeValues[currentAttNumber++] = gravityYMin[pos];
+            attributeValues[currentAttNumber++] = gravityZMin[pos];
+            attributeValues[currentAttNumber++] = gravityXMax[pos];
+            attributeValues[currentAttNumber++] = gravityYMax[pos];
+            attributeValues[currentAttNumber++] = gravityZMax[pos];
             attributeValues[currentAttNumber++] = gravityXMean[pos];
             attributeValues[currentAttNumber++] = gravityYMean[pos];
             attributeValues[currentAttNumber++] = gravityZMean[pos];
@@ -1490,6 +1761,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             attributeValues[currentAttNumber++] = linAccelXArray[pos];
             attributeValues[currentAttNumber++] = linAccelYArray[pos];
             attributeValues[currentAttNumber++] = linAccelZArray[pos];
+            attributeValues[currentAttNumber++] = linAccelXMin[pos];
+            attributeValues[currentAttNumber++] = linAccelYMin[pos];
+            attributeValues[currentAttNumber++] = linAccelZMin[pos];
+            attributeValues[currentAttNumber++] = linAccelXMax[pos];
+            attributeValues[currentAttNumber++] = linAccelYMax[pos];
+            attributeValues[currentAttNumber++] = linAccelZMax[pos];
             attributeValues[currentAttNumber++] = linAccelXMean[pos];
             attributeValues[currentAttNumber++] = linAccelYMean[pos];
             attributeValues[currentAttNumber++] = linAccelZMean[pos];
@@ -1501,6 +1778,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             attributeValues[currentAttNumber++] = rotVecYArray[pos];
             attributeValues[currentAttNumber++] = rotVecZArray[pos];
             attributeValues[currentAttNumber++] = rotVecSArray[pos];
+            attributeValues[currentAttNumber++] = rotVecXMin[pos];
+            attributeValues[currentAttNumber++] = rotVecYMin[pos];
+            attributeValues[currentAttNumber++] = rotVecZMin[pos];
+            attributeValues[currentAttNumber++] = rotVecSMin[pos];
+            attributeValues[currentAttNumber++] = rotVecXMax[pos];
+            attributeValues[currentAttNumber++] = rotVecYMax[pos];
+            attributeValues[currentAttNumber++] = rotVecZMax[pos];
+            attributeValues[currentAttNumber++] = rotVecSMax[pos];
             attributeValues[currentAttNumber++] = rotVecXMean[pos];
             attributeValues[currentAttNumber++] = rotVecYMean[pos];
             attributeValues[currentAttNumber++] = rotVecZMean[pos];
@@ -1513,12 +1798,20 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             attributeValues[currentAttNumber++] = stDetValArray[pos];
 
             attributeValues[currentAttNumber++] = aiPreValArray[pos];
+            attributeValues[currentAttNumber++] = aiPreValMin[pos];
+            attributeValues[currentAttNumber++] = aiPreValMax[pos];
             attributeValues[currentAttNumber++] = aiPreValMean[pos];
             attributeValues[currentAttNumber++] = aiPreValStd[pos];
 
             attributeValues[currentAttNumber++] = magFielXArray[pos];
             attributeValues[currentAttNumber++] = magFielYArray[pos];
             attributeValues[currentAttNumber++] = magFielZArray[pos];
+            attributeValues[currentAttNumber++] = magFielXMin[pos];
+            attributeValues[currentAttNumber++] = magFielYMin[pos];
+            attributeValues[currentAttNumber++] = magFielZMin[pos];
+            attributeValues[currentAttNumber++] = magFielXMax[pos];
+            attributeValues[currentAttNumber++] = magFielYMax[pos];
+            attributeValues[currentAttNumber++] = magFielZMax[pos];
             attributeValues[currentAttNumber++] = magFielXMean[pos];
             attributeValues[currentAttNumber++] = magFielYMean[pos];
             attributeValues[currentAttNumber++] = magFielZMean[pos];
@@ -1527,11 +1820,18 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             attributeValues[currentAttNumber++] = magFielZStd[pos];
 
             attributeValues[currentAttNumber++] = heartRateValArray[pos];
+            attributeValues[currentAttNumber++] = heartRateValMin[pos];
+            attributeValues[currentAttNumber++] = heartRateValMax[pos];
             attributeValues[currentAttNumber++] = heartRateValMean[pos];
             attributeValues[currentAttNumber++] = heartRateValStd[pos];
 
             List<String> activityValues = getActivityValues();
-            attributeValues[currentAttNumber] = activityValues.indexOf(activityValues.get(performingActivity));
+            if (appState == 1) {
+                // any value for a place of activity
+                attributeValues[currentAttNumber] = activityValues.indexOf(activityValues.get(0));
+            } else {
+                attributeValues[currentAttNumber] = activityValues.indexOf(activityValues.get(performingActivity));
+            }
         }
 
         return new DenseInstance(1.0, attributeValues);

@@ -3,7 +3,6 @@ package com.project.frugalmachinelearning.classifiers;
 import android.util.Log;
 
 import java.util.ArrayList;
-
 import weka.classifiers.AbstractClassifier;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
@@ -36,7 +35,7 @@ public class ActivityWindow {
                 valueOfMax = activityInWindow[i];
             }
         }
-        String activityFullName = ActivityType.values()[posOfMax].toString();
+        String activityFullName = ActivityType.values()[posOfMax].toString() + " " + Math.round(valueOfMax * 1.0 / data.numInstances() * 100);
 
         return activityFullName;
     }

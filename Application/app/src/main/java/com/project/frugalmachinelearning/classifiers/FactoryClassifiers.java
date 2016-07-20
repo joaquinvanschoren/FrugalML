@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 
+// import weka.classifiers.AbstractClassifier;
+
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.bayes.AveragedNDependenceEstimators.A1DE;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.meta.AdaBoostM1;
 import weka.classifiers.meta.Dagging;
-import weka.classifiers.misc.HyperPipes;
-import weka.classifiers.meta.RandomSubSpace;
 import weka.classifiers.trees.RandomForest;
 
 /**
@@ -44,9 +44,7 @@ public class FactoryClassifiers {
     public AbstractClassifier getModel(String modelName, InputStream ins) {
         try {
             AbstractClassifier model = null;
-            if (modelName.equals("HyperPipes")) {
-                model = (HyperPipes) (new ObjectInputStream(ins)).readObject();
-            } else if (modelName.equals("NaiveBayes")) {
+            if (modelName.equals("NaiveBayes")) {
                 model = (NaiveBayes) new ObjectInputStream(ins).readObject();
             } else if (modelName.equals("RandomForest")) {
                 model = (RandomForest) new ObjectInputStream(ins).readObject();
