@@ -102,7 +102,82 @@ dsx <- loadValues()
 
 dsx$Activity <- as.factor(dsx$Activity) 
 dsx <- dsx[!is.na(dsx$HeartRateVal), ]  
-dsx <- dsx[, 2:ncol(dsx)]  
+dsx <- dsx[, 2:ncol(dsx)]       
+
+calcNewFeatures <- function(originData) { 
+    # compute new features 
+    updated <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Features/extended/measurements20,114751.csv", 
+                        stringsAsFactors = FALSE) 
+    
+    updated <- updated[, 2:108] 
+    
+    for (i in 32: nrow(originData)) { 
+        numStart <- i-31 
+        originData[i, 66] <- min(originData[numStart:i, 1]) 
+        originData[i, 67] <- min(originData[numStart:i, 2]) 
+        originData[i, 68] <- min(originData[numStart:i, 3]) 
+        originData[i, 69] <- max(originData[numStart:i, 1]) 
+        originData[i, 70] <- max(originData[numStart:i, 2]) 
+        originData[i, 71] <- max(originData[numStart:i, 3]) 
+        
+        originData[i, 72] <- min(originData[numStart:i, 10]) 
+        originData[i, 73] <- min(originData[numStart:i, 11]) 
+        originData[i, 74] <- min(originData[numStart:i, 12]) 
+        originData[i, 75] <- max(originData[numStart:i, 10]) 
+        originData[i, 76] <- max(originData[numStart:i, 11]) 
+        originData[i, 77] <- max(originData[numStart:i, 12]) 
+        
+        originData[i, 78] <- min(originData[numStart:i, 19]) 
+        originData[i, 79] <- min(originData[numStart:i, 20]) 
+        originData[i, 80] <- min(originData[numStart:i, 21]) 
+        originData[i, 81] <- max(originData[numStart:i, 19]) 
+        originData[i, 82] <- max(originData[numStart:i, 20]) 
+        originData[i, 83] <- max(originData[numStart:i, 21]) 
+        
+        originData[i, 84] <- min(originData[numStart:i, 28]) 
+        originData[i, 85] <- min(originData[numStart:i, 29]) 
+        originData[i, 86] <- min(originData[numStart:i, 30]) 
+        originData[i, 87] <- max(originData[numStart:i, 28]) 
+        originData[i, 88] <- max(originData[numStart:i, 29]) 
+        originData[i, 89] <- max(originData[numStart:i, 30]) 
+        
+        originData[i, 90] <- min(originData[numStart:i, 37]) 
+        originData[i, 91] <- min(originData[numStart:i, 38]) 
+        originData[i, 92] <- min(originData[numStart:i, 39]) 
+        originData[i, 93] <- min(originData[numStart:i, 40]) 
+        originData[i, 94] <- max(originData[numStart:i, 37]) 
+        originData[i, 95] <- max(originData[numStart:i, 38]) 
+        originData[i, 96] <- max(originData[numStart:i, 39]) 
+        originData[i, 97] <- max(originData[numStart:i, 40]) 
+        
+        originData[i, 98] <- min(originData[numStart:i, 50]) 
+        originData[i, 99] <- max(originData[numStart:i, 50]) 
+        
+        originData[i, 100] <- min(originData[numStart:i, 53]) 
+        originData[i, 101] <- min(originData[numStart:i, 54]) 
+        originData[i, 102] <- min(originData[numStart:i, 55]) 
+        originData[i, 103] <- max(originData[numStart:i, 53]) 
+        originData[i, 104] <- max(originData[numStart:i, 54]) 
+        originData[i, 105] <- max(originData[numStart:i, 55]) 
+        
+        originData[i, 106] <- min(originData[numStart:i, 62]) 
+        originData[i, 107] <- max(originData[numStart:i, 62]) 
+    }  
+    
+    extenData <- as.data.frame(cbind(originData[, 1:3], originData[, 66:71], originData[, 4:9], 
+                                     originData[, 10:12], originData[, 72:77], originData[, 13:18],
+                                     originData[, 19:21], originData[, 78:83], originData[, 22:27],
+                                     originData[, 28:30], originData[, 84:89], originData[, 31:36],
+                                     originData[, 37:40], originData[, 90:97], originData[, 41:49],
+                                     originData[, 50], originData[, 98:99], originData[, 51:52],
+                                     originData[, 53:55], originData[, 100:105], originData[, 56:61], 
+                                     originData[, 62], originData[, 106:107], originData[, 63:64],
+                                     originData[, 65])) 
+    
+    colnames(extenData) <- colnames(updated) 
+    
+    return (extenData) 
+} 
 
 # sensor for heart rate measurements is not fast, and some values should be imputed 
 for (i in 1:nrow(dsx)) {
@@ -141,11 +216,29 @@ for (i in framesToRemove:cutForLoop) {
         print(i) 
     } 
 } 
-  
+ 
+
 # clean all activities with an empty label 
 dsx <- as.data.frame(dsx[dsx$Activity != 6, ])   
  
 # present results in common notation 
 options("scipen" = 100, "digits" = 5) 
 
-write.csv(dsx, "measurements.csv", row.names = FALSE) 
+# group values in a small data frame that can be used for a filter  
+for (i in 1:64) {
+    if (i == 1) {
+        value.min <- min(dsx[, i]) 
+        value.max <- max(dsx[, i]) 
+    } else {
+        value.min <- c(value.min, min(dsx[, i])) 
+        value.max <- c(value.max, max(dsx[, i]))  
+    }
+} 
+value.min <- as.data.frame(t(c(value.min, 0))) 
+value.max <- as.data.frame(t(c(value.max, 5))) 
+
+dsb <- rbind(value.min, value.max) 
+colnames(dsb) <- colnames(dsx)  
+   
+# choose what file do you want to write 
+write.csv(dsx, "measurements.csv", row.names = FALSE)  
