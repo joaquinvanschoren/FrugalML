@@ -103,7 +103,7 @@ dsx <- loadValues()
 dsx$Activity <- as.factor(dsx$Activity) 
 dsx <- dsx[!is.na(dsx$HeartRateVal), ]  
 dsx <- dsx[, 2:ncol(dsx)]       
-
+ 
 calcNewFeatures <- function(originData) { 
     # compute new features 
     updated <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Features/extended/measurements20,114751.csv", 
@@ -220,6 +220,8 @@ for (i in framesToRemove:cutForLoop) {
 
 # clean all activities with an empty label 
 dsx <- as.data.frame(dsx[dsx$Activity != 6, ])   
+
+dsx$Activity <- droplevels(dsx$Activity) 
  
 # present results in common notation 
 options("scipen" = 100, "digits" = 5) 
