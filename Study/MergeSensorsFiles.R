@@ -2,7 +2,7 @@ loadValues <- function() {
     pf1a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id1/measurements16_154856.txt", 
                      stringsAsFactors = FALSE)   
     summary(as.factor(pf1a$Activity))  
-
+    
     pf2a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id2/measurements161910.txt", 
                      stringsAsFactors = FALSE)  
     summary(as.factor(pf2a$Activity)) 
@@ -39,25 +39,25 @@ loadValues <- function() {
     pf7a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id7/measurements14_124024.txt", 
                      stringsAsFactors = FALSE) 
     summary(as.factor(pf7a$Activity)) 
-
+    
     pf8a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id8/measurements14_133952.txt", 
                      stringsAsFactors = FALSE) 
     summary(as.factor(pf8a$Activity)) 
-
+    
     pf9a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id9/measurements14_140924.txt", 
                      stringsAsFactors = FALSE) 
     summary(as.factor(pf9a$Activity)) 
     
     pf10a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id10/measurements14_143717.txt", 
-                     stringsAsFactors = FALSE) 
+                      stringsAsFactors = FALSE) 
     summary(as.factor(pf10a$Activity)) 
-
+    
     pf11a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id11/measurements15_151057.txt", 
-                     stringsAsFactors = FALSE) 
+                      stringsAsFactors = FALSE) 
     summary(as.factor(pf11a$Activity)) 
     
     pf12a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id12/measurements15_174116.txt", 
-                     stringsAsFactors = FALSE) 
+                      stringsAsFactors = FALSE) 
     summary(as.factor(pf12a$Activity)) 
     
     pf13a <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Results/id13/measurements16_121819.txt", 
@@ -92,7 +92,7 @@ loadValues <- function() {
                       stringsAsFactors = FALSE) 
     summary(as.factor(pf20a$Activity)) 
     
-                
+    
     dsx <- rbind(pf1a, pf2a, pf2b, pf3a, pf4a, pf4b, pf4c, pf5a, pf6a, pf7a, pf8a, pf9a, pf10a, pf11a, pf12a, pf13a, pf14a, pf15a, pf16a, pf17a, pf18a, pf19a, pf20a) 
     
     return (dsx) 
@@ -103,78 +103,130 @@ dsx <- loadValues()
 dsx$Activity <- as.factor(dsx$Activity) 
 dsx <- dsx[!is.na(dsx$HeartRateVal), ]  
 dsx <- dsx[, 2:ncol(dsx)]       
- 
+
 calcNewFeatures <- function(originData) { 
     # compute new features 
-    updated <- read.csv("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Features/extended/measurements20,114751.csv", 
-                        stringsAsFactors = FALSE) 
-    
-    updated <- updated[, 2:108] 
-    
-    for (i in 32: nrow(originData)) { 
+
+    for (i in seq(32, nrow(originData), 16)) { 
         numStart <- i-31 
-        originData[i, 66] <- min(originData[numStart:i, 1]) 
-        originData[i, 67] <- min(originData[numStart:i, 2]) 
-        originData[i, 68] <- min(originData[numStart:i, 3]) 
-        originData[i, 69] <- max(originData[numStart:i, 1]) 
-        originData[i, 70] <- max(originData[numStart:i, 2]) 
-        originData[i, 71] <- max(originData[numStart:i, 3]) 
+        originData[i, 20] <- min(originData[numStart:i, 1]) 
+        originData[i, 21] <- min(originData[numStart:i, 2]) 
+        originData[i, 22] <- min(originData[numStart:i, 3]) 
+        originData[i, 23] <- max(originData[numStart:i, 1]) 
+        originData[i, 24] <- max(originData[numStart:i, 2]) 
+        originData[i, 25] <- max(originData[numStart:i, 3])  
+        originData[i, 26] <- mean(originData[numStart:i, 1]) 
+        originData[i, 27] <- mean(originData[numStart:i, 2]) 
+        originData[i, 28] <- mean(originData[numStart:i, 3])  
+        originData[i, 29] <- originData[i, 23] - originData[i, 20] 
+        originData[i, 30] <- originData[i, 24] - originData[i, 21] 
+        originData[i, 31] <- originData[i, 25] - originData[i, 22] 
+        originData[i, 32] <- sd(originData[numStart:i, 1]) 
+        originData[i, 33] <- sd(originData[numStart:i, 2]) 
+        originData[i, 34] <- sd(originData[numStart:i, 3])  
+         
+        originData[i, 35] <- min(originData[numStart:i, 4]) 
+        originData[i, 36] <- min(originData[numStart:i, 5]) 
+        originData[i, 37] <- min(originData[numStart:i, 6]) 
+        originData[i, 38] <- max(originData[numStart:i, 4]) 
+        originData[i, 39] <- max(originData[numStart:i, 5]) 
+        originData[i, 40] <- max(originData[numStart:i, 6])  
+        originData[i, 41] <- mean(originData[numStart:i, 4]) 
+        originData[i, 42] <- mean(originData[numStart:i, 5]) 
+        originData[i, 43] <- mean(originData[numStart:i, 6])  
+        originData[i, 44] <- originData[i, 38] - originData[i, 35] 
+        originData[i, 45] <- originData[i, 39] - originData[i, 36] 
+        originData[i, 46] <- originData[i, 40] - originData[i, 41] 
+        originData[i, 47] <- sd(originData[numStart:i, 4]) 
+        originData[i, 48] <- sd(originData[numStart:i, 5]) 
+        originData[i, 49] <- sd(originData[numStart:i, 6])  
         
-        originData[i, 72] <- min(originData[numStart:i, 10]) 
-        originData[i, 73] <- min(originData[numStart:i, 11]) 
-        originData[i, 74] <- min(originData[numStart:i, 12]) 
-        originData[i, 75] <- max(originData[numStart:i, 10]) 
-        originData[i, 76] <- max(originData[numStart:i, 11]) 
-        originData[i, 77] <- max(originData[numStart:i, 12]) 
+        originData[i, 50] <- min(originData[numStart:i, 7]) 
+        originData[i, 51] <- min(originData[numStart:i, 8]) 
+        originData[i, 52] <- min(originData[numStart:i, 9]) 
+        originData[i, 53] <- max(originData[numStart:i, 7]) 
+        originData[i, 54] <- max(originData[numStart:i, 8]) 
+        originData[i, 55] <- max(originData[numStart:i, 9])  
+        originData[i, 56] <- mean(originData[numStart:i, 7]) 
+        originData[i, 57] <- mean(originData[numStart:i, 8]) 
+        originData[i, 58] <- mean(originData[numStart:i, 9])  
+        originData[i, 59] <- originData[i, 53] - originData[i, 50] 
+        originData[i, 60] <- originData[i, 54] - originData[i, 51] 
+        originData[i, 61] <- originData[i, 55] - originData[i, 52] 
+        originData[i, 62] <- sd(originData[numStart:i, 7]) 
+        originData[i, 63] <- sd(originData[numStart:i, 8]) 
+        originData[i, 64] <- sd(originData[numStart:i, 9])  
         
-        originData[i, 78] <- min(originData[numStart:i, 19]) 
-        originData[i, 79] <- min(originData[numStart:i, 20]) 
-        originData[i, 80] <- min(originData[numStart:i, 21]) 
-        originData[i, 81] <- max(originData[numStart:i, 19]) 
-        originData[i, 82] <- max(originData[numStart:i, 20]) 
-        originData[i, 83] <- max(originData[numStart:i, 21]) 
+        originData[i, 65] <- min(originData[numStart:i, 10]) 
+        originData[i, 66] <- min(originData[numStart:i, 11]) 
+        originData[i, 67] <- min(originData[numStart:i, 12]) 
+        originData[i, 68] <- max(originData[numStart:i, 10]) 
+        originData[i, 69] <- max(originData[numStart:i, 11]) 
+        originData[i, 70] <- max(originData[numStart:i, 12])  
+        originData[i, 71] <- mean(originData[numStart:i, 10]) 
+        originData[i, 72] <- mean(originData[numStart:i, 11]) 
+        originData[i, 73] <- mean(originData[numStart:i, 12])  
+        originData[i, 74] <- originData[i, 68] - originData[i, 65] 
+        originData[i, 75] <- originData[i, 69] - originData[i, 66] 
+        originData[i, 76] <- originData[i, 70] - originData[i, 67] 
+        originData[i, 77] <- sd(originData[numStart:i, 10]) 
+        originData[i, 78] <- sd(originData[numStart:i, 11]) 
+        originData[i, 79] <- sd(originData[numStart:i, 12])  
         
-        originData[i, 84] <- min(originData[numStart:i, 28]) 
-        originData[i, 85] <- min(originData[numStart:i, 29]) 
-        originData[i, 86] <- min(originData[numStart:i, 30]) 
-        originData[i, 87] <- max(originData[numStart:i, 28]) 
-        originData[i, 88] <- max(originData[numStart:i, 29]) 
-        originData[i, 89] <- max(originData[numStart:i, 30]) 
+        originData[i, 80] <- min(originData[numStart:i, 13]) 
+        originData[i, 81] <- min(originData[numStart:i, 14]) 
+        originData[i, 82] <- min(originData[numStart:i, 15]) 
+        originData[i, 83] <- max(originData[numStart:i, 13]) 
+        originData[i, 84] <- max(originData[numStart:i, 14]) 
+        originData[i, 85] <- max(originData[numStart:i, 15])  
+        originData[i, 86] <- mean(originData[numStart:i, 13]) 
+        originData[i, 87] <- mean(originData[numStart:i, 14]) 
+        originData[i, 88] <- mean(originData[numStart:i, 15])  
+        originData[i, 89] <- originData[i, 83] - originData[i, 80] 
+        originData[i, 90] <- originData[i, 84] - originData[i, 81] 
+        originData[i, 91] <- originData[i, 85] - originData[i, 82] 
+        originData[i, 92] <- sd(originData[numStart:i, 13]) 
+        originData[i, 93] <- sd(originData[numStart:i, 14]) 
+        originData[i, 94] <- sd(originData[numStart:i, 15])  
         
-        originData[i, 90] <- min(originData[numStart:i, 37]) 
-        originData[i, 91] <- min(originData[numStart:i, 38]) 
-        originData[i, 92] <- min(originData[numStart:i, 39]) 
-        originData[i, 93] <- min(originData[numStart:i, 40]) 
-        originData[i, 94] <- max(originData[numStart:i, 37]) 
-        originData[i, 95] <- max(originData[numStart:i, 38]) 
-        originData[i, 96] <- max(originData[numStart:i, 39]) 
-        originData[i, 97] <- max(originData[numStart:i, 40]) 
-        
-        originData[i, 98] <- min(originData[numStart:i, 50]) 
-        originData[i, 99] <- max(originData[numStart:i, 50]) 
-        
-        originData[i, 100] <- min(originData[numStart:i, 53]) 
-        originData[i, 101] <- min(originData[numStart:i, 54]) 
-        originData[i, 102] <- min(originData[numStart:i, 55]) 
-        originData[i, 103] <- max(originData[numStart:i, 53]) 
-        originData[i, 104] <- max(originData[numStart:i, 54]) 
-        originData[i, 105] <- max(originData[numStart:i, 55]) 
-        
-        originData[i, 106] <- min(originData[numStart:i, 62]) 
-        originData[i, 107] <- max(originData[numStart:i, 62]) 
+        originData[i, 95] <- min(originData[numStart:i, 16]) 
+        originData[i, 96] <- max(originData[numStart:i, 16]) 
+        originData[i, 97] <- mean(originData[numStart:i, 16]) 
+        originData[i, 98] <- originData[i, 96] - originData[i, 95] 
+        originData[i, 99] <- sd(originData[numStart:i, 16]) 
+
+        originData[i, 100] <- min(originData[numStart:i, 17]) 
+        originData[i, 101] <- max(originData[numStart:i, 17]) 
+        originData[i, 102] <- mean(originData[numStart:i, 17]) 
+        originData[i, 103] <- originData[i, 101] - originData[i, 100] 
+        originData[i, 104] <- sd(originData[numStart:i, 17]) 
+
+        originData[i, 105] <- min(originData[numStart:i, 18]) 
+        originData[i, 106] <- max(originData[numStart:i, 18]) 
+        originData[i, 107] <- mean(originData[numStart:i, 18]) 
+        originData[i, 108] <- originData[i, 106] - originData[i, 105] 
+        originData[i, 109] <- sd(originData[numStart:i, 18]) 
     }  
     
-    extenData <- as.data.frame(cbind(originData[, 1:3], originData[, 66:71], originData[, 4:9], 
-                                     originData[, 10:12], originData[, 72:77], originData[, 13:18],
-                                     originData[, 19:21], originData[, 78:83], originData[, 22:27],
-                                     originData[, 28:30], originData[, 84:89], originData[, 31:36],
-                                     originData[, 37:40], originData[, 90:97], originData[, 41:49],
-                                     originData[, 50], originData[, 98:99], originData[, 51:52],
-                                     originData[, 53:55], originData[, 100:105], originData[, 56:61], 
-                                     originData[, 62], originData[, 106:107], originData[, 63:64],
-                                     originData[, 65])) 
+    originData <- originData[!is.na(originData[ , 25]), c(20:109, 19)] 
     
-    colnames(extenData) <- colnames(updated) 
+    colnames(originData) <- c("AccelXMin", "AccelYMin", "AccelZMin", "AccelXMax", "AccelYMax", "AccelZMax", 
+    "AccelXMean", "AccelYMean", "AccelZMean", "AccelXRange", "AccelYRange", "AccelZRange", 
+    "AccelXStd", "AccelYStd", "AccelZStd", "GyroXMin", "GyroYMin", "GyroZMin", 
+    "GyroXMax", "GyroYMax", "GyroZMax", "GyroXMean", "GyroYMean", "GyroZMean", 
+    "GyroXRange", "GyroYRange", "GyroZRange", "GyroXStd", "GyroYStd", "GyroZStd", 
+    "GravityXMin", "GravityYMin", "GravityZMin", "GravityXMax", "GravityYMax", "GravityZMax", 
+    "GravityXMean", "GravityYMean", "GravityZMean", "GravityXRange", "GravityYRange", "GravityZRange", 
+    "GravityXStd", "GravityYStd", "GravityZStd", "LinAccelXMin", "LinAccelYMin", "LinAccelZMin", 
+    "LinAccelXMax", "LinAccelYMax", "LinAccelZMax", "LinAccelXMean", "LinAccelYMean", "LinAccelZMean", 
+    "LinAccelXRange", "LinAccelYRange", "LinAccelZRange", "LinAccelXStd", "LinAccelYStd", "LinAccelZStd", 
+    "RotVecXMin", "RotVecYMin", "RotVecSMin", "RotVecXMax", "RotVecYMax", "RotVecSMax", 
+    "RotVecXMean", "RotVecYMean", "RotVecSMean", "RotVecXRange", "RotVecYRange", "RotVecSRange", 
+    "RotVecXStd", "RotVecYStd", "RotVecSStd",
+    "AiPreValMin", "AiPreValMax", "AiPreValMean", "AiPreValRange", "AiPreValStd",
+    "MagFielYMin", "MagFielYMax", "MagFielYMean", "MagFielYRange", "MagFielYStd",
+    "HeartRateValMin", "HeartRateValMax", "HeartRateValMean", "HeartRateValRange", "HeartRateValStd",
+    "Activity") 
     
     return (extenData) 
 } 
@@ -195,7 +247,10 @@ for (i in 1:nrow(dsx)) {
 # clean all activities with an empty label 
 dsx <- as.data.frame(dsx[dsx$Activity != 6, ])   
 
-framesToRemove <- 80 + 1 
+# update data set with new values 
+dsx <- calcNewFeatures(dsx) 
+
+framesToRemove <- 5 
 cutForLoop <- nrow(dsx) - framesToRemove 
 numChanges <- 0 
 
@@ -212,17 +267,25 @@ for (i in framesToRemove:cutForLoop) {
         print(i) 
         
     }
-    if (i %% 10000 == 0) {
+    if (i %% 100 == 0) {
         print(i) 
     } 
 } 
- 
+
 
 # clean all activities with an empty label 
 dsx <- as.data.frame(dsx[dsx$Activity != 6, ])   
 
+# get factors with existing values 
 dsx$Activity <- droplevels(dsx$Activity) 
- 
+
+# obtain raw values 
+dsa <- dsx[ , c(1, 2, 3, 10, 11, 12, 19, 20, 21, 28, 29, 30, 37, 38, 40, 50, 54, 62, 65)] 
+
+# load new features 
+
+dsb <- readRDS("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Features/extended/new_features_included.RDS") 
+
 # present results in common notation 
 options("scipen" = 100, "digits" = 5) 
 
@@ -241,6 +304,6 @@ value.max <- as.data.frame(t(c(value.max, 5)))
 
 dsb <- rbind(value.min, value.max) 
 colnames(dsb) <- colnames(dsx)  
-   
+
 # choose what file do you want to write 
 write.csv(dsx, "measurements.csv", row.names = FALSE)  
