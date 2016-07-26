@@ -282,6 +282,8 @@ dsx$Activity <- droplevels(dsx$Activity)
 # obtain raw values 
 dsa <- dsx[ , c(1, 2, 3, 10, 11, 12, 19, 20, 21, 28, 29, 30, 37, 38, 40, 50, 54, 62, 65)] 
 
+dsv <- dsa[, c(18, 16, 14, 9, 7, 15, 17, 10, 13, 8, 11, 12, 4, 5)] 
+
 # load new features 
 
 dsb <- readRDS("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Features/extended/new_features_included.RDS") 

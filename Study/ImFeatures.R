@@ -36,7 +36,7 @@ print(importance)
 plot(importance)
 
 # define the control using a random forest selection function
-control <- rfeControl(functions = rfFuncs, method = "cv", number = 3) 
+control <- rfeControl(functions = rfFuncs, method = "cv", number = 10) 
 # run the RFE algorithm
 results <- rfe(dsa[1:10000, 1:18], dsa[1:10000, 19], sizes = c(1:18), rfeControl = control)
 # summarize the results
