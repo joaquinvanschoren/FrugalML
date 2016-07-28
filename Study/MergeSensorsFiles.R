@@ -228,9 +228,9 @@ calcNewFeatures <- function(originData) {
     "HeartRateValMin", "HeartRateValMax", "HeartRateValMean", "HeartRateValRange", "HeartRateValStd",
     "Activity") 
     
-    return (extenData) 
+    return (originData) 
 } 
-
+  
 # sensor for heart rate measurements is not fast, and some values should be imputed 
 for (i in 1:nrow(dsx)) {
     if (is.na(dsx$HeartRateValMean[i])) {
@@ -248,7 +248,7 @@ for (i in 1:nrow(dsx)) {
 dsx <- as.data.frame(dsx[dsx$Activity != 6, ])   
 
 # update data set with new values 
-dsx <- calcNewFeatures(dsx) 
+dsx <- calcNewFeatures(dsx)  
 
 framesToRemove <- 5 
 cutForLoop <- nrow(dsx) - framesToRemove 
