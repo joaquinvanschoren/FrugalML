@@ -286,13 +286,13 @@ dsv <- dsa[, c(18, 16, 14, 9, 7, 15, 17, 10, 13, 8, 11, 12, 4, 5)]
 
 # load new features 
 
-dsb <- readRDS("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Features/extended/new_features_included.RDS") 
+dsb <- readRDS("/home/mikhail/Desktop/GitProjects/FrugalML/Study/data/SensorsInformation/Features/extended/computed_small_values.RDS") 
 
 # present results in common notation 
 options("scipen" = 100, "digits" = 5) 
 
 # group values in a small data frame that can be used for a filter  
-for (i in 1:64) {
+for (i in 1:90) {
     if (i == 1) {
         value.min <- min(dsx[, i]) 
         value.max <- max(dsx[, i]) 
