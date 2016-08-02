@@ -5,5 +5,9 @@
     ]]>
     <string name="new_activity">New activity is</string>
     <string name="dialog_title">Are you sure that you want to quit this activity</string>
+    <string name="exit_the_application">Exit the application</string>
+    <string name="pause_collecting_data">pause_collecting_data</string>
+    <string name="collect_data">Collect data</string>
+    <string name="recognize_activities">Recognize activities</string>
 </resources>
 

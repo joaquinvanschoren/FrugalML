@@ -79,7 +79,7 @@ import weka.filters.unsupervised.attribute.Discretize;
 public class MainActivity extends WearableActivity implements SensorEventListener {
 
     private static final String TAG = "MainActivity";
-    private static final int AMOUNT_OF_ATTRIBUTES = 23;
+    private static final int AMOUNT_OF_ATTRIBUTES = 18;
 
     private static final int UPDATES_PER_SECOND = 16;
 
@@ -105,16 +105,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     private float rotVecX;
     private float rotVecY;
-    private float rotVecZ;
     private float rotVecS;
-
-    private float stDetVal;
 
     private float aiPreVal;
 
-    private float magFielX;
     private float magFielY;
-    private float magFielZ;
 
     private float heartRateVal;
 
@@ -126,7 +121,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     private AbstractClassifier selectedClassifier;
 
-    private DenseInstance[] instances = new DenseInstance[FRAME_SIZE];
+    private DenseInstance timeWindowInstance;
+
     private int posInstance;
     private boolean warmingUp;
     private int performingActivity;
@@ -152,124 +148,123 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private double[] accelXArray = new double[FRAME_SIZE];
     private double[] accelYArray = new double[FRAME_SIZE];
     private double[] accelZArray = new double[FRAME_SIZE];
-    private double[] accelXMin = new double[FRAME_SIZE];
-    private double[] accelYMin = new double[FRAME_SIZE];
-    private double[] accelZMin = new double[FRAME_SIZE];
-    private double[] accelXMax = new double[FRAME_SIZE];
-    private double[] accelYMax = new double[FRAME_SIZE];
-    private double[] accelZMax = new double[FRAME_SIZE];
-    private double[] accelXMean = new double[FRAME_SIZE];
-    private double[] accelYMean = new double[FRAME_SIZE];
-    private double[] accelZMean = new double[FRAME_SIZE];
-    private double[] accelXStd = new double[FRAME_SIZE];
-    private double[] accelYStd = new double[FRAME_SIZE];
-    private double[] accelZStd = new double[FRAME_SIZE];
+    private double accelXMin = 0.0;
+    private double accelYMin = 0.0;
+    private double accelZMin = 0.0;
+    private double accelXMax = 0.0;
+    private double accelYMax = 0.0;
+    private double accelZMax = 0.0;
+    private double accelXMean = 0.0;
+    private double accelYMean = 0.0;
+    private double accelZMean = 0.0;
+    private double accelXRange = 0.0;
+    private double accelYRange = 0.0;
+    private double accelZRange = 0.0;
+    private double accelXStd = 0.0;
+    private double accelYStd = 0.0;
+    private double accelZStd = 0.0;
 
     private double[] gyroXArray = new double[FRAME_SIZE];
     private double[] gyroYArray = new double[FRAME_SIZE];
     private double[] gyroZArray = new double[FRAME_SIZE];
-    private double[] gyroXMin = new double[FRAME_SIZE];
-    private double[] gyroYMin = new double[FRAME_SIZE];
-    private double[] gyroZMin = new double[FRAME_SIZE];
-    private double[] gyroXMax = new double[FRAME_SIZE];
-    private double[] gyroYMax = new double[FRAME_SIZE];
-    private double[] gyroZMax = new double[FRAME_SIZE];
-    private double[] gyroXMean = new double[FRAME_SIZE];
-    private double[] gyroYMean = new double[FRAME_SIZE];
-    private double[] gyroZMean = new double[FRAME_SIZE];
-    private double[] gyroXStd = new double[FRAME_SIZE];
-    private double[] gyroYStd = new double[FRAME_SIZE];
-    private double[] gyroZStd = new double[FRAME_SIZE];
+    private double gyroXMin = 0.0;
+    private double gyroYMin = 0.0;
+    private double gyroZMin = 0.0;
+    private double gyroXMax = 0.0;
+    private double gyroYMax = 0.0;
+    private double gyroZMax = 0.0;
+    private double gyroXMean = 0.0;
+    private double gyroYMean = 0.0;
+    private double gyroZMean = 0.0;
+    private double gyroXRange = 0.0;
+    private double gyroYRange = 0.0;
+    private double gyroZRange = 0.0;
+    private double gyroXStd = 0.0;
+    private double gyroYStd = 0.0;
+    private double gyroZStd = 0.0;
 
     private double[] gravityXArray = new double[FRAME_SIZE];
     private double[] gravityYArray = new double[FRAME_SIZE];
     private double[] gravityZArray = new double[FRAME_SIZE];
-    private double[] gravityXMin = new double[FRAME_SIZE];
-    private double[] gravityYMin = new double[FRAME_SIZE];
-    private double[] gravityZMin = new double[FRAME_SIZE];
-    private double[] gravityXMax = new double[FRAME_SIZE];
-    private double[] gravityYMax = new double[FRAME_SIZE];
-    private double[] gravityZMax = new double[FRAME_SIZE];
-    private double[] gravityXMean = new double[FRAME_SIZE];
-    private double[] gravityYMean = new double[FRAME_SIZE];
-    private double[] gravityZMean = new double[FRAME_SIZE];
-    private double[] gravityXStd = new double[FRAME_SIZE];
-    private double[] gravityYStd = new double[FRAME_SIZE];
-    private double[] gravityZStd = new double[FRAME_SIZE];
+    private double gravityXMin = 0.0;
+    private double gravityYMin = 0.0;
+    private double gravityZMin = 0.0;
+    private double gravityXMax = 0.0;
+    private double gravityYMax = 0.0;
+    private double gravityZMax = 0.0;
+    private double gravityXMean = 0.0;
+    private double gravityYMean = 0.0;
+    private double gravityZMean = 0.0;
+    private double gravityXRange = 0.0;
+    private double gravityYRange = 0.0;
+    private double gravityZRange = 0.0;
+    private double gravityXStd = 0.0;
+    private double gravityYStd = 0.0;
+    private double gravityZStd = 0.0;
 
     private double[] linAccelXArray = new double[FRAME_SIZE];
     private double[] linAccelYArray = new double[FRAME_SIZE];
     private double[] linAccelZArray = new double[FRAME_SIZE];
-    private double[] linAccelXMin = new double[FRAME_SIZE];
-    private double[] linAccelYMin = new double[FRAME_SIZE];
-    private double[] linAccelZMin = new double[FRAME_SIZE];
-    private double[] linAccelXMax = new double[FRAME_SIZE];
-    private double[] linAccelYMax = new double[FRAME_SIZE];
-    private double[] linAccelZMax = new double[FRAME_SIZE];
-    private double[] linAccelXMean = new double[FRAME_SIZE];
-    private double[] linAccelYMean = new double[FRAME_SIZE];
-    private double[] linAccelZMean = new double[FRAME_SIZE];
-    private double[] linAccelXStd = new double[FRAME_SIZE];
-    private double[] linAccelYStd = new double[FRAME_SIZE];
-    private double[] linAccelZStd = new double[FRAME_SIZE];
+    private double linAccelXMin = 0.0;
+    private double linAccelYMin = 0.0;
+    private double linAccelZMin = 0.0;
+    private double linAccelXMax = 0.0;
+    private double linAccelYMax = 0.0;
+    private double linAccelZMax = 0.0;
+    private double linAccelXMean = 0.0;
+    private double linAccelYMean = 0.0;
+    private double linAccelZMean = 0.0;
+    private double linAccelXRange = 0.0;
+    private double linAccelYRange = 0.0;
+    private double linAccelZRange = 0.0;
+    private double linAccelXStd = 0.0;
+    private double linAccelYStd = 0.0;
+    private double linAccelZStd = 0.0;
 
     private double[] rotVecXArray = new double[FRAME_SIZE];
     private double[] rotVecYArray = new double[FRAME_SIZE];
-    private double[] rotVecZArray = new double[FRAME_SIZE];
     private double[] rotVecSArray = new double[FRAME_SIZE];
-    private double[] rotVecXMin = new double[FRAME_SIZE];
-    private double[] rotVecYMin = new double[FRAME_SIZE];
-    private double[] rotVecZMin = new double[FRAME_SIZE];
-    private double[] rotVecSMin = new double[FRAME_SIZE];
-    private double[] rotVecXMax = new double[FRAME_SIZE];
-    private double[] rotVecYMax = new double[FRAME_SIZE];
-    private double[] rotVecZMax = new double[FRAME_SIZE];
-    private double[] rotVecSMax = new double[FRAME_SIZE];
-    private double[] rotVecXMean = new double[FRAME_SIZE];
-    private double[] rotVecYMean = new double[FRAME_SIZE];
-    private double[] rotVecZMean = new double[FRAME_SIZE];
-    private double[] rotVecSMean = new double[FRAME_SIZE];
-    private double[] rotVecXStd = new double[FRAME_SIZE];
-    private double[] rotVecYStd = new double[FRAME_SIZE];
-    private double[] rotVecZStd = new double[FRAME_SIZE];
-    private double[] rotVecSStd = new double[FRAME_SIZE];
-
-    private double[] stDetValArray = new double[FRAME_SIZE];
+    private double rotVecXMin = 0.0;
+    private double rotVecYMin = 0.0;
+    private double rotVecSMin = 0.0;
+    private double rotVecXMax = 0.0;
+    private double rotVecYMax = 0.0;
+    private double rotVecSMax = 0.0;
+    private double rotVecXMean = 0.0;
+    private double rotVecYMean = 0.0;
+    private double rotVecSMean = 0.0;
+    private double rotVecXRange = 0.0;
+    private double rotVecYRange = 0.0;
+    private double rotVecSRange = 0.0;
+    private double rotVecXStd = 0.0;
+    private double rotVecYStd = 0.0;
+    private double rotVecSStd = 0.0;
 
     private double[] aiPreValArray = new double[FRAME_SIZE];
-    private double[] aiPreValMin = new double[FRAME_SIZE];
-    private double[] aiPreValMax = new double[FRAME_SIZE];
-    private double[] aiPreValMean = new double[FRAME_SIZE];
-    private double[] aiPreValStd = new double[FRAME_SIZE];
+    private double aiPreValMin = 0.0;
+    private double aiPreValMax = 0.0;
+    private double aiPreValMean = 0.0;
+    private double aiPreValRange  = 0.0;
+    private double aiPreValStd = 0.0;
 
-    private double[] magFielXArray = new double[FRAME_SIZE];
     private double[] magFielYArray = new double[FRAME_SIZE];
-    private double[] magFielZArray = new double[FRAME_SIZE];
-    private double[] magFielXMin = new double[FRAME_SIZE];
-    private double[] magFielYMin = new double[FRAME_SIZE];
-    private double[] magFielZMin = new double[FRAME_SIZE];
-    private double[] magFielXMax = new double[FRAME_SIZE];
-    private double[] magFielYMax = new double[FRAME_SIZE];
-    private double[] magFielZMax = new double[FRAME_SIZE];
-    private double[] magFielXMean = new double[FRAME_SIZE];
-    private double[] magFielYMean = new double[FRAME_SIZE];
-    private double[] magFielZMean = new double[FRAME_SIZE];
-    private double[] magFielXStd = new double[FRAME_SIZE];
-    private double[] magFielYStd = new double[FRAME_SIZE];
-    private double[] magFielZStd = new double[FRAME_SIZE];
+    private double magFielYMin = 0.0;
+    private double magFielYMax = 0.0;
+    private double magFielYMean = 0.0;
+    private double magFielYRange = 0.0;
+    private double magFielYStd = 0.0;
 
     private double[] heartRateValArray = new double[FRAME_SIZE];
-    private double[] heartRateValMin = new double[FRAME_SIZE];
-    private double[] heartRateValMax = new double[FRAME_SIZE];
-    private double[] heartRateValMean = new double[FRAME_SIZE];
-    private double[] heartRateValStd = new double[FRAME_SIZE];
+    private double heartRateValMin = 0.0;
+    private double heartRateValMax = 0.0;
+    private double heartRateValMean = 0.0;
+    private double heartRateValRange = 0.0;
+    private double heartRateValStd = 0.0;
 
     private long previousBatteryUpdate;
 
     StandardDeviation stDev = new StandardDeviation();
     Mean mean = new Mean();
-
-    private StringBuilder stringOfSensors;
 
     private MathStuff msf;
 
@@ -372,7 +367,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                         }
 
                                         // computing features
-                                        sensorsAndComplexFeaturesToArrays(posInstance);
+                                        sensorsFeaturesToArrays(posInstance);
+                                        if (computeComplexFeatures) {
+                                            computeAdditionalFeatures();
+                                        }
+
 
                                         if (appState == 0) {
                                             if (computeComplexFeatures && performingActivity != 6) {
@@ -385,8 +384,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                                 }
                                             }
                                         } else {
-                                            DenseInstance instance = getDenseInstances(AMOUNT_OF_ATTRIBUTES * 5 - 8, posInstance);
-                                            instances[posInstance] = instance;
+                                            timeWindowInstance = getDenseInstances(AMOUNT_OF_ATTRIBUTES * 5 + 1, posInstance);
                                         }
 
                                         posInstance++;
@@ -417,20 +415,23 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             public void run() {
                 try {
                     while (!isInterrupted()) {
-                        Thread.sleep(2000);
+                        Thread.sleep(1000);
                         runOnUiThread(new Runnable() {
 
                             @Override
                             public void run() {
                                 ArrayList<Attribute> attributes = getNewAttributes();
+                                DenseInstance[] instances = {timeWindowInstance};
                                 Instances data = ActivityWindow.constructInstances(attributes, instances);
 
                                 Instances discretData = null;
 
-                                if (discretizeData && data.numInstances() == 32 && discretizeItems != null) {
+                                if (discretizeData && discretizeItems != null) {
 
                                     try {
+
                                         discretData = Filter.useFilter(data, discretizeItems);
+
                                     } catch (Exception e) {
                                         Log.i(TAG, e.toString());
                                     }
@@ -440,6 +441,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                                 if (discretData != null) {
                                     activityFullName = ActivityWindow.getActivityName(selectedClassifier, discretData);
+
                                 } else  {
                                     if (!discretizeData) {
                                         activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
@@ -604,14 +606,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                     pw = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
 
-                    stringOfSensors = new StringBuilder();
-
                     mTheoreticalActivity.setVisibility(View.INVISIBLE);
                     mGenericActivity.setVisibility(View.INVISIBLE);
 
                     bPause.setVisibility(View.INVISIBLE);
 
-                    Log.i(TAG, sensorDataName);
+                    Log.i(TAG, sensorDataName); 
 
                 }
 
@@ -663,17 +663,15 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         String[] options = new String[6];
         options[0] = "-B";
-        options[1] = "2";
+        options[1] = "3";
         options[2] = "-M";
         options[3] = "-1.0";
         options[4] = "-R";
-        options[5] = "first-106";
+        options[5] = "first-last";
 
         try {
 
-//            InputStream ins = getResources().openRawResource(getResources().getIdentifier("margins", "raw", getPackageName()));
-
-            InputStream ins = getResources().openRawResource(getResources().getIdentifier("extended", "raw", getPackageName()));
+            InputStream ins = getResources().openRawResource(getResources().getIdentifier("margins", "raw", getPackageName()));
 
             BufferedReader br = new BufferedReader(new InputStreamReader(ins, "UTF-8"));
 
@@ -682,6 +680,22 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
             discretizeItems.setOptions(options);
             discretizeItems.setInputFormat(data);
+
+            br.close();
+
+            ins = getResources().openRawResource(getResources().getIdentifier("features", "raw", getPackageName()));
+
+            br = new BufferedReader(new InputStreamReader(ins, "UTF-8"));
+
+            Instances dataInFile = new Instances(br);
+            dataInFile.setClassIndex(dataInFile.numAttributes() - 1);
+
+            Instances tData  = new Instances(dataInFile, 0, 32);
+
+            tData = Filter.useFilter(tData, discretizeItems);
+
+            br.close();
+
         } catch (Exception e) {
             Log.i(TAG, e.toString());
         }
@@ -750,11 +764,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE),
                 SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
 
-        mSensorManager.registerListener(this,
-                mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR),
-                SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
-
-        mSensorManager.registerListener(this,
+       mSensorManager.registerListener(this,
                 mSensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE),
                 SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
 
@@ -771,142 +781,137 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     }
 
-    private void sensorsAndComplexFeaturesToArrays(int pos) {
+    private void sensorsFeaturesToArrays(int pos) {
         accelXArray[pos] = accelX;
         accelYArray[pos] = accelY;
         accelZArray[pos] = accelZ;
-        if (computeComplexFeatures) {
-            accelXMin[pos] = msf.getMin(accelXArray);
-            accelYMin[pos] = msf.getMin(accelYArray);
-            accelZMin[pos] = msf.getMin(accelZArray);
-            accelXMax[pos] = msf.getMax(accelXArray);
-            accelYMax[pos] = msf.getMax(accelYArray);
-            accelZMax[pos] = msf.getMax(accelZArray);
-            accelXMean[pos] = msf.getMean(accelXArray);
-            accelYMean[pos] = msf.getMean(accelYArray);
-            accelZMean[pos] = msf.getMean(accelZArray);
-            accelXStd[pos] = msf.getStdDev(accelXArray);
-            accelYStd[pos] = msf.getStdDev(accelYArray);
-            accelZStd[pos] = msf.getStdDev(accelZArray);
-        }
 
         gyroXArray[pos] = gyroX;
         gyroYArray[pos] = gyroY;
         gyroZArray[pos] = gyroZ;
-        if (computeComplexFeatures) {
-            gyroXMin[pos] = msf.getMin(gyroXArray);
-            gyroYMin[pos] = msf.getMin(gyroYArray);
-            gyroZMin[pos] = msf.getMin(gyroZArray);
-            gyroXMax[pos] = msf.getMax(gyroXArray);
-            gyroYMax[pos] = msf.getMax(gyroYArray);
-            gyroZMax[pos] = msf.getMax(gyroZArray);
-            gyroXMean[pos] = msf.getMean(gyroXArray);
-            gyroYMean[pos] = msf.getMean(gyroYArray);
-            gyroZMean[pos] = msf.getMean(gyroZArray);
-            gyroXStd[pos] = msf.getStdDev(gyroXArray);
-            gyroYStd[pos] = msf.getStdDev(gyroYArray);
-            gyroZStd[pos] = msf.getStdDev(gyroZArray);
-        }
 
         gravityXArray[pos] = gravityX;
         gravityYArray[pos] = gravityY;
         gravityZArray[pos] = gravityZ;
-        if (computeComplexFeatures) {
-            gravityXMin[pos] = msf.getMin(gravityXArray);
-            gravityYMin[pos] = msf.getMin(gravityYArray);
-            gravityZMin[pos] = msf.getMin(gravityZArray);
-            gravityXMax[pos] = msf.getMax(gravityXArray);
-            gravityYMax[pos] = msf.getMax(gravityYArray);
-            gravityZMax[pos] = msf.getMax(gravityZArray);
-            gravityXMean[pos] = msf.getMean(gravityXArray);
-            gravityYMean[pos] = msf.getMean(gravityYArray);
-            gravityZMean[pos] = msf.getMean(gravityZArray);
-            gravityXStd[pos] = msf.getStdDev(gravityXArray);
-            gravityYStd[pos] = msf.getStdDev(gravityYArray);
-            gravityZStd[pos] = msf.getStdDev(gravityZArray);
-        }
 
         linAccelXArray[pos] = linAccelX;
         linAccelYArray[pos] = linAccelY;
         linAccelZArray[pos] = linAccelZ;
-        if (computeComplexFeatures) {
-            linAccelXMin[pos] = msf.getMin(linAccelXArray);
-            linAccelYMin[pos] = msf.getMin(linAccelYArray);
-            linAccelZMin[pos] = msf.getMin(linAccelZArray);
-            linAccelXMax[pos] = msf.getMax(linAccelXArray);
-            linAccelYMax[pos] = msf.getMax(linAccelYArray);
-            linAccelZMax[pos] = msf.getMax(linAccelZArray);
-            linAccelXMean[pos] = msf.getMean(linAccelXArray);
-            linAccelYMean[pos] = msf.getMean(linAccelYArray);
-            linAccelZMean[pos] = msf.getMean(linAccelZArray);
-            linAccelXStd[pos] = msf.getStdDev(linAccelXArray);
-            linAccelYStd[pos] = msf.getStdDev(linAccelYArray);
-            linAccelZStd[pos] = msf.getStdDev(linAccelZArray);
-        }
 
         rotVecXArray[pos] = rotVecX;
         rotVecYArray[pos] = rotVecY;
-        rotVecZArray[pos] = rotVecZ;
         rotVecSArray[pos] = rotVecS;
-        if (computeComplexFeatures) {
-            rotVecXMin[pos] = msf.getMin(rotVecXArray);
-            rotVecYMin[pos] = msf.getMin(rotVecYArray);
-            rotVecZMin[pos] = msf.getMin(rotVecZArray);
-            rotVecSMin[pos] = msf.getMin(rotVecSArray);
-            rotVecXMax[pos] = msf.getMax(rotVecXArray);
-            rotVecYMax[pos] = msf.getMax(rotVecYArray);
-            rotVecZMax[pos] = msf.getMax(rotVecZArray);
-            rotVecSMax[pos] = msf.getMax(rotVecSArray);
-            rotVecXMean[pos] = msf.getMean(rotVecXArray);
-            rotVecYMean[pos] = msf.getMean(rotVecYArray);
-            rotVecZMean[pos] = msf.getMean(rotVecZArray);
-            rotVecSMean[pos] = msf.getMean(rotVecSArray);
-            rotVecXStd[pos] = msf.getStdDev(rotVecXArray);
-            rotVecYStd[pos] = msf.getStdDev(rotVecYArray);
-            rotVecZStd[pos] = msf.getStdDev(rotVecZArray);
-            rotVecSStd[pos] = msf.getStdDev(rotVecSArray);
-        }
-
-        stDetValArray[pos] = stDetVal;
 
         aiPreValArray[pos] = aiPreVal;
-        if (computeComplexFeatures) {
-            aiPreValMin[pos] = msf.getMin(aiPreValArray);
-            aiPreValMax[pos] = msf.getMax(aiPreValArray);
-            aiPreValMean[pos] = msf.getMean(aiPreValArray);
-            aiPreValStd[pos] = msf.getStdDev(aiPreValArray);
-        }
 
-        magFielXArray[pos] = magFielX;
         magFielYArray[pos] = magFielY;
-        magFielZArray[pos] = magFielZ;
-        if (computeComplexFeatures) {
-            magFielXMin[pos] = msf.getMin(magFielXArray);
-            magFielYMin[pos] = msf.getMin(magFielYArray);
-            magFielZMin[pos] = msf.getMin(magFielZArray);
-            magFielXMax[pos] = msf.getMax(magFielXArray);
-            magFielYMax[pos] = msf.getMax(magFielYArray);
-            magFielZMax[pos] = msf.getMax(magFielZArray);
-            magFielXMean[pos] = msf.getMean(magFielXArray);
-            magFielYMean[pos] = msf.getMean(magFielYArray);
-            magFielZMean[pos] = msf.getMean(magFielZArray);
-            magFielXStd[pos] = msf.getStdDev(magFielXArray);
-            magFielYStd[pos] = msf.getStdDev(magFielYArray);
-            magFielZStd[pos] = msf.getStdDev(magFielZArray);
-        }
 
         heartRateValArray[pos] = heartRateVal;
-        if (computeComplexFeatures) {
-            heartRateValMin[pos] = msf.getMin(heartRateValArray);
-            heartRateValMax[pos] = msf.getMax(heartRateValArray);
-            heartRateValMean[pos] = msf.getMean(heartRateValArray);
-            heartRateValStd[pos] = msf.getStdDev(heartRateValArray);
-        }
 
     }
 
+    private void computeAdditionalFeatures() {
+        accelXMin = msf.getMin(accelXArray);
+        accelYMin = msf.getMin(accelYArray);
+        accelZMin = msf.getMin(accelZArray);
+        accelXMax = msf.getMax(accelXArray);
+        accelYMax = msf.getMax(accelYArray);
+        accelZMax = msf.getMax(accelZArray);
+        accelXMean = msf.getMean(accelXArray);
+        accelYMean = msf.getMean(accelYArray);
+        accelZMean = msf.getMean(accelZArray);
+        accelXRange = accelXMax - accelXMin;
+        accelYRange = accelYMax - accelYMin;
+        accelZRange = accelZMax - accelZMin;
+        accelXStd = msf.getStdDev(accelXArray);
+        accelYStd = msf.getStdDev(accelYArray);
+        accelZStd = msf.getStdDev(accelZArray);
+
+        gyroXMin = msf.getMin(gyroXArray);
+        gyroYMin = msf.getMin(gyroYArray);
+        gyroZMin = msf.getMin(gyroZArray);
+        gyroXMax = msf.getMax(gyroXArray);
+        gyroYMax = msf.getMax(gyroYArray);
+        gyroZMax = msf.getMax(gyroZArray);
+        gyroXMean = msf.getMean(gyroXArray);
+        gyroYMean = msf.getMean(gyroYArray);
+        gyroZMean = msf.getMean(gyroZArray);
+        gyroXRange = gyroXMax - gyroXMin;
+        gyroYRange = gyroYMax - gyroYMin;
+        gyroZRange = gyroZMax - gyroZMin;
+        gyroXStd = msf.getStdDev(gyroXArray);
+        gyroYStd = msf.getStdDev(gyroYArray);
+        gyroZStd = msf.getStdDev(gyroZArray);
+
+        gravityXMin = msf.getMin(gravityXArray);
+        gravityYMin = msf.getMin(gravityYArray);
+        gravityZMin = msf.getMin(gravityZArray);
+        gravityXMax = msf.getMax(gravityXArray);
+        gravityYMax = msf.getMax(gravityYArray);
+        gravityZMax = msf.getMax(gravityZArray);
+        gravityXMean = msf.getMean(gravityXArray);
+        gravityYMean = msf.getMean(gravityYArray);
+        gravityZMean = msf.getMean(gravityZArray);
+        gravityXRange = gravityXMax - gravityXMin;
+        gravityYRange = gravityYMax - gravityYMin;
+        gravityZRange = gravityZMax - gravityZMin;
+        gravityXStd = msf.getStdDev(gravityXArray);
+        gravityYStd = msf.getStdDev(gravityYArray);
+        gravityZStd = msf.getStdDev(gravityZArray);
+
+        linAccelXMin = msf.getMin(linAccelXArray);
+        linAccelYMin = msf.getMin(linAccelYArray);
+        linAccelZMin = msf.getMin(linAccelZArray);
+        linAccelXMax = msf.getMax(linAccelXArray);
+        linAccelYMax = msf.getMax(linAccelYArray);
+        linAccelZMax = msf.getMax(linAccelZArray);
+        linAccelXMean = msf.getMean(linAccelXArray);
+        linAccelYMean = msf.getMean(linAccelYArray);
+        linAccelZMean = msf.getMean(linAccelZArray);
+        linAccelXRange = linAccelXMax - linAccelXMin;
+        linAccelYRange = linAccelYMax - linAccelYMin;
+        linAccelZRange = linAccelZMax - linAccelZMin;
+        linAccelXStd = msf.getStdDev(linAccelXArray);
+        linAccelYStd = msf.getStdDev(linAccelYArray);
+        linAccelZStd = msf.getStdDev(linAccelZArray);
+
+        rotVecXMin = msf.getMin(rotVecXArray);
+        rotVecYMin = msf.getMin(rotVecYArray);
+        rotVecSMin = msf.getMin(rotVecSArray);
+        rotVecXMax = msf.getMax(rotVecXArray);
+        rotVecYMax = msf.getMax(rotVecYArray);
+        rotVecSMax = msf.getMax(rotVecSArray);
+        rotVecXMean = msf.getMean(rotVecXArray);
+        rotVecYMean = msf.getMean(rotVecYArray);
+        rotVecSMean = msf.getMean(rotVecSArray);
+        rotVecXRange = rotVecXMax - rotVecXMin;
+        rotVecYRange = rotVecYMax - rotVecYMin;
+        rotVecSRange = rotVecSMax - rotVecSMin;
+        rotVecXStd = msf.getStdDev(rotVecXArray);
+        rotVecYStd = msf.getStdDev(rotVecYArray);
+        rotVecSStd = msf.getStdDev(rotVecSArray);
+
+        aiPreValMin = msf.getMin(aiPreValArray);
+        aiPreValMax = msf.getMax(aiPreValArray);
+        aiPreValMean = msf.getMean(aiPreValArray);
+        aiPreValRange = aiPreValMax - aiPreValMin;
+        aiPreValStd = msf.getStdDev(aiPreValArray);
+
+        magFielYMin = msf.getMin(magFielYArray);
+        magFielYMax = msf.getMax(magFielYArray);
+        magFielYMean = msf.getMean(magFielYArray);
+        magFielYRange = magFielYMax - magFielYMin;
+        magFielYStd = msf.getStdDev(magFielYArray);
+
+        heartRateValMin = msf.getMin(heartRateValArray);
+        heartRateValMax = msf.getMax(heartRateValArray);
+        heartRateValMean = msf.getMean(heartRateValArray);
+        heartRateValRange = heartRateValMax - heartRateValMin;
+        heartRateValStd = msf.getStdDev(heartRateValArray);
+    }
+
     private StringBuilder arraysToString(int pos) {
-        StringBuilder allSensorsData = stringOfSensors;
+        StringBuilder allSensorsData = new StringBuilder();
         long currentTime = System.currentTimeMillis();
 
         if (pTime == 0) {
@@ -922,61 +927,23 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             }
         }
 
-        if (allSensorsData != null) {
-            allSensorsData.setLength(0);
-        } else {
-            allSensorsData = new StringBuilder();
-        }
+        allSensorsData.append(currentTime).append(",");
 
-        allSensorsData.append(currentTime).append(",")
-                .append(accelXArray[pos]).append(",").append(accelYArray[pos]).append(",").append(accelZArray[pos]).append(",")
-                .append(accelXMin[pos]).append(",").append(accelYMin[pos]).append(",").append(accelZMin[pos]).append(",")
-                .append(accelXMax[pos]).append(",").append(accelYMax[pos]).append(",").append(accelZMax[pos]).append(",")
-                .append(accelXMean[pos]).append(",").append(accelYMean[pos]).append(",").append(accelZMean[pos]).append(",")
-                .append(accelXStd[pos]).append(",").append(accelYStd[pos]).append(",").append(accelZStd[pos]).append(",");
+        allSensorsData.append(accelXArray[pos]).append(",").append(accelYArray[pos]).append(",").append(accelZArray[pos]).append(",");
 
-        allSensorsData.append(gyroXArray[pos]).append(",").append(gyroYArray[pos]).append(",").append(gyroZArray[pos]).append(",")
-                .append(gyroXMin[pos]).append(",").append(gyroYMin[pos]).append(",").append(gyroZMin[pos]).append(",")
-                .append(gyroXMax[pos]).append(",").append(gyroYMax[pos]).append(",").append(gyroZMax[pos]).append(",")
-                .append(gyroXMean[pos]).append(",").append(gyroYMean[pos]).append(",").append(gyroZMean[pos]).append(",")
-                .append(gyroXStd[pos]).append(",").append(gyroYStd[pos]).append(",").append(gyroZStd[pos]).append(",");
+        allSensorsData.append(gyroXArray[pos]).append(",").append(gyroYArray[pos]).append(",").append(gyroZArray[pos]).append(",");
 
-        allSensorsData.append(gravityXArray[pos]).append(",").append(gravityYArray[pos]).append(",").append(gravityZArray[pos]).append(",")
-                .append(gravityXMin[pos]).append(",").append(gravityYMin[pos]).append(",").append(gravityZMin[pos]).append(",")
-                .append(gravityXMax[pos]).append(",").append(gravityYMax[pos]).append(",").append(gravityZMax[pos]).append(",")
-                .append(gravityXMean[pos]).append(",").append(gravityYMean[pos]).append(",").append(gravityZMean[pos]).append(",")
-                .append(gravityXStd[pos]).append(",").append(gravityYStd[pos]).append(",").append(gravityZStd[pos]).append(",");
+        allSensorsData.append(gravityXArray[pos]).append(",").append(gravityYArray[pos]).append(",").append(gravityZArray[pos]).append(",");
 
-        allSensorsData.append(linAccelXArray[pos]).append(",").append(linAccelYArray[pos]).append(",").append(linAccelZArray[pos]).append(",")
-                .append(linAccelXMin[pos]).append(",").append(linAccelYMin[pos]).append(",").append(linAccelZMin[pos]).append(",")
-                .append(linAccelXMax[pos]).append(",").append(linAccelYMax[pos]).append(",").append(linAccelZMax[pos]).append(",")
-                .append(linAccelXMean[pos]).append(",").append(linAccelYMean[pos]).append(",").append(linAccelZMean[pos]).append(",")
-                .append(linAccelXStd[pos]).append(",").append(linAccelYStd[pos]).append(",").append(linAccelZStd[pos]).append(",");
+        allSensorsData.append(linAccelXArray[pos]).append(",").append(linAccelYArray[pos]).append(",").append(linAccelZArray[pos]).append(",");
 
-        allSensorsData.append(rotVecXArray[pos]).append(",").append(rotVecYArray[pos]).append(",")
-                .append(rotVecZArray[pos]).append(",").append(rotVecSArray[pos]).append(",")
-                .append(rotVecXMin[pos]).append(",").append(rotVecYMin[pos]).append(",")
-                .append(rotVecZMin[pos]).append(",").append(rotVecSMin[pos]).append(",")
-                .append(rotVecXMax[pos]).append(",").append(rotVecYMax[pos]).append(",")
-                .append(rotVecZMax[pos]).append(",").append(rotVecSMax[pos]).append(",")
-                .append(rotVecXMean[pos]).append(",").append(rotVecYMean[pos]).append(",")
-                .append(rotVecZMean[pos]).append(",").append(rotVecSMean[pos]).append(",")
-                .append(rotVecXStd[pos]).append(",").append(rotVecYStd[pos]).append(",")
-                .append(rotVecZStd[pos]).append(",").append(rotVecSStd[pos]).append(",");
+        allSensorsData.append(rotVecXArray[pos]).append(",").append(rotVecYArray[pos]).append(",").append(rotVecSArray[pos]).append(",");
 
-        allSensorsData.append(stDetValArray[pos]).append(",");
+        allSensorsData.append(aiPreValArray[pos]).append(",");
 
-        allSensorsData.append(aiPreValArray[pos]).append(",").append(aiPreValMin[pos]).append(",").append(aiPreValMax[pos]).append(",")
-                .append(aiPreValMean[pos]).append(",").append(aiPreValStd[pos]).append(",") ;
+        allSensorsData.append(magFielYArray[pos]).append(",");
 
-        allSensorsData.append(magFielXArray[pos]).append(",").append(magFielYArray[pos]).append(",").append(magFielZArray[pos]).append(",")
-                .append(magFielXMin[pos]).append(",").append(magFielYMin[pos]).append(",").append(magFielZMin[pos]).append(",")
-                .append(magFielXMax[pos]).append(",").append(magFielYMax[pos]).append(",").append(magFielZMax[pos]).append(",")
-                .append(magFielXMean[pos]).append(",").append(magFielYMean[pos]).append(",").append(magFielZMean[pos]).append(",")
-                .append(magFielXStd[pos]).append(",").append(magFielYStd[pos]).append(",").append(magFielZStd[pos]).append(",");
-
-        allSensorsData.append(heartRateValArray[pos]).append(",").append(heartRateValMin[pos]).append(",").append(heartRateValMax[pos]).append(",")
-                .append(heartRateValMean[pos]).append(",").append(heartRateValStd[pos]).append(",");
+        allSensorsData.append(heartRateValArray[pos]).append(",");
 
         allSensorsData.append(performingActivity);
 
@@ -990,123 +957,32 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         title.append("AccelX, ");
         title.append("AccelY, ");
         title.append("AccelZ, ");
-        title.append("AccelXMin, ");
-        title.append("AccelYMin, ");
-        title.append("AccelZMin, ");
-        title.append("AccelXMax, ");
-        title.append("AccelYMax, ");
-        title.append("AccelZMax, ");
-        title.append("AccelXMean, ");
-        title.append("AccelYMean, ");
-        title.append("AccelZMean, ");
-        title.append("AccelXStd, ");
-        title.append("AccelYStd, ");
-        title.append("AccelZStd, ");
 
         title.append("GyroX, ");
         title.append("GyroY, ");
         title.append("GyroZ, ");
-        title.append("GyroXMin, ");
-        title.append("GyroYMin, ");
-        title.append("GyroZMin, ");
-        title.append("GyroXMax, ");
-        title.append("GyroYMax, ");
-        title.append("GyroZMax, ");
-        title.append("GyroXMean, ");
-        title.append("GyroYMean, ");
-        title.append("GyroZMean, ");
-        title.append("GyroXStd, ");
-        title.append("GyroYStd, ");
-        title.append("GyroZStd, ");
 
         title.append("GravityX, ");
         title.append("GravityY, ");
         title.append("GravityZ, ");
-        title.append("GravityXMin, ");
-        title.append("GravityYMin, ");
-        title.append("GravityZMin, ");
-        title.append("GravityXMax, ");
-        title.append("GravityYMax, ");
-        title.append("GravityZMax, ");
-        title.append("GravityXMean, ");
-        title.append("GravityYMean, ");
-        title.append("GravityZMean, ");
-        title.append("GravityXStd, ");
-        title.append("GravityYStd, ");
-        title.append("GravityZStd, ");
 
         title.append("LinAccelX, ");
         title.append("LinAccelY, ");
         title.append("LinAccelZ, ");
-        title.append("LinAccelXMin, ");
-        title.append("LinAccelYMin, ");
-        title.append("LinAccelZMin, ");
-        title.append("LinAccelXMax, ");
-        title.append("LinAccelYMax, ");
-        title.append("LinAccelZMax, ");
-        title.append("LinAccelXMean, ");
-        title.append("LinAccelYMean, ");
-        title.append("LinAccelZMean, ");
-        title.append("LinAccelXStd, ");
-        title.append("LinAccelYStd, ");
-        title.append("LinAccelZStd, ");
 
         title.append("RotVecX, ");
         title.append("RotVecY, ");
-        title.append("RotVecZ, ");
         title.append("RotVecS, ");
-        title.append("RotVecXMin, ");
-        title.append("RotVecYMin, ");
-        title.append("RotVecZMin, ");
-        title.append("RotVecSMin, ");
-        title.append("RotVecXMax, ");
-        title.append("RotVecYMax, ");
-        title.append("RotVecZMax, ");
-        title.append("RotVecSMax, ");
-        title.append("RotVecXMean, ");
-        title.append("RotVecYMean, ");
-        title.append("RotVecZMean, ");
-        title.append("RotVecSMean, ");
-        title.append("RotVecXStd, ");
-        title.append("RotVecYStd, ");
-        title.append("RotVecZStd, ");
-        title.append("RotVecSStd, ");
-
-        title.append("StDetVal, ");
 
         title.append("AiPreVal, ");
-        title.append("AiPreValMin, ");
-        title.append("AiPreValMax, ");
-        title.append("AiPreValMean, ");
-        title.append("AiPreValStd, ");
 
-        title.append("MagFielX, ");
         title.append("MagFielY, ");
-        title.append("MagFielZ, ");
-        title.append("MagFielXMin, ");
-        title.append("MagFielYMin, ");
-        title.append("MagFielZMin, ");
-        title.append("MagFielXMax, ");
-        title.append("MagFielYMax, ");
-        title.append("MagFielZMax, ");
-        title.append("MagFielXMean, ");
-        title.append("MagFielYMean, ");
-        title.append("MagFielZMean, ");
-        title.append("MagFielXStd, ");
-        title.append("MagFielYStd, ");
-        title.append("MagFielZStd, ");
 
         title.append("HeartRateVal, ");
-        title.append("HeartRateValMin, ");
-        title.append("HeartRateValMax, ");
-        title.append("HeartRateValMean, ");
-        title.append("HeartRateValStd, ");
 
         title.append("Activity");
 
         String dataTitle = title.toString();
-
-        title = null;
 
         return dataTitle;
     }
@@ -1169,19 +1045,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             float ax = event.values[0];
             float ay = event.values[1];
-            float az = event.values[2];
             float as = event.values[2];
 
             rotVecX = ax;
             rotVecY = ay;
-            rotVecZ = az;
             rotVecS = as;
-        }
-
-        if (event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
-            float ax = event.values[0];
-
-            stDetVal = ax;
         }
 
         if (event.sensor.getType() == Sensor.TYPE_PRESSURE) {
@@ -1191,13 +1059,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-            float ax = event.values[0];
             float ay = event.values[1];
-            float az = event.values[2];
 
-            magFielX = ax;
             magFielY = ay;
-            magFielZ = az;
         }
 
         if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
@@ -1207,7 +1071,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         if (warmingUp) {
-            stDetVal = 0.0f;
             heartRateVal = 0.0f;
             warmingUp = false;
         }
@@ -1559,9 +1422,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         ArrayList<Attribute> attributes = new ArrayList<Attribute>();
         int numAttrib = 0;
 
-        attributes.add(new Attribute("AccelX", numAttrib++));
-        attributes.add(new Attribute("AccelY", numAttrib++));
-        attributes.add(new Attribute("AccelZ", numAttrib++));
         attributes.add(new Attribute("AccelXMin", numAttrib++));
         attributes.add(new Attribute("AccelYMin", numAttrib++));
         attributes.add(new Attribute("AccelZMin", numAttrib++));
@@ -1571,13 +1431,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("AccelXMean", numAttrib++));
         attributes.add(new Attribute("AccelYMean", numAttrib++));
         attributes.add(new Attribute("AccelZMean", numAttrib++));
+        attributes.add(new Attribute("AccelXRange", numAttrib++));
+        attributes.add(new Attribute("AccelYRange", numAttrib++));
+        attributes.add(new Attribute("AccelZRange", numAttrib++));
         attributes.add(new Attribute("AccelXStd", numAttrib++));
         attributes.add(new Attribute("AccelYStd", numAttrib++));
         attributes.add(new Attribute("AccelZStd", numAttrib++));
 
-        attributes.add(new Attribute("GyroX", numAttrib++));
-        attributes.add(new Attribute("GyroY", numAttrib++));
-        attributes.add(new Attribute("GyroZ", numAttrib++));
         attributes.add(new Attribute("GyroXMin", numAttrib++));
         attributes.add(new Attribute("GyroYMin", numAttrib++));
         attributes.add(new Attribute("GyroZMin", numAttrib++));
@@ -1587,13 +1447,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("GyroXMean", numAttrib++));
         attributes.add(new Attribute("GyroYMean", numAttrib++));
         attributes.add(new Attribute("GyroZMean", numAttrib++));
+        attributes.add(new Attribute("GyroXRange", numAttrib++));
+        attributes.add(new Attribute("GyroYRange", numAttrib++));
+        attributes.add(new Attribute("GyroZRange", numAttrib++));
         attributes.add(new Attribute("GyroXStd", numAttrib++));
         attributes.add(new Attribute("GyroYStd", numAttrib++));
         attributes.add(new Attribute("GyroZStd", numAttrib++));
 
-        attributes.add(new Attribute("GravityX", numAttrib++));
-        attributes.add(new Attribute("GravityY", numAttrib++));
-        attributes.add(new Attribute("GravityZ", numAttrib++));
         attributes.add(new Attribute("GravityXMin", numAttrib++));
         attributes.add(new Attribute("GravityYMin", numAttrib++));
         attributes.add(new Attribute("GravityZMin", numAttrib++));
@@ -1603,13 +1463,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("GravityXMean", numAttrib++));
         attributes.add(new Attribute("GravityYMean", numAttrib++));
         attributes.add(new Attribute("GravityZMean", numAttrib++));
+        attributes.add(new Attribute("GravityXRange", numAttrib++));
+        attributes.add(new Attribute("GravityYRange", numAttrib++));
+        attributes.add(new Attribute("GravityZRange", numAttrib++));
         attributes.add(new Attribute("GravityXStd", numAttrib++));
         attributes.add(new Attribute("GravityYStd", numAttrib++));
         attributes.add(new Attribute("GravityZStd", numAttrib++));
 
-        attributes.add(new Attribute("LinAccelX", numAttrib++));
-        attributes.add(new Attribute("LinAccelY", numAttrib++));
-        attributes.add(new Attribute("LinAccelZ", numAttrib++));
         attributes.add(new Attribute("LinAccelXMin", numAttrib++));
         attributes.add(new Attribute("LinAccelYMin", numAttrib++));
         attributes.add(new Attribute("LinAccelZMin", numAttrib++));
@@ -1619,59 +1479,45 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         attributes.add(new Attribute("LinAccelXMean", numAttrib++));
         attributes.add(new Attribute("LinAccelYMean", numAttrib++));
         attributes.add(new Attribute("LinAccelZMean", numAttrib++));
+        attributes.add(new Attribute("LinAccelXRange", numAttrib++));
+        attributes.add(new Attribute("LinAccelYRange", numAttrib++));
+        attributes.add(new Attribute("LinAccelZRange", numAttrib++));
         attributes.add(new Attribute("LinAccelXStd", numAttrib++));
         attributes.add(new Attribute("LinAccelYStd", numAttrib++));
         attributes.add(new Attribute("LinAccelZStd", numAttrib++));
 
-        attributes.add(new Attribute("RotVecX", numAttrib++));
-        attributes.add(new Attribute("RotVecY", numAttrib++));
-        attributes.add(new Attribute("RotVecZ", numAttrib++));
-        attributes.add(new Attribute("RotVecS", numAttrib++));
         attributes.add(new Attribute("RotVecXMin", numAttrib++));
         attributes.add(new Attribute("RotVecYMin", numAttrib++));
-        attributes.add(new Attribute("RotVecZMin", numAttrib++));
         attributes.add(new Attribute("RotVecSMin", numAttrib++));
         attributes.add(new Attribute("RotVecXMax", numAttrib++));
         attributes.add(new Attribute("RotVecYMax", numAttrib++));
-        attributes.add(new Attribute("RotVecZMax", numAttrib++));
         attributes.add(new Attribute("RotVecSMax", numAttrib++));
         attributes.add(new Attribute("RotVecXMean", numAttrib++));
         attributes.add(new Attribute("RotVecYMean", numAttrib++));
-        attributes.add(new Attribute("RotVecZMean", numAttrib++));
         attributes.add(new Attribute("RotVecSMean", numAttrib++));
+        attributes.add(new Attribute("RotVecXRange", numAttrib++));
+        attributes.add(new Attribute("RotVecYRange", numAttrib++));
+        attributes.add(new Attribute("RotVecSRange", numAttrib++));
         attributes.add(new Attribute("RotVecXStd", numAttrib++));
         attributes.add(new Attribute("RotVecYStd", numAttrib++));
-        attributes.add(new Attribute("RotVecZStd", numAttrib++));
         attributes.add(new Attribute("RotVecSStd", numAttrib++));
 
-        attributes.add(new Attribute("StDetVal", numAttrib++));
-
-        attributes.add(new Attribute("AiPreVal", numAttrib++));
         attributes.add(new Attribute("AiPreValMin", numAttrib++));
         attributes.add(new Attribute("AiPreValMax", numAttrib++));
         attributes.add(new Attribute("AiPreValMean", numAttrib++));
+        attributes.add(new Attribute("AiPreValRange", numAttrib++));
         attributes.add(new Attribute("AiPreValStd", numAttrib++));
 
-        attributes.add(new Attribute("MagFielX", numAttrib++));
-        attributes.add(new Attribute("MagFielY", numAttrib++));
-        attributes.add(new Attribute("MagFielZ", numAttrib++));
-        attributes.add(new Attribute("MagFielXMin", numAttrib++));
         attributes.add(new Attribute("MagFielYMin", numAttrib++));
-        attributes.add(new Attribute("MagFielZMin", numAttrib++));
-        attributes.add(new Attribute("MagFielXMax", numAttrib++));
         attributes.add(new Attribute("MagFielYMax", numAttrib++));
-        attributes.add(new Attribute("MagFielZMax", numAttrib++));
-        attributes.add(new Attribute("MagFielXMean", numAttrib++));
         attributes.add(new Attribute("MagFielYMean", numAttrib++));
-        attributes.add(new Attribute("MagFielZMean", numAttrib++));
-        attributes.add(new Attribute("MagFielXStd", numAttrib++));
+        attributes.add(new Attribute("MagFielYRange", numAttrib++));
         attributes.add(new Attribute("MagFielYStd", numAttrib++));
-        attributes.add(new Attribute("MagFielZStd", numAttrib++));
 
-        attributes.add(new Attribute("HeartRateVal", numAttrib++));
         attributes.add(new Attribute("HeartRateValMin", numAttrib++));
         attributes.add(new Attribute("HeartRateValMax", numAttrib++));
         attributes.add(new Attribute("HeartRateValMean", numAttrib++));
+        attributes.add(new Attribute("HeartRateValRange", numAttrib++));
         attributes.add(new Attribute("HeartRateValStd", numAttrib++));
 
         List<String> values = getActivityValues();
@@ -1710,127 +1556,108 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         int currentAttNumber = 0;
 
         if (computeComplexFeatures) {
-            attributeValues[currentAttNumber++] = accelXArray[pos];
-            attributeValues[currentAttNumber++] = accelYArray[pos];
-            attributeValues[currentAttNumber++] = accelZArray[pos];
-            attributeValues[currentAttNumber++] = accelXMin[pos];
-            attributeValues[currentAttNumber++] = accelYMin[pos];
-            attributeValues[currentAttNumber++] = accelZMin[pos];
-            attributeValues[currentAttNumber++] = accelXMax[pos];
-            attributeValues[currentAttNumber++] = accelYMax[pos];
-            attributeValues[currentAttNumber++] = accelZMax[pos];
-            attributeValues[currentAttNumber++] = accelXMean[pos];
-            attributeValues[currentAttNumber++] = accelYMean[pos];
-            attributeValues[currentAttNumber++] = accelZMean[pos];
-            attributeValues[currentAttNumber++] = accelXStd[pos];
-            attributeValues[currentAttNumber++] = accelYStd[pos];
-            attributeValues[currentAttNumber++] = accelZStd[pos];
+            attributeValues[currentAttNumber++] = accelXMin;
+            attributeValues[currentAttNumber++] = accelYMin;
+            attributeValues[currentAttNumber++] = accelZMin;
+            attributeValues[currentAttNumber++] = accelXMax;
+            attributeValues[currentAttNumber++] = accelYMax;
+            attributeValues[currentAttNumber++] = accelZMax;
+            attributeValues[currentAttNumber++] = accelXMean;
+            attributeValues[currentAttNumber++] = accelYMean;
+            attributeValues[currentAttNumber++] = accelZMean;
+            attributeValues[currentAttNumber++] = accelXRange;
+            attributeValues[currentAttNumber++] = accelYRange;
+            attributeValues[currentAttNumber++] = accelZRange;
+            attributeValues[currentAttNumber++] = accelXStd;
+            attributeValues[currentAttNumber++] = accelYStd;
+            attributeValues[currentAttNumber++] = accelZStd;
 
-            attributeValues[currentAttNumber++] = gyroXArray[pos];
-            attributeValues[currentAttNumber++] = gyroYArray[pos];
-            attributeValues[currentAttNumber++] = gyroZArray[pos];
-            attributeValues[currentAttNumber++] = gyroXMin[pos];
-            attributeValues[currentAttNumber++] = gyroYMin[pos];
-            attributeValues[currentAttNumber++] = gyroZMin[pos];
-            attributeValues[currentAttNumber++] = gyroXMax[pos];
-            attributeValues[currentAttNumber++] = gyroYMax[pos];
-            attributeValues[currentAttNumber++] = gyroZMax[pos];
-            attributeValues[currentAttNumber++] = gyroXMean[pos];
-            attributeValues[currentAttNumber++] = gyroYMean[pos];
-            attributeValues[currentAttNumber++] = gyroZMean[pos];
-            attributeValues[currentAttNumber++] = gyroXStd[pos];
-            attributeValues[currentAttNumber++] = gyroYStd[pos];
-            attributeValues[currentAttNumber++] = gyroZStd[pos];
+            attributeValues[currentAttNumber++] = gyroXMin;
+            attributeValues[currentAttNumber++] = gyroYMin;
+            attributeValues[currentAttNumber++] = gyroZMin;
+            attributeValues[currentAttNumber++] = gyroXMax;
+            attributeValues[currentAttNumber++] = gyroYMax;
+            attributeValues[currentAttNumber++] = gyroZMax;
+            attributeValues[currentAttNumber++] = gyroXMean;
+            attributeValues[currentAttNumber++] = gyroYMean;
+            attributeValues[currentAttNumber++] = gyroZMean;
+            attributeValues[currentAttNumber++] = gyroXRange;
+            attributeValues[currentAttNumber++] = gyroYRange;
+            attributeValues[currentAttNumber++] = gyroZRange;
+            attributeValues[currentAttNumber++] = gyroXStd;
+            attributeValues[currentAttNumber++] = gyroYStd;
+            attributeValues[currentAttNumber++] = gyroZStd;
 
-            attributeValues[currentAttNumber++] = gravityXArray[pos];
-            attributeValues[currentAttNumber++] = gravityYArray[pos];
-            attributeValues[currentAttNumber++] = gravityZArray[pos];
-            attributeValues[currentAttNumber++] = gravityXMin[pos];
-            attributeValues[currentAttNumber++] = gravityYMin[pos];
-            attributeValues[currentAttNumber++] = gravityZMin[pos];
-            attributeValues[currentAttNumber++] = gravityXMax[pos];
-            attributeValues[currentAttNumber++] = gravityYMax[pos];
-            attributeValues[currentAttNumber++] = gravityZMax[pos];
-            attributeValues[currentAttNumber++] = gravityXMean[pos];
-            attributeValues[currentAttNumber++] = gravityYMean[pos];
-            attributeValues[currentAttNumber++] = gravityZMean[pos];
-            attributeValues[currentAttNumber++] = gravityXStd[pos];
-            attributeValues[currentAttNumber++] = gravityYStd[pos];
-            attributeValues[currentAttNumber++] = gravityZStd[pos];
+            attributeValues[currentAttNumber++] = gravityXMin;
+            attributeValues[currentAttNumber++] = gravityYMin;
+            attributeValues[currentAttNumber++] = gravityZMin;
+            attributeValues[currentAttNumber++] = gravityXMax;
+            attributeValues[currentAttNumber++] = gravityYMax;
+            attributeValues[currentAttNumber++] = gravityZMax;
+            attributeValues[currentAttNumber++] = gravityXMean;
+            attributeValues[currentAttNumber++] = gravityYMean;
+            attributeValues[currentAttNumber++] = gravityZMean;
+            attributeValues[currentAttNumber++] = gravityXRange;
+            attributeValues[currentAttNumber++] = gravityYRange;
+            attributeValues[currentAttNumber++] = gravityZRange;
+            attributeValues[currentAttNumber++] = gravityXStd;
+            attributeValues[currentAttNumber++] = gravityYStd;
+            attributeValues[currentAttNumber++] = gravityZStd;
 
-            attributeValues[currentAttNumber++] = linAccelXArray[pos];
-            attributeValues[currentAttNumber++] = linAccelYArray[pos];
-            attributeValues[currentAttNumber++] = linAccelZArray[pos];
-            attributeValues[currentAttNumber++] = linAccelXMin[pos];
-            attributeValues[currentAttNumber++] = linAccelYMin[pos];
-            attributeValues[currentAttNumber++] = linAccelZMin[pos];
-            attributeValues[currentAttNumber++] = linAccelXMax[pos];
-            attributeValues[currentAttNumber++] = linAccelYMax[pos];
-            attributeValues[currentAttNumber++] = linAccelZMax[pos];
-            attributeValues[currentAttNumber++] = linAccelXMean[pos];
-            attributeValues[currentAttNumber++] = linAccelYMean[pos];
-            attributeValues[currentAttNumber++] = linAccelZMean[pos];
-            attributeValues[currentAttNumber++] = linAccelXStd[pos];
-            attributeValues[currentAttNumber++] = linAccelYStd[pos];
-            attributeValues[currentAttNumber++] = linAccelZStd[pos];
+            attributeValues[currentAttNumber++] = linAccelXMin;
+            attributeValues[currentAttNumber++] = linAccelYMin;
+            attributeValues[currentAttNumber++] = linAccelZMin;
+            attributeValues[currentAttNumber++] = linAccelXMax;
+            attributeValues[currentAttNumber++] = linAccelYMax;
+            attributeValues[currentAttNumber++] = linAccelZMax;
+            attributeValues[currentAttNumber++] = linAccelXMean;
+            attributeValues[currentAttNumber++] = linAccelYMean;
+            attributeValues[currentAttNumber++] = linAccelZMean;
+            attributeValues[currentAttNumber++] = linAccelXRange;
+            attributeValues[currentAttNumber++] = linAccelYRange;
+            attributeValues[currentAttNumber++] = linAccelZRange;
+            attributeValues[currentAttNumber++] = linAccelXStd;
+            attributeValues[currentAttNumber++] = linAccelYStd;
+            attributeValues[currentAttNumber++] = linAccelZStd;
 
-            attributeValues[currentAttNumber++] = rotVecXArray[pos];
-            attributeValues[currentAttNumber++] = rotVecYArray[pos];
-            attributeValues[currentAttNumber++] = rotVecZArray[pos];
-            attributeValues[currentAttNumber++] = rotVecSArray[pos];
-            attributeValues[currentAttNumber++] = rotVecXMin[pos];
-            attributeValues[currentAttNumber++] = rotVecYMin[pos];
-            attributeValues[currentAttNumber++] = rotVecZMin[pos];
-            attributeValues[currentAttNumber++] = rotVecSMin[pos];
-            attributeValues[currentAttNumber++] = rotVecXMax[pos];
-            attributeValues[currentAttNumber++] = rotVecYMax[pos];
-            attributeValues[currentAttNumber++] = rotVecZMax[pos];
-            attributeValues[currentAttNumber++] = rotVecSMax[pos];
-            attributeValues[currentAttNumber++] = rotVecXMean[pos];
-            attributeValues[currentAttNumber++] = rotVecYMean[pos];
-            attributeValues[currentAttNumber++] = rotVecZMean[pos];
-            attributeValues[currentAttNumber++] = rotVecSMean[pos];
-            attributeValues[currentAttNumber++] = rotVecXStd[pos];
-            attributeValues[currentAttNumber++] = rotVecYStd[pos];
-            attributeValues[currentAttNumber++] = rotVecZStd[pos];
-            attributeValues[currentAttNumber++] = rotVecSStd[pos];
+            attributeValues[currentAttNumber++] = rotVecXMin;
+            attributeValues[currentAttNumber++] = rotVecYMin;
+            attributeValues[currentAttNumber++] = rotVecSMin;
+            attributeValues[currentAttNumber++] = rotVecXMax;
+            attributeValues[currentAttNumber++] = rotVecYMax;
+            attributeValues[currentAttNumber++] = rotVecSMax;
+            attributeValues[currentAttNumber++] = rotVecXMean;
+            attributeValues[currentAttNumber++] = rotVecYMean;
+            attributeValues[currentAttNumber++] = rotVecSMean;
+            attributeValues[currentAttNumber++] = rotVecXRange;
+            attributeValues[currentAttNumber++] = rotVecYRange;
+            attributeValues[currentAttNumber++] = rotVecSRange;
+            attributeValues[currentAttNumber++] = rotVecXStd;
+            attributeValues[currentAttNumber++] = rotVecYStd;
+            attributeValues[currentAttNumber++] = rotVecSStd;
 
-            attributeValues[currentAttNumber++] = stDetValArray[pos];
+            attributeValues[currentAttNumber++] = aiPreValMin;
+            attributeValues[currentAttNumber++] = aiPreValMax;
+            attributeValues[currentAttNumber++] = aiPreValMean;
+            attributeValues[currentAttNumber++] = aiPreValRange;
+            attributeValues[currentAttNumber++] = aiPreValStd;
 
-            attributeValues[currentAttNumber++] = aiPreValArray[pos];
-            attributeValues[currentAttNumber++] = aiPreValMin[pos];
-            attributeValues[currentAttNumber++] = aiPreValMax[pos];
-            attributeValues[currentAttNumber++] = aiPreValMean[pos];
-            attributeValues[currentAttNumber++] = aiPreValStd[pos];
+            attributeValues[currentAttNumber++] = magFielYMin;
+            attributeValues[currentAttNumber++] = magFielYMax;
+            attributeValues[currentAttNumber++] = magFielYMean;
+            attributeValues[currentAttNumber++] = magFielYRange;
+            attributeValues[currentAttNumber++] = magFielYStd;
 
-            attributeValues[currentAttNumber++] = magFielXArray[pos];
-            attributeValues[currentAttNumber++] = magFielYArray[pos];
-            attributeValues[currentAttNumber++] = magFielZArray[pos];
-            attributeValues[currentAttNumber++] = magFielXMin[pos];
-            attributeValues[currentAttNumber++] = magFielYMin[pos];
-            attributeValues[currentAttNumber++] = magFielZMin[pos];
-            attributeValues[currentAttNumber++] = magFielXMax[pos];
-            attributeValues[currentAttNumber++] = magFielYMax[pos];
-            attributeValues[currentAttNumber++] = magFielZMax[pos];
-            attributeValues[currentAttNumber++] = magFielXMean[pos];
-            attributeValues[currentAttNumber++] = magFielYMean[pos];
-            attributeValues[currentAttNumber++] = magFielZMean[pos];
-            attributeValues[currentAttNumber++] = magFielXStd[pos];
-            attributeValues[currentAttNumber++] = magFielYStd[pos];
-            attributeValues[currentAttNumber++] = magFielZStd[pos];
-
-            attributeValues[currentAttNumber++] = heartRateValArray[pos];
-            attributeValues[currentAttNumber++] = heartRateValMin[pos];
-            attributeValues[currentAttNumber++] = heartRateValMax[pos];
-            attributeValues[currentAttNumber++] = heartRateValMean[pos];
-            attributeValues[currentAttNumber++] = heartRateValStd[pos];
+            attributeValues[currentAttNumber++] = heartRateValMin;
+            attributeValues[currentAttNumber++] = heartRateValMax;
+            attributeValues[currentAttNumber++] = heartRateValMean;
+            attributeValues[currentAttNumber++] = heartRateValRange;
+            attributeValues[currentAttNumber++] = heartRateValStd;
 
             List<String> activityValues = getActivityValues();
             if (appState == 1) {
                 // any value for a place of activity
                 attributeValues[currentAttNumber] = activityValues.indexOf(activityValues.get(0));
-            } else {
-                attributeValues[currentAttNumber] = activityValues.indexOf(activityValues.get(performingActivity));
             }
         }
 
@@ -1858,7 +1685,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         values.add("3");
         values.add("4");
         values.add("5");
-        values.add("NA");
 
         return values;
     }

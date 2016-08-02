@@ -15,27 +15,16 @@ import weka.core.Instances;
 public class ActivityWindow {
 
     public static String getActivityName(AbstractClassifier classifier, Instances data) {
-        int[] activityInWindow = new int[ActivityType.values().length];
-        for (Instance instance : data) {
-            try {
-                double value = classifier.classifyInstance(instance);
-                String aType = data.classAttribute().value((int) value);
-                activityInWindow[Integer.parseInt(aType)]++;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
+        double value = Double.NaN;
+        try {
+            Instance instance = data.get(0);
+            value = classifier.classifyInstance(instance);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
 
-        int posOfMax = 0;
-        int valueOfMax = 0;
-        for (int i = 0; i < activityInWindow.length; i++) {
-            if (valueOfMax < activityInWindow[i]) {
-                posOfMax = i;
-                valueOfMax = activityInWindow[i];
-            }
-        }
-        String activityFullName = ActivityType.values()[posOfMax].toString() + " " + Math.round(valueOfMax * 1.0 / data.numInstances() * 100);
+        String activityFullName = ActivityType.values()[(int) value].toString();
 
         return activityFullName;
     }

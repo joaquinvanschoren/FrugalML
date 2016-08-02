@@ -4,7 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.project.frugalmachinelearning.InitialActivity"
-    tools:deviceIds="wear_round">
+    tools:deviceIds="wear_round"
+    android:id="@+id/background_layout"
+    android:baselineAligned="false">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -17,7 +19,7 @@
         <Button
             android:layout_width="86dp"
             android:layout_height="wrap_content"
-            android:text="Collect data "
+            android:text="@string/collect_data"
             android:id="@+id/closeInitialScreen"
             android:layout_gravity="center"
             android:nestedScrollingEnabled="false"
@@ -42,7 +44,7 @@
         <Button
             android:layout_width="86dp"
             android:layout_height="wrap_content"
-            android:text="Recognize activities"
+            android:text="@string/recognize_activities"
             android:id="@+id/showDialog"
             android:layout_gravity="center"
             android:onClick="recognizeActivities"

@@ -45,7 +45,8 @@
         android:onClick="onFinishActivity"
         android:layout_marginBottom="20dp"
         android:layout_alignParentBottom="true"
-        android:layout_alignStart="@+id/pauseActivities" />
+        android:layout_alignStart="@+id/pauseActivities"
+        android:contentDescription="@string/exit_the_application" />
 
     <ImageButton
         android:id="@+id/pauseActivities"
@@ -59,6 +60,7 @@
         android:nestedScrollingEnabled="false"
         android:onClick="onPause"
         android:layout_alignTop="@+id/finishActivities"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:contentDescription="@string/pause_collecting_data" />
 
 </RelativeLayout>
