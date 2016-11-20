@@ -1,8 +1,7 @@
 <resources>
     <string name="app_name">Frugal Machine Learning</string>
     <string name="hello_square">Hello Square World!</string>
-    <string name="activity_name">Activity is</string><![CDATA[>
-    ]]>
+    <string name="activity_name">Activity is</string><![CDATA[>]]>
     <string name="new_activity">New activity is</string>
     <string name="dialog_title">Are you sure that you want to quit this activity</string>
     <string name="exit_the_application">Exit the application</string>

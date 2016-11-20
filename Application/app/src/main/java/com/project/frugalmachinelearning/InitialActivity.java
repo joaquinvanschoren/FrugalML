@@ -46,12 +46,12 @@ public class InitialActivity extends Activity {
         startActivity(callMainIntent);
     }
 
-    public void recognizeActivities (View view) {
+    public void recognizeActivities(View view) {
         Toast toast = Toast.makeText(InitialActivity.this, "Activity recognition started", Toast.LENGTH_SHORT);
 
         // center text in toast message
         TextView v = (TextView) toast.getView().findViewById(android.R.id.message);
-        if( v != null) v.setGravity(Gravity.CENTER);
+        if (v != null) v.setGravity(Gravity.CENTER);
 
         toast.show();
 

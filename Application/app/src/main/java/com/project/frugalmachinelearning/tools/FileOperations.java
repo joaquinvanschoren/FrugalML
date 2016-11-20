@@ -16,11 +16,11 @@ public abstract class FileOperations {
         File fileToDelete = new File(fileName);
 
         if (fileToDelete.exists() && fileToDelete.delete()) {
-                Log.i(TAG, "File " + fileName + " was deleted from a file system");
+            Log.i(TAG, "File " + fileName + " was deleted from a file system");
 
-                return true;
+            return true;
         } else
-                return false;
+            return false;
 
     }
 
@@ -30,6 +30,14 @@ public abstract class FileOperations {
             Log.i(TAG, "Directory not created");
         }
         return file.toString();
+    }
+
+    public static boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
     }
 
 }

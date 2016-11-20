@@ -1,4 +1,4 @@
-package com.project.frugalmachinelearning.tools;
+package com.project.frugalmachinelearning.external;
 
 import android.util.Log;
 
