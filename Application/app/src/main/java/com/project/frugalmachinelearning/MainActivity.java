@@ -27,12 +27,13 @@ import android.widget.TextView;
 import com.project.frugalmachinelearning.classifiers.ActivityWindow;
 import com.project.frugalmachinelearning.classifiers.FactoryClassifiers;
 import com.project.frugalmachinelearning.external.CircleMenu;
+import com.project.frugalmachinelearning.external.Classifiers;
 import com.project.frugalmachinelearning.external.InstanceBuilder;
 import com.project.frugalmachinelearning.tools.ApplicationStates;
 import com.project.frugalmachinelearning.tools.Dialogs;
 import com.project.frugalmachinelearning.tools.FileOperations;
 import com.project.frugalmachinelearning.tools.FloatingActionButtonFlexibleActions;
-import com.project.frugalmachinelearning.tools.ReadDiscretizedValues;
+import com.project.frugalmachinelearning.external.ReadDiscretizedValues;
 import com.project.frugalmachinelearning.tools.SensorsActions;
 import com.project.frugalmachinelearning.tools.StorageCurrentData;
 import com.project.frugalmachinelearning.tools.StorageData;
@@ -128,6 +129,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     private StorageCurrentData newMeasurement;
     private StorageData measurements;
+    private final String selectedClassifierName;
+
+    public MainActivity() {
+
+        // choose the algorithm for recognition
+        selectedClassifierName = Classifiers.ADA_BOOST_M1.getAlgName();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -428,7 +436,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
             } else {
 
-                CircleMenu.createCircleMenu(this, bStop, bPause, mGenericActivity);
+                CircleMenu cMenu = new CircleMenu();
+                cMenu.createCircleMenu(this, bStop, bPause, mGenericActivity);
+                leftCenterButton = cMenu.getLeftCenterButton();
 
                 final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/StorageData" + fileNumber + ".txt";
                 FileOperations.deleteFile(sensorDataName);
@@ -454,8 +464,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         FileOperations.deleteFile("myfile_nbp.txt");
 
         // create classifier from a file
-        String selectedClassifierName = "AdaBoostM1";
-        if (selectedClassifierName.equals("A1DE")) {
+        if (selectedClassifierName.equals(Classifiers.A1DE.getAlgName())) {
             discretizeData = true;
             discretizeItems = ReadDiscretizedValues.initFilter(this);
         }
@@ -559,7 +568,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
      * Handles the button press to finish this activity and take the user back to the Home.
      */
     public void onFinishActivity(View view) {
-        Dialogs.showCustomDialog(this, view);
+        Dialogs.showCustomDialog(this);
     }
 
     public void onWalking() {

@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import com.project.frugalmachinelearning.MainActivity;
 import com.project.frugalmachinelearning.R;
+import com.project.frugalmachinelearning.tools.Dialogs;
 
 /**
  * Created by Mikhail on 20.11.2016.
@@ -45,7 +46,7 @@ public class MyGestureDetector extends GestureDetector.SimpleOnGestureListener {
 
     @Override
     public void onLongPress(MotionEvent event) {
-        activity.showCustomDialog(bStop);
+        Dialogs.showCustomDialog(activity);
     }
 
 }

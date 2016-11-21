@@ -17,7 +17,7 @@ import com.project.frugalmachinelearning.R;
  */
 public class Dialogs {
 
-    public static void showCustomDialog(final MainActivity activity, View view) {
+    public static void showCustomDialog(final MainActivity activity) {
         final Dialog dialog = new Dialog(activity);
         dialog.setContentView(R.layout.dialog);
 

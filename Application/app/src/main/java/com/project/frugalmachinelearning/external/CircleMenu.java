@@ -24,7 +24,9 @@ import com.project.frugalmachinelearning.tools.FloatingActionButtonFlexibleActio
  */
 public class CircleMenu {
 
-    public static void createCircleMenu(final MainActivity activity, final ImageButton bStop, final ImageButton bPause, final TextView mGenericActivity) {
+    FloatingActionButtonFlexibleActions leftCenterButton;
+
+    public void createCircleMenu(final MainActivity activity, final ImageButton bStop, final ImageButton bPause, final TextView mGenericActivity) {
 
         Resources resources = activity.getResources();
 
@@ -55,7 +57,7 @@ public class CircleMenu {
                 redActionButtonContentMargin,
                 redActionButtonContentMargin);
 
-        final FloatingActionButtonFlexibleActions leftCenterButton = new FloatingActionButtonFlexibleActions.Builder(activity)
+        leftCenterButton = new FloatingActionButtonFlexibleActions.Builder(activity)
                 .setContentView(fabIconStar, fabIconStarParams)
                 .setBackgroundDrawable(R.drawable.button_action_red_selector)
                 .setPosition(FloatingActionButtonFlexibleActions.POSITION_CENTER)
@@ -228,4 +230,7 @@ public class CircleMenu {
 
     }
 
+    public FloatingActionButtonFlexibleActions getLeftCenterButton() {
+        return leftCenterButton;
+    }
 }
