@@ -6,10 +6,10 @@ package com.project.frugalmachinelearning.tools;
 public class StorageData {
 
     public static final int UPDATES_PER_SECOND = 16;
-  
-    public final int windowTime;
 
-    private final int frameSize;
+    public static final int AMOUNT_OF_ATTRIBUTES = 18;
+
+    public final int windowTime;
 
     public double[] accelXArray;
     public double[] accelYArray;
@@ -128,8 +128,10 @@ public class StorageData {
     public double heartRateValStd;
 
     public StorageData(int windowTime) {
-        this.windowTime = windowTime; 
-        this.frameSize = UPDATES_PER_SECOND * windowTime;
+        this.windowTime = windowTime;
+
+        final int frameSize;
+        frameSize = UPDATES_PER_SECOND * windowTime;
 
         accelXArray = new double[frameSize];
         accelYArray = new double[frameSize];

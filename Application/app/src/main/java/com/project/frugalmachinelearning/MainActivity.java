@@ -60,18 +60,18 @@ import weka.core.Instances;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Discretize;
 
+import static com.project.frugalmachinelearning.tools.StorageData.AMOUNT_OF_ATTRIBUTES;
+
 public class MainActivity extends WearableActivity implements SensorEventListener {
 
     public static final String TAG = "MainActivity";
-
-    private static final int AMOUNT_OF_ATTRIBUTES = 18;
 
     private SensorManager mSensorManager;
 
     private Thread t;
     private Thread tClassifyActivity;
 
-    private boolean needTitle = true;
+    private boolean needTitle;
 
     private AbstractClassifier selectedClassifier;
 
@@ -91,9 +91,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private RelativeLayout fBackground;
 
     private PrintWriter pw;
-    private DateFormat df = new SimpleDateFormat("HH:mm:ss.SSS dd/MM/yyyy");
+    private final DateFormat df;
 
-    private boolean firstRun = true;
+    private boolean firstRun;
 
     private long timeChangeActivityUpdateMs;
 
@@ -105,7 +105,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private FloatingActionButtonFlexibleActions leftCenterButton;
 
     private static int appState;
-    boolean computeComplexFeatures = false;
+    private boolean computeComplexFeatures;
 
     /**
      * Custom 'what' for Message sent to Handler.
@@ -135,6 +135,14 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         // choose the algorithm for recognition
         selectedClassifierName = Classifiers.ADA_BOOST_M1.getAlgName();
+
+        needTitle = true;
+
+        df = new SimpleDateFormat("HH:mm:ss.SSS dd/MM/yyyy");
+
+        firstRun = true;
+
+        computeComplexFeatures = false;
     }
 
     @Override
@@ -166,15 +174,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         // screen on for the whole run of the application
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent ambientStateIntent = new Intent(getApplicationContext(), MainActivity.class);
-
-        mAmbientStatePendingIntent = PendingIntent.getActivity(
-                getApplicationContext(),
-                0 /* requestCode */,
-                ambientStateIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
+        initializeAmbientVariables();
 
         newMeasurement = new StorageCurrentData();
         measurements = new StorageData(2);
@@ -183,7 +183,93 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     private void launchCollectingInformation() {
-        t = new Thread() {
+        t = getCollectionInformationThreadInstance();
+
+        t.start();
+    }
+
+    private void launchingRecognitionActivities() {
+        tClassifyActivity = getRecognitionActivitiesThreadInstance();
+
+        tClassifyActivity.start();
+    }
+
+    private Thread getRecognitionActivitiesThreadInstance() {
+        Thread recognitionActivities = new Thread() {
+
+            @Override
+            public void run() {
+                try {
+                    while (!isInterrupted()) {
+                        Thread.sleep(1000);
+                        runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                ArrayList<Attribute> attributes = getNewAttributes();
+                                DenseInstance[] instances = {timeWindowInstance};
+                                Instances data = ActivityWindow.constructInstances(attributes, instances);
+
+                                String activityFullName = getActivityName(data);
+
+                                long currentTimeMs = System.currentTimeMillis();
+                                if (currentTimeMs - previousBatteryUpdate > 29555) {
+                                    String bInfoString = getStringForActivityRecognitionFIle(currentTimeMs);
+
+                                    pw.println(bInfoString);
+                                    pw.flush();
+
+                                    previousBatteryUpdate = currentTimeMs;
+
+                                    Log.i(TAG, bInfoString);
+                                }
+
+                                String label = getString(R.string.activity_name) + activityFullName;
+                                mTheoreticalActivity.setText(label);
+
+                                Log.i(TAG, activityFullName);
+                            }
+
+                        });
+                    }
+                } catch (InterruptedException e) {
+                    Log.i(TAG, e.toString());
+                }
+            }
+        };
+
+        return recognitionActivities;
+    }
+
+    private String getStringForActivityRecognitionFIle(long currentTimeMs) {
+        StringBuilder bInfo = new StringBuilder();
+        bInfo.append(currentTimeMs).append(",");
+        bInfo.append(selectedClassifier.getClass()).append(",");
+        bInfo.append(getBatteryLevel());
+        return bInfo.toString();
+    }
+
+    private String getActivityName(Instances data) {
+
+        String activityFullName = "";
+
+        if (discretizeData && discretizeItems != null) {
+            try {
+                Instances discretData = Filter.useFilter(data, discretizeItems);
+                activityFullName = ActivityWindow.getActivityName(selectedClassifier, discretData);
+            } catch (Exception e) {
+                Log.i(TAG, e.toString());
+            }
+        } else if (!discretizeData) {
+            activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
+        } else {
+            activityFullName = "BEING COMPUTED";
+        }
+        return activityFullName;
+    }
+
+    private Thread getCollectionInformationThreadInstance() {
+        Thread collectionInformation = new Thread() {
 
             @Override
             public void run() {
@@ -207,16 +293,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                             StorageDataActions.computeAdditionalFeatures(measurements);
                                         }
 
-
                                         if (appState == 0) {
                                             if (computeComplexFeatures && performingActivity != 6) {
-
-                                                // pause data collection after activity change for a short period and wait for computed values
-                                                long currentTimeMs = System.currentTimeMillis();
-                                                if (currentTimeMs - timeChangeActivityUpdateMs >= 5000) {
-                                                    StringBuilder newInfo = arraysToString(posInstance);
-                                                    pw.println(newInfo);
-                                                }
+                                                writeNewActivityDataToFile();
                                             }
                                         } else {
                                             timeWindowInstance = InstanceBuilder.getInstance(AMOUNT_OF_ATTRIBUTES * 5 + 1, computeComplexFeatures, measurements, appState);
@@ -235,78 +314,21 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                         });
                     }
                 } catch (InterruptedException e) {
-
+                    Log.e(TAG, e.getMessage());
                 }
             }
         };
 
-        t.start();
+        return collectionInformation;
     }
 
-    private void launchingRecognitionActivities() {
-        tClassifyActivity = new Thread() {
-
-            @Override
-            public void run() {
-                try {
-                    while (!isInterrupted()) {
-                        Thread.sleep(1000);
-                        runOnUiThread(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                ArrayList<Attribute> attributes = getNewAttributes();
-                                DenseInstance[] instances = {timeWindowInstance};
-                                Instances data = ActivityWindow.constructInstances(attributes, instances);
-
-                                String activityFullName = "BEING COMPUTED";
-
-                                Instances discretData = null;
-
-                                if (discretizeData && discretizeItems != null) {
-                                    try {
-                                        discretData = Filter.useFilter(data, discretizeItems);
-                                        activityFullName = ActivityWindow.getActivityName(selectedClassifier, discretData);
-                                    } catch (Exception e) {
-                                        Log.i(TAG, e.toString());
-                                    }
-                                } else {
-                                    if (!discretizeData) {
-                                        activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
-                                    }
-                                }
-
-                                long currentTimeMs = System.currentTimeMillis();
-                                if (currentTimeMs - previousBatteryUpdate > 29555) {
-                                    StringBuilder bInfo = new StringBuilder();
-                                    bInfo.append(currentTimeMs).append(",");
-                                    bInfo.append(selectedClassifier.getClass()).append(",");
-                                    bInfo.append(getBatteryLevel());
-                                    String bInfoString = bInfo.toString();
-                                    pw.println(bInfoString);
-                                    pw.flush();
-
-                                    bInfo = null;
-                                    previousBatteryUpdate = currentTimeMs;
-
-                                    Log.i(TAG, bInfoString);
-
-                                }
-
-                                mTheoreticalActivity.setText("Activity is " + activityFullName);
-
-                                Log.i(TAG, activityFullName);
-                            }
-
-                        });
-                    }
-                } catch (InterruptedException e) {
-                    Log.i(TAG, e.toString());
-                }
-            }
-        };
-
-        tClassifyActivity.start();
+    private void writeNewActivityDataToFile() {
+        // pause data collection after activity change for a short period and wait for computed values
+        long currentTimeMs = System.currentTimeMillis();
+        if (currentTimeMs - timeChangeActivityUpdateMs >= 5000) {
+            StringBuilder newInfo = arraysToString(posInstance);
+            pw.println(newInfo);
+        }
     }
 
     @Override
@@ -404,15 +426,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
             performingActivity = 6;
 
-                /*    Random random = new Random();
-                int fileNumber = random.nextInt(100);   */
 
             Intent intent = getIntent();
             String stateFromIntent = intent.getStringExtra("APP STATE");
             appState = ApplicationStates.valueOf(stateFromIntent).ordinal();
-
-/*                String hexColor = "#" + intent.getStringExtra("background");
-                fBackground.setBackgroundColor(Color.parseColor(hexColor)); */
 
             SimpleDateFormat shortName = new SimpleDateFormat("dd,HHmmss");
             String fileNumber = shortName.format(new Date());
@@ -635,6 +652,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
      * Handler separated into static class to avoid memory leaks.
      */
     private static class UpdateHandler extends Handler {
+
         private final WeakReference<MainActivity> mMainActivityWeakReference;
 
         public UpdateHandler(MainActivity reference) {
@@ -653,10 +671,22 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 }
             }
         }
+
     }
 
     public ArrayList<Attribute> getNewAttributes() {
         return InstanceBuilder.getNewAttributes();
+    }
+
+    private void initializeAmbientVariables() {
+        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent ambientStateIntent = new Intent(getApplicationContext(), MainActivity.class);
+
+        mAmbientStatePendingIntent = PendingIntent.getActivity(
+                getApplicationContext(),
+                0 /* requestCode */,
+                ambientStateIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     private void doExit() {
