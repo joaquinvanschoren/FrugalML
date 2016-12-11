@@ -1,10 +1,6 @@
-Study/.Rproj.user
-Study/.Rhistory
-Study/.RData
 Study/Slides from WU/*
 Study/anaconda/*
 Study/articles/*
-Study/.ipynb_checkpoints/*
 Study/Tips/*
 Study/data/*
 Study/external/*
@@ -13,6 +9,12 @@ Study/plots/*
 Study/processed/*
 Study/reports/*
 Study/objects/*
+Application/.idea/*
+Application/.idea
+Application/.DS_Store
+Application/build
+Application/captures
+Application/projectFilesBackup
 # files by extension
 *.csv
 *.arff
@@ -21,11 +23,9 @@ Study/objects/*
 *~
 # single files
 Study/ConnectOML.R
+Study/.ipynb_checkpoints/*
+Study/.Rproj.user
+Study/.Rhistory
+Study/.RData
 Application/.gradle
 Application/local.properties
-Application/.idea/*
-Application/.idea
-Application/.DS_Store
-Application/build
-Application/captures
-Application/projectFilesBackup
