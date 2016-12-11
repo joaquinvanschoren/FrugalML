@@ -21,7 +21,7 @@ Application/projectFilesBackup
 *.Rproj
 *.iml
 *~
-# single files
+# single files 
 Study/ConnectOML.R
 Study/.ipynb_checkpoints/*
 Study/.Rproj.user
