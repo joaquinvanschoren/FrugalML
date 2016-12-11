@@ -1,6 +1,5 @@
-package com.project.frugalmachinelearning.external;
+package com.project.frugalmachinelearning.tools;
 
-import android.content.res.Resources;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -9,7 +8,7 @@ import android.widget.TextView;
 
 import com.project.frugalmachinelearning.MainActivity;
 import com.project.frugalmachinelearning.R;
-import com.project.frugalmachinelearning.tools.Dialogs;
+import com.project.frugalmachinelearning.gui.Dialogs;
 
 /**
  * Created by Mikhail on 20.11.2016.
@@ -17,9 +16,9 @@ import com.project.frugalmachinelearning.tools.Dialogs;
 
 public class MyGestureDetector extends GestureDetector.SimpleOnGestureListener {
 
-    ImageButton bStop;
-    TextView mGenericActivity;
-    MainActivity activity;
+    private ImageButton bStop;
+    private TextView mGenericActivity;
+    private MainActivity activity;
 
     public MyGestureDetector(ImageButton bStop, TextView mGenericActivity, MainActivity activity) {
         this.bStop = bStop;

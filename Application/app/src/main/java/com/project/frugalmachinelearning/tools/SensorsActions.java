@@ -13,7 +13,7 @@ import jflex.Main;
 /**
  * Created by Mikhail on 20.11.2016.
  */
-public class SensorsActions {
+public abstract class SensorsActions {
 
     public static void setSensors(MainActivity activity, SensorManager mSensorManager) {
 

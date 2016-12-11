@@ -1,4 +1,4 @@
-package com.project.frugalmachinelearning.classifiers;
+package com.project.frugalmachinelearning.activities;
 
 /**
  * Created by Mikhail on 02.05.2016.
