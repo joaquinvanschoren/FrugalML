@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Frugal Machine Learning</string>
+    <string name="hello_square">Hello Square World!</string>
+    <string name="activity_name">Activity is</string><![CDATA[>]]>
+    <string name="new_activity">New activity is</string>
+    <string name="dialog_title">Are you sure that you want to quit this activity</string>
+    <string name="exit_the_application">Exit the application</string>
+    <string name="pause_collecting_data">pause_collecting_data</string>
+    <string name="collect_data">Collect data</string>
+    <string name="recognize_activities">Recognize activities</string>
+    <string name="type_walking">Walking</string>
+    <string name="type_upstairs">Upstairs</string>
+    <string name="type_downstairs">Downstairs</string>
+    <string name="type_sitting">Sitting</string>
+    <string name="type_standing">Standing</string>
+    <string name="type_lying">Lying</string>
+    <string name="type_blank_activity">Pause</string>
+</resources>
+

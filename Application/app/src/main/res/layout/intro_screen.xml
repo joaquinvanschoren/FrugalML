@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.project.frugalmachinelearning.InitialActivity"
+    tools:deviceIds="wear_round"
+    android:id="@+id/background_layout"
+    android:baselineAligned="false">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/collect_framelayout"
+        android:layout_weight="1"
+        android:background="#81c784"
+        android:clickable="true">
+
+        <Button
+            android:layout_width="86dp"
+            android:layout_height="wrap_content"
+            android:text="@string/collect_data"
+            android:id="@+id/closeInitialScreen"
+            android:layout_gravity="center"
+            android:nestedScrollingEnabled="false"
+            android:onClick="collectData"
+            android:enabled="true"
+            android:focusable="false"
+            android:textSize="14sp"
+            android:padding="1sp"
+            android:background="#64b5f6"
+            android:elegantTextHeight="true" />
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/recognize_framelayout"
+        android:layout_weight="1"
+        android:background="#80deea"
+        android:clickable="true">
+
+        <Button
+            android:layout_width="86dp"
+            android:layout_height="wrap_content"
+            android:text="@string/recognize_activities"
+            android:id="@+id/showDialog"
+            android:layout_gravity="center"
+            android:onClick="recognizeActivities"
+            android:background="#64b5f6"
+            android:textSize="14sp"
+            android:padding="1sp"
+            android:elegantTextHeight="true" />
+    </FrameLayout>
+</LinearLayout>
+

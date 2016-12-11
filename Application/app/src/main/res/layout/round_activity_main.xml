@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.project.frugalmachinelearning.MainActivity"
+    tools:deviceIds="wear_round"
+    android:id="@+id/mBackRelativeLayout"
+    android:background="#ffffff">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/mTheoreticalActivity"
+        android:text="@string/activity_name"
+        android:textSize="20sp"
+        android:textAlignment="center"
+        android:textColor="@color/common_google_signin_btn_text_light"
+        android:layout_marginTop="21dp"
+        android:layout_below="@+id/mGenericActivity"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/new_activity"
+        android:id="@+id/mGenericActivity"
+        android:textSize="20sp"
+        android:textAlignment="center"
+        android:textColor="@color/common_google_signin_btn_text_light"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp" />
+
+    <ImageButton
+        android:id="@+id/finishActivities"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
+        android:layout_gravity="bottom|right"
+        android:background="@drawable/ripple"
+        android:stateListAnimator="@anim/anim"
+        android:src="@drawable/ic_power_settings_new_white_24dp"
+        android:elevation="4dp"
+        android:nestedScrollingEnabled="false"
+        android:onClick="onFinishActivity"
+        android:layout_marginBottom="20dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/pauseActivities"
+        android:contentDescription="@string/exit_the_application" />
+
+    <ImageButton
+        android:id="@+id/pauseActivities"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
+        android:layout_gravity="bottom|right"
+        android:background="@drawable/ripple"
+        android:stateListAnimator="@anim/anim"
+        android:src="@drawable/ic_pause_white_24dp"
+        android:elevation="4dp"
+        android:nestedScrollingEnabled="false"
+        android:onClick="onPause"
+        android:layout_alignTop="@+id/finishActivities"
+        android:layout_centerHorizontal="true"
+        android:contentDescription="@string/pause_collecting_data" />
+
+</RelativeLayout>
