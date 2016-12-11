@@ -1,22 +1,31 @@
-.Rproj.user
-.Rhistory
-.RData
-Slides from WU/*
-anaconda/*
-articles/*
-.ipynb_checkpoints/*
-Tips/*
-data/*
-external/*
-codes/*
-plots/*
-processed/*
-reports/*
-objects/*
+Study/.Rproj.user
+Study/.Rhistory
+Study/.RData
+Study/Slides from WU/*
+Study/anaconda/*
+Study/articles/*
+Study/.ipynb_checkpoints/*
+Study/Tips/*
+Study/data/*
+Study/external/*
+Study/codes/*
+Study/plots/*
+Study/processed/*
+Study/reports/*
+Study/objects/*
 # files by extension
 *.csv
 *.arff
 *.Rproj
+*.iml
 *~
 # single files
-ConnectOML.R
+Study/ConnectOML.R
+Application/.gradle
+Application/local.properties
+Application/.idea/*
+Application/.idea
+Application/.DS_Store
+Application/build
+Application/captures
+Application/projectFilesBackup
