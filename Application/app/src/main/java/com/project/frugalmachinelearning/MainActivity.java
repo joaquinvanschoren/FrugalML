@@ -108,7 +108,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private StorageData measurements;
 
     /**
-     *  Application control
+     * Application control
      */
     private boolean applicationFirstRunAfterStart;
     private long activityUpdateEvent;
@@ -352,7 +352,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     public void onLying() {
-        NumberOfPerformingActivity =  ActivityType.valueOf("LYING").ordinal();
+        NumberOfPerformingActivity = ActivityType.valueOf("LYING").ordinal();
         mGenericActivity.setText(R.string.type_lying);
         activityUpdateEvent = System.currentTimeMillis();
         posInstance = 0;

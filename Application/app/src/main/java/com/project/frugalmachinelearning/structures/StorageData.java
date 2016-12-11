@@ -127,6 +127,12 @@ public class StorageData {
     public double heartRateValRange;
     public double heartRateValStd;
 
+    /**
+     * Main constructor
+     *
+     * @param windowTime
+     *              interval in seconds for constructing time frame for activity recognition
+     */
     public StorageData(int windowTime) {
         this.windowTime = windowTime;
 
