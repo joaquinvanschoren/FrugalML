@@ -6,12 +6,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -21,24 +19,24 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageButton;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.project.frugalmachinelearning.classifiers.ActivityWindow;
+import com.project.frugalmachinelearning.activities.ActivityType;
+import com.project.frugalmachinelearning.structures.ActivityWindow;
 import com.project.frugalmachinelearning.classifiers.FactoryClassifiers;
-import com.project.frugalmachinelearning.external.CircleMenu;
-import com.project.frugalmachinelearning.external.Classifiers;
-import com.project.frugalmachinelearning.external.InstanceBuilder;
+import com.project.frugalmachinelearning.tools.StringInstruments;
+import com.project.frugalmachinelearning.gui.CircleMenu;
+import com.project.frugalmachinelearning.classifiers.Classifiers;
+import com.project.frugalmachinelearning.structures.InstanceBuilder;
 import com.project.frugalmachinelearning.tools.ApplicationStates;
-import com.project.frugalmachinelearning.tools.Dialogs;
+import com.project.frugalmachinelearning.gui.Dialogs;
 import com.project.frugalmachinelearning.tools.FileOperations;
-import com.project.frugalmachinelearning.tools.FloatingActionButtonFlexibleActions;
-import com.project.frugalmachinelearning.external.ReadDiscretizedValues;
+import com.project.frugalmachinelearning.gui.FlexibleActions;
+import com.project.frugalmachinelearning.structures.ReadDiscretizedValues;
 import com.project.frugalmachinelearning.tools.SensorsActions;
-import com.project.frugalmachinelearning.tools.StorageCurrentData;
-import com.project.frugalmachinelearning.tools.StorageData;
+import com.project.frugalmachinelearning.structures.StorageCurrentData;
+import com.project.frugalmachinelearning.structures.StorageData;
 import com.project.frugalmachinelearning.tools.StorageDataActions;
-import com.project.frugalmachinelearning.tools.TextFileActions;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -47,123 +45,132 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import weka.classifiers.AbstractClassifier;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instances;
-import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Discretize;
-
-import static com.project.frugalmachinelearning.tools.StorageData.AMOUNT_OF_ATTRIBUTES;
 
 public class MainActivity extends WearableActivity implements SensorEventListener {
 
+    /**
+     * Activity identifier for the activity
+     */
     public static final String TAG = "MainActivity";
 
+    /**
+     * Variables for Android standard elements
+     */
     private SensorManager mSensorManager;
-
-    private Thread t;
-    private Thread tClassifyActivity;
-
-    private boolean needTitle;
-
-    private AbstractClassifier selectedClassifier;
-
-    private DenseInstance timeWindowInstance;
-
-    private int posInstance;
-    private boolean warmingUp;
-    private int performingActivity;
-
     private TextView mTheoreticalActivity;
     private TextView mGenericActivity;
-
     private ImageButton bPause;
-
     private ImageButton bStop;
+    private AlarmManager mAmbientStateAlarmManager;
+    private PendingIntent mAmbientStatePendingIntent;
+    private final Handler mActiveModeUpdateHandler;
 
-    private RelativeLayout fBackground;
-
-    private PrintWriter pw;
-    private final DateFormat df;
-
-    private boolean firstRun;
-
-    private long timeChangeActivityUpdateMs;
-
-    private long previousBatteryUpdate;
-
-    private long pTime;
-    private long nTime;
-
-    private FloatingActionButtonFlexibleActions leftCenterButton;
-
-    private static int appState;
-    private boolean computeComplexFeatures;
-
-    /**
-     * Custom 'what' for Message sent to Handler.
-     */
+    //  Custom 'what' for Message sent to Handler.
     private static final int MSG_UPDATE_SCREEN = 0;
 
-    /**
-     * Milliseconds between updates based on state.
-     */
+    // Milliseconds between updates based on state.
     private static final long ACTIVE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(1);
     private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(900);
 
-    private final Handler mActiveModeUpdateHandler = new UpdateHandler(this);
+    /**
+     * Weka elements
+     */
 
-    private boolean discretizeData = false;
+    // standard filter to convert data from continuous to discrete format
+    private Discretize discretizeUnit;
 
-    private Discretize discretizeItems;
+    // used classifier
+    private AbstractClassifier selectedClassifier;
 
-    private AlarmManager mAmbientStateAlarmManager;
-    private PendingIntent mAmbientStatePendingIntent;
+    // new instance created from updated sensor data
+    private DenseInstance timeWindowInstance;
 
+    /**
+     * Variables related to converting data from raw data to Weka format
+     */
+    private int posInstance;
+    private boolean warmingUp;
+    private int NumberOfPerformingActivity;
+    private boolean needDiscretizeData;
+    private final String selectedClassifierName;
     private StorageCurrentData newMeasurement;
     private StorageData measurements;
-    private final String selectedClassifierName;
 
+    /**
+     *  Application control
+     */
+    private boolean applicationFirstRunAfterStart;
+    private long activityUpdateEvent;
+    private long previousBatteryUpdate;
+    private static int appState;
+    private boolean computeComplexFeatures;
+
+    // variable to call the menu in the center of a screen
+    private FlexibleActions leftCenterButton;
+
+    // application uses one of two processes, one for collecting data and one for activity recognition
+    private Thread t;
+    private Thread tClassifyActivity;
+
+    /**
+     * Variable that are used to store data to a file
+     */
+    private PrintWriter printWriter;
+    private boolean needTitle;
+
+    /**
+     * Main constructor
+     */
     public MainActivity() {
 
         // choose the algorithm for recognition
         selectedClassifierName = Classifiers.ADA_BOOST_M1.getAlgName();
 
+        // checks if input should be discretized for a classifier
+        needDiscretizeData = false;
+
+        // create title row in file with activity data
         needTitle = true;
 
-        df = new SimpleDateFormat("HH:mm:ss.SSS dd/MM/yyyy");
+        // controls initialization
+        applicationFirstRunAfterStart = true;
 
-        firstRun = true;
-
+        // derived measurements can be calculated only with sufficient data
         computeComplexFeatures = false;
+
+        // ambient mode variables
+        mActiveModeUpdateHandler = new UpdateHandler(this);
+        initializeAmbientVariables();
+
+        // create storage for incoming data
+        newMeasurement = new StorageCurrentData();
+        measurements = new StorageData(2);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
-
         final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
+
         stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
             @Override
             public void onLayoutInflated(WatchViewStub stub) {
                 mTheoreticalActivity = (TextView) stub.findViewById(R.id.mTheoreticalActivity);
                 mGenericActivity = (TextView) stub.findViewById(R.id.mGenericActivity);
-
                 bPause = (ImageButton) stub.findViewById(R.id.pauseActivities);
-
                 bStop = (ImageButton) stub.findViewById(R.id.finishActivities);
-
-                fBackground = (RelativeLayout) stub.findViewById(R.id.mBackRelativeLayout);
-
                 refreshDisplayAndSetNextUpdate();
             }
         });
@@ -174,24 +181,224 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         // screen on for the whole run of the application
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        initializeAmbientVariables();
-
-        newMeasurement = new StorageCurrentData();
-        measurements = new StorageData(2);
-
         Log.i(TAG, "onCreate()");
     }
 
+    /**
+     * Collect data from sensors and store to a file
+     */
     private void launchCollectingInformation() {
         t = getCollectionInformationThreadInstance();
-
         t.start();
     }
 
+    /**
+     * Process data and recognize activity
+     */
     private void launchingRecognitionActivities() {
         tClassifyActivity = getRecognitionActivitiesThreadInstance();
-
         tClassifyActivity.start();
+    }
+
+    private void firstRunActions() {
+        try {
+            activityUpdateEvent = System.currentTimeMillis();
+
+            // number for a blank activity
+            NumberOfPerformingActivity = 6;
+
+            // get the state from the intro screen
+            Intent intent = getIntent();
+            String stateFromIntent = intent.getStringExtra("APP STATE");
+            appState = ApplicationStates.valueOf(stateFromIntent).ordinal();
+
+            // create a name for a file based on time
+            SimpleDateFormat shortName = new SimpleDateFormat("dd,HHmmss", Locale.ENGLISH);
+            String fileNumber = shortName.format(new Date());
+
+            // change an interface and prepare tools for processing activity information
+            if (appState == 1) {
+                final String batteryLevelName = FileOperations.getSensorStorageDir("SensorsInformation") + "/batteryInfo" + fileNumber + ".txt";
+                FileOperations.deleteFile(batteryLevelName);
+                final File batteryData = new File(batteryLevelName);
+
+                previousBatteryUpdate = System.currentTimeMillis();
+                printWriter = new PrintWriter(new BufferedWriter(new FileWriter(batteryData, true)));
+
+                mGenericActivity.setVisibility(View.INVISIBLE);
+                bPause.setVisibility(View.INVISIBLE);
+
+                Log.i(TAG, batteryLevelName);
+            } else {
+                final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/StorageData" + fileNumber + ".txt";
+                FileOperations.deleteFile(sensorDataName);
+                final File sensorData = new File(sensorDataName);
+
+                printWriter = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
+
+                mTheoreticalActivity.setVisibility(View.INVISIBLE);
+                mGenericActivity.setVisibility(View.INVISIBLE);
+                bPause.setVisibility(View.INVISIBLE);
+
+                // create a menu in the center of a screen
+                CircleMenu cMenu = new CircleMenu();
+                cMenu.createCircleMenu(this, bStop, bPause, mGenericActivity);
+                leftCenterButton = cMenu.getLeftCenterButton();
+
+                Log.i(TAG, sensorDataName);
+            }
+        } catch (IOException e) {
+            Log.i(TAG, e.toString());
+        }
+
+        // prepare data if a classifier requires discrete input
+        if (selectedClassifierName.equals(Classifiers.A1DE.getAlgName())) {
+            needDiscretizeData = true;
+            discretizeUnit = ReadDiscretizedValues.initFilter(this);
+        }
+
+        // load a previously trained classifier from a file
+        FactoryClassifiers fc = new FactoryClassifiers();
+        String modelFileName = fc.getModelFile(selectedClassifierName);
+        InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
+        selectedClassifier = fc.getModel(selectedClassifierName, ins);
+
+        // initialize variables that collect data about activities
+        posInstance = 0;
+        warmingUp = true;
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        SensorsActions.setSensors(this, mSensorManager);
+
+        // create new threads
+        launchCollectingInformation();
+        if (appState == 1) {
+            launchingRecognitionActivities();
+        }
+
+        // set to false that initialization does not another time
+        applicationFirstRunAfterStart = false;
+
+        Log.i(TAG, "First run is still active");
+    }
+
+    /**
+     * Handles the button press to finish this activity and take the user back to the Home.
+     */
+    public void onFinishActivity(View view) {
+        Dialogs.showCustomDialog(this);
+    }
+
+    /**
+     * Update screen in ambient mode
+     */
+    private void refreshDisplayAndSetNextUpdate() {
+        loadDataAndUpdateScreen();
+        long timeMs = System.currentTimeMillis();
+
+        // this condition is true when called from ambient mode and can be used with timer value
+        if (isAmbient()) {
+            long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
+            long triggerTimeMs = timeMs + delayMs;
+
+            mAmbientStateAlarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTimeMs,
+                    mAmbientStatePendingIntent);
+        } else {
+            long delayMs = ACTIVE_INTERVAL_MS - (timeMs % ACTIVE_INTERVAL_MS);
+            mActiveModeUpdateHandler.removeMessages(MSG_UPDATE_SCREEN);
+            mActiveModeUpdateHandler.sendEmptyMessageDelayed(MSG_UPDATE_SCREEN, delayMs);
+        }
+    }
+
+    public void onWalking() {
+        NumberOfPerformingActivity = ActivityType.valueOf("WALKING").ordinal();
+        mGenericActivity.setText(R.string.type_walking);
+        activityUpdateEvent = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
+    }
+
+    public void onUpstairs() {
+        NumberOfPerformingActivity = ActivityType.valueOf("WALKING_UPSTAIRS").ordinal();
+        mGenericActivity.setText(R.string.type_upstairs);
+        activityUpdateEvent = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
+    }
+
+    public void onDownstairs() {
+        NumberOfPerformingActivity = ActivityType.valueOf("WALKING_DOWNSTAIRS").ordinal();
+        mGenericActivity.setText(R.string.type_downstairs);
+        activityUpdateEvent = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
+    }
+
+    public void onSitting() {
+        NumberOfPerformingActivity = ActivityType.valueOf("SITTING").ordinal();
+        mGenericActivity.setText(R.string.type_sitting);
+        activityUpdateEvent = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
+    }
+
+    public void onStanding() {
+        NumberOfPerformingActivity = ActivityType.valueOf("STANDING").ordinal();
+        mGenericActivity.setText(R.string.type_standing);
+        activityUpdateEvent = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
+    }
+
+    public void onLying() {
+        NumberOfPerformingActivity =  ActivityType.valueOf("LYING").ordinal();
+        mGenericActivity.setText(R.string.type_lying);
+        activityUpdateEvent = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
+    }
+
+    public void onPause(View view) {
+        NumberOfPerformingActivity = 6;
+        mGenericActivity.setText(R.string.type_blank_activity);
+        activityUpdateEvent = System.currentTimeMillis();
+        posInstance = 0;
+        computeComplexFeatures = false;
+
+        leftCenterButton.setVisibility(View.VISIBLE);
+        bPause.setVisibility(View.INVISIBLE);
+        bStop.setVisibility(View.VISIBLE);
+    }
+
+    private void initializeAmbientVariables() {
+        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent ambientStateIntent = new Intent(getApplicationContext(), MainActivity.class);
+
+        mAmbientStatePendingIntent = PendingIntent.getActivity(
+                getApplicationContext(),
+                0 /* requestCode */,
+                ambientStateIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    private void doExit() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
+        alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+        alertDialog.setNegativeButton("No", null);
+        alertDialog.setMessage("Do you want to exit?");
+        alertDialog.setTitle("AppTitle");
+        alertDialog.show();
+    }
+
+    public void setLeftCenterButton(FlexibleActions leftCenterButton) {
+        this.leftCenterButton = leftCenterButton;
     }
 
     private Thread getRecognitionActivitiesThreadInstance() {
@@ -206,18 +413,19 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                             @Override
                             public void run() {
-                                ArrayList<Attribute> attributes = getNewAttributes();
+                                ArrayList<Attribute> attributes = InstanceBuilder.getNewAttributes();
                                 DenseInstance[] instances = {timeWindowInstance};
                                 Instances data = ActivityWindow.constructInstances(attributes, instances);
 
-                                String activityFullName = getActivityName(data);
+                                String activityFullName = StringInstruments.recognizeActivity(data, needDiscretizeData, discretizeUnit, selectedClassifier);
 
                                 long currentTimeMs = System.currentTimeMillis();
                                 if (currentTimeMs - previousBatteryUpdate > 29555) {
-                                    String bInfoString = getStringForActivityRecognitionFIle(currentTimeMs);
+                                    String bInfoString = StringInstruments.getStringForActivityRecognitionFile(getApplicationContext(), currentTimeMs,
+                                            selectedClassifier);
 
-                                    pw.println(bInfoString);
-                                    pw.flush();
+                                    printWriter.println(bInfoString);
+                                    printWriter.flush();
 
                                     previousBatteryUpdate = currentTimeMs;
 
@@ -241,33 +449,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         return recognitionActivities;
     }
 
-    private String getStringForActivityRecognitionFIle(long currentTimeMs) {
-        StringBuilder bInfo = new StringBuilder();
-        bInfo.append(currentTimeMs).append(",");
-        bInfo.append(selectedClassifier.getClass()).append(",");
-        bInfo.append(getBatteryLevel());
-        return bInfo.toString();
-    }
-
-    private String getActivityName(Instances data) {
-
-        String activityFullName = "";
-
-        if (discretizeData && discretizeItems != null) {
-            try {
-                Instances discretData = Filter.useFilter(data, discretizeItems);
-                activityFullName = ActivityWindow.getActivityName(selectedClassifier, discretData);
-            } catch (Exception e) {
-                Log.i(TAG, e.toString());
-            }
-        } else if (!discretizeData) {
-            activityFullName = ActivityWindow.getActivityName(selectedClassifier, data);
-        } else {
-            activityFullName = "BEING COMPUTED";
-        }
-        return activityFullName;
-    }
-
     private Thread getCollectionInformationThreadInstance() {
         Thread collectionInformation = new Thread() {
 
@@ -281,9 +462,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                             public void run() {
                                 try {
                                     if (FileOperations.isExternalStorageWritable()) {
-
                                         if (needTitle && appState == 0) {
-                                            pw.println(TextFileActions.createTitle());
+                                            printWriter.println(StringInstruments.createTitle());
                                             needTitle = false;
                                         }
 
@@ -294,11 +474,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                                         }
 
                                         if (appState == 0) {
-                                            if (computeComplexFeatures && performingActivity != 6) {
-                                                writeNewActivityDataToFile();
+                                            if (computeComplexFeatures && NumberOfPerformingActivity != 6) {
+                                                StringInstruments.writeNewActivityDataToFile(activityUpdateEvent, posInstance,
+                                                        printWriter, NumberOfPerformingActivity, measurements);
                                             }
                                         } else {
-                                            timeWindowInstance = InstanceBuilder.getInstance(AMOUNT_OF_ATTRIBUTES * 5 + 1, computeComplexFeatures, measurements, appState);
+                                            timeWindowInstance = InstanceBuilder.getInstance(StorageData.AMOUNT_OF_ATTRIBUTES * 5 + 1, computeComplexFeatures,
+                                                    measurements, appState);
                                         }
 
                                         posInstance++;
@@ -322,18 +504,40 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         return collectionInformation;
     }
 
-    private void writeNewActivityDataToFile() {
-        // pause data collection after activity change for a short period and wait for computed values
-        long currentTimeMs = System.currentTimeMillis();
-        if (currentTimeMs - timeChangeActivityUpdateMs >= 5000) {
-            StringBuilder newInfo = arraysToString(posInstance);
-            pw.println(newInfo);
+    @Override
+    public void onAccuracyChanged(Sensor arg0, int arg1) {
+        Log.i(TAG, "onAccuracyChanged()");
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        setIntent(intent);
+        Log.d(TAG, "onNewIntent(): " + intent);
+
+        // Described in the following section
+        refreshDisplayAndSetNextUpdate();
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        StorageDataActions.updateSensorData(event, newMeasurement);
+
+        if (warmingUp) {
+            newMeasurement.heartRateVal = 0.0f;
+            warmingUp = false;
         }
     }
 
     @Override
-    protected void onDestroy() {
+    public void onBackPressed() {
+        doExit();
+    }
 
+
+    @Override
+    protected void onDestroy() {
         if (t != null) {
             t.interrupt();
 
@@ -342,19 +546,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             tClassifyActivity.interrupt();
         }
 
-        pw.close();
+        printWriter.close();
 
         mSensorManager = null;
-
         mActiveModeUpdateHandler.removeMessages(MSG_UPDATE_SCREEN);
         mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
 
         super.onDestroy();
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor arg0, int arg1) {
-        Log.i(TAG, "onAccuracyChanged()");
     }
 
     @Override
@@ -377,7 +575,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         Log.d(TAG, "onEnterAmbient()");
 
         onExitAmbient();
-
     }
 
     @Override
@@ -401,251 +598,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
      * Updates display based on Ambient state. If you need to pull data, you should do it here.
      */
     private void loadDataAndUpdateScreen() {
-
         long currentTimeMs = System.currentTimeMillis();
-        Log.d(TAG, "loadDataAndUpdateScreen(): " + currentTimeMs + "(" + isAmbient() + ")");
-
-        Date current = new Date();
-
-        // mTime.setText(new SimpleDateFormat("HH:mm:ss.SSS").format(current) + " update time");
-
-        if (firstRun) {
+        if (applicationFirstRunAfterStart) {
             firstRunActions();
         }
-
-        if (isAmbient()) {
-
-        } else {
-
-        }
-    }
-
-    private void firstRunActions() {
-        try {
-            timeChangeActivityUpdateMs = System.currentTimeMillis();
-
-            performingActivity = 6;
-
-
-            Intent intent = getIntent();
-            String stateFromIntent = intent.getStringExtra("APP STATE");
-            appState = ApplicationStates.valueOf(stateFromIntent).ordinal();
-
-            SimpleDateFormat shortName = new SimpleDateFormat("dd,HHmmss");
-            String fileNumber = shortName.format(new Date());
-
-            // change an interface and prepare tools for the assignment
-            if (appState == 1) {
-
-                final String batteryLevelName = FileOperations.getSensorStorageDir("SensorsInformation") + "/batteryInfo" + fileNumber + ".txt";
-                FileOperations.deleteFile(batteryLevelName);
-                final File batteryData = new File(batteryLevelName);
-
-                previousBatteryUpdate = System.currentTimeMillis();
-
-                pw = new PrintWriter(new BufferedWriter(new FileWriter(batteryData, true)));
-
-                mGenericActivity.setVisibility(View.INVISIBLE);
-
-                bPause.setVisibility(View.INVISIBLE);
-
-                Log.i(TAG, batteryLevelName);
-
-            } else {
-
-                CircleMenu cMenu = new CircleMenu();
-                cMenu.createCircleMenu(this, bStop, bPause, mGenericActivity);
-                leftCenterButton = cMenu.getLeftCenterButton();
-
-                final String sensorDataName = FileOperations.getSensorStorageDir("SensorsInformation") + "/StorageData" + fileNumber + ".txt";
-                FileOperations.deleteFile(sensorDataName);
-                final File sensorData = new File(sensorDataName);
-
-                pw = new PrintWriter(new BufferedWriter(new FileWriter(sensorData, true)));
-
-                mTheoreticalActivity.setVisibility(View.INVISIBLE);
-                mGenericActivity.setVisibility(View.INVISIBLE);
-
-                bPause.setVisibility(View.INVISIBLE);
-
-                Log.i(TAG, sensorDataName);
-
-            }
-
-        } catch (IOException e) {
-            Log.i(TAG, e.toString());
-        }
-
-        // clean old files with random results
-        FileOperations.deleteFile("/storage/emulated/0/myfile_nbp.txt");
-        FileOperations.deleteFile("myfile_nbp.txt");
-
-        // create classifier from a file
-        if (selectedClassifierName.equals(Classifiers.A1DE.getAlgName())) {
-            discretizeData = true;
-            discretizeItems = ReadDiscretizedValues.initFilter(this);
-        }
-        FactoryClassifiers fc = new FactoryClassifiers();
-        String modelFileName = fc.getModelFile(selectedClassifierName);
-        InputStream ins = getResources().openRawResource(getResources().getIdentifier(modelFileName, "raw", getPackageName()));
-
-        selectedClassifier = fc.getModel(selectedClassifierName, ins);
-
-        posInstance = 0;
-        warmingUp = true;
-        setSensors();
-
-        if (appState == 0) {
-            launchCollectingInformation();
-        } else {
-            launchCollectingInformation();
-            launchingRecognitionActivities();
-        }
-
-        firstRun = false;
-
-        Log.i(TAG, "First run is still active");
-    }
-
-    @Override
-    public void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-
-        setIntent(intent);
-        Log.d(TAG, "onNewIntent(): " + intent);
-
-        // Described in the following section
-        refreshDisplayAndSetNextUpdate();
-    }
-
-    private void refreshDisplayAndSetNextUpdate() {
-
-        loadDataAndUpdateScreen();
-        long timeMs = System.currentTimeMillis();
-
-        // this condition is true when called from ambient mode and can be used with timer value
-        if (isAmbient()) {
-            long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
-            long triggerTimeMs = timeMs + delayMs;
-
-            mAmbientStateAlarmManager.setExact(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerTimeMs,
-                    mAmbientStatePendingIntent);
-
-        } else {
-            long delayMs = ACTIVE_INTERVAL_MS - (timeMs % ACTIVE_INTERVAL_MS);
-
-            mActiveModeUpdateHandler.removeMessages(MSG_UPDATE_SCREEN);
-            mActiveModeUpdateHandler.sendEmptyMessageDelayed(MSG_UPDATE_SCREEN, delayMs);
-        }
-
-    }
-
-    private void setSensors() {
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-
-        SensorsActions.setSensors(this, mSensorManager);
-    }
-
-    private void checkTimeDifference() {
-        long currentTime = System.currentTimeMillis();
-
-        if (pTime == 0) {
-            pTime = currentTime;
-        } else {
-            pTime = nTime;
-            nTime = currentTime;
-
-            long difference = nTime - pTime;
-
-            if (difference > 100) {
-                Log.i(TAG, String.valueOf(nTime - pTime));
-            }
-        }
-    }
-
-    private StringBuilder arraysToString(int pos) {
-        checkTimeDifference();
-        StringBuilder allSensorsData = StorageDataActions.arraysToString(pos, performingActivity, measurements);
-        return allSensorsData;
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        StorageDataActions.updateSensorData(event, newMeasurement);
-
-        if (warmingUp) {
-            newMeasurement.heartRateVal = 0.0f;
-            warmingUp = false;
-        }
-    }
-
-    /**
-     * Handles the button press to finish this activity and take the user back to the Home.
-     */
-    public void onFinishActivity(View view) {
-        Dialogs.showCustomDialog(this);
-    }
-
-    public void onWalking() {
-        performingActivity = 0;                                                      // ActivityType.valueOf("WALKING").ordinal();
-        mGenericActivity.setText("Walking");
-        timeChangeActivityUpdateMs = System.currentTimeMillis();
-        posInstance = 0;
-        computeComplexFeatures = false;
-    }
-
-    public void onUpstairs() {
-        performingActivity = 1;                                                      // ActivityType.valueOf("WALKING_UPSTAIRS").ordinal();
-        mGenericActivity.setText("Upstairs");
-        timeChangeActivityUpdateMs = System.currentTimeMillis();
-        posInstance = 0;
-        computeComplexFeatures = false;
-    }
-
-    public void onDownstairs() {
-        performingActivity = 2;                                                      // ActivityType.valueOf("WALKING_DOWNSTAIRS").ordinal();
-        mGenericActivity.setText("Downstairs");
-        timeChangeActivityUpdateMs = System.currentTimeMillis();
-        posInstance = 0;
-        computeComplexFeatures = false;
-    }
-
-    public void onSitting() {
-        performingActivity = 3;                                                      // ActivityType.valueOf("SITTING").ordinal();
-        mGenericActivity.setText("Sitting");
-        timeChangeActivityUpdateMs = System.currentTimeMillis();
-        posInstance = 0;
-        computeComplexFeatures = false;
-    }
-
-    public void onStanding() {
-        performingActivity = 4;                                                      // ActivityType.valueOf("STANDING").ordinal();
-        mGenericActivity.setText("Standing");
-        timeChangeActivityUpdateMs = System.currentTimeMillis();
-        posInstance = 0;
-        computeComplexFeatures = false;
-    }
-
-    public void onLying() {
-        performingActivity = 5;                                                      // ActivityType.valueOf("LYING").ordinal();
-        mGenericActivity.setText("Lying");
-        timeChangeActivityUpdateMs = System.currentTimeMillis();
-        posInstance = 0;
-        computeComplexFeatures = false;
-    }
-
-    public void onPause(View view) {
-        performingActivity = 6;
-        mGenericActivity.setText("Pause");
-        timeChangeActivityUpdateMs = System.currentTimeMillis();
-        posInstance = 0;
-        computeComplexFeatures = false;
-
-        leftCenterButton.setVisibility(View.VISIBLE);
-        bPause.setVisibility(View.INVISIBLE);
-        bStop.setVisibility(View.VISIBLE);
+        Log.d(TAG, "loadDataAndUpdateScreen(): " + currentTimeMs + "(" + isAmbient() + ")");
     }
 
     /**
@@ -673,63 +630,5 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
     }
-
-    public ArrayList<Attribute> getNewAttributes() {
-        return InstanceBuilder.getNewAttributes();
-    }
-
-    private void initializeAmbientVariables() {
-        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent ambientStateIntent = new Intent(getApplicationContext(), MainActivity.class);
-
-        mAmbientStatePendingIntent = PendingIntent.getActivity(
-                getApplicationContext(),
-                0 /* requestCode */,
-                ambientStateIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
-    private void doExit() {
-
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(
-                MainActivity.this);
-
-        alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                finish();
-            }
-        });
-
-        alertDialog.setNegativeButton("No", null);
-
-        alertDialog.setMessage("Do you want to exit?");
-        alertDialog.setTitle("AppTitle");
-        alertDialog.show();
-    }
-
-    public void setLeftCenterButton(FloatingActionButtonFlexibleActions leftCenterButton) {
-        this.leftCenterButton = leftCenterButton;
-    }
-
-    @Override
-    public void onBackPressed() {
-        doExit();
-    }
-
-    public float getBatteryLevel() {
-        Intent batteryIntent = getApplicationContext().registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-        int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-
-        // Error checking that probably isn't needed but I added just in case.
-        if (level == -1 || scale == -1) {
-            return 50.0f;
-        }
-
-        return ((float) level / (float) scale) * 100.0f;
-    }
-
-
 }
+

@@ -1,4 +1,4 @@
-package com.project.frugalmachinelearning.external;
+package com.project.frugalmachinelearning.structures;
 
 import android.content.res.Resources;
 import android.util.Log;
@@ -16,7 +16,7 @@ import weka.filters.unsupervised.attribute.Discretize;
 /**
  * Created by Mikhail on 20.11.2016.
  */
-public class ReadDiscretizedValues {
+public abstract class ReadDiscretizedValues {
 
     public static Discretize initFilter(MainActivity activity) {
 

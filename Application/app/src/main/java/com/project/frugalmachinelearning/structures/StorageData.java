@@ -1,4 +1,4 @@
-package com.project.frugalmachinelearning.tools;
+package com.project.frugalmachinelearning.structures;
 
 /**
  * Created by Mikhail on 20.11.2016.

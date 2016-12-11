@@ -1,6 +1,4 @@
-package com.project.frugalmachinelearning.external;
-
-import android.util.Log;
+package com.project.frugalmachinelearning.structures;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,7 +11,7 @@ import weka.core.Instances;
 /**
  * Created by Mikhail on 03.05.2016.
  */
-public class InstancesSaved {
+public abstract class InstancesSaved {
 
     public static int getLabelFromSavedFirstInstances(InputStream ins, AbstractClassifier classifier) {
 
@@ -40,14 +38,4 @@ public class InstancesSaved {
         return value;
     }
 
-    public static void main(String[] args) {
-
-/*        InputStream insValues = getResources().openRawResource(getResources().getIdentifier("measurements",
-                "raw", getPackageName()));
-
-        int stableValue = InstancesSaved.getLabelFromSavedFirstInstances(insValues, selectedClassifier);
-        Log.i(TAG, String.valueOf(stableValue));
-*/
-
-    }
 }

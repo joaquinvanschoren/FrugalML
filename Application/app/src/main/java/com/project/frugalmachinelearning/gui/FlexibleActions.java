@@ -1,14 +1,11 @@
-package com.project.frugalmachinelearning.tools;
+package com.project.frugalmachinelearning.gui;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.util.AttributeSet;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -19,7 +16,7 @@ import com.project.frugalmachinelearning.R;
 /**
  * Created by Mikhail on 08.06.2016.
  */
-public class FloatingActionButtonFlexibleActions extends FrameLayout {
+public class FlexibleActions extends FrameLayout {
 
     public static final int THEME_LIGHT = 0;
     public static final int THEME_DARK = 1;
@@ -38,10 +35,10 @@ public class FloatingActionButtonFlexibleActions extends FrameLayout {
 
     private boolean systemOverlay;
 
-    public FloatingActionButtonFlexibleActions(Context context, ViewGroup.LayoutParams layoutParams, int theme,
-                                               Drawable backgroundDrawable, int position, View contentView,
-                                               FrameLayout.LayoutParams contentParams,
-                                               boolean systemOverlay) {
+    public FlexibleActions(Context context, ViewGroup.LayoutParams layoutParams, int theme,
+                           Drawable backgroundDrawable, int position, View contentView,
+                           FrameLayout.LayoutParams contentParams,
+                           boolean systemOverlay) {
         super(context);
         this.systemOverlay = systemOverlay;
 
@@ -211,7 +208,7 @@ public class FloatingActionButtonFlexibleActions extends FrameLayout {
     }
 
     /**
-     * A builder for {@link FloatingActionButtonFlexibleActions} in conventional Java Builder format
+     * A builder for {@link FlexibleActions} in conventional Java Builder format
      */
     public static class Builder {
 
@@ -233,8 +230,8 @@ public class FloatingActionButtonFlexibleActions extends FrameLayout {
             FrameLayout.LayoutParams layoutParams = new LayoutParams(size, size, Gravity.BOTTOM | Gravity.RIGHT);
             layoutParams.setMargins(margin, margin, margin, margin);
             setLayoutParams(layoutParams);
-            setTheme(FloatingActionButtonFlexibleActions.THEME_LIGHT);
-            setPosition(FloatingActionButtonFlexibleActions.POSITION_BOTTOM_RIGHT);
+            setTheme(FlexibleActions.THEME_LIGHT);
+            setPosition(FlexibleActions.POSITION_BOTTOM_RIGHT);
             setSystemOverlay(false);
         }
 
@@ -277,8 +274,8 @@ public class FloatingActionButtonFlexibleActions extends FrameLayout {
             return this;
         }
 
-        public FloatingActionButtonFlexibleActions build() {
-            return new FloatingActionButtonFlexibleActions(context,
+        public FlexibleActions build() {
+            return new FlexibleActions(context,
                     layoutParams,
                     theme,
                     backgroundDrawable,
