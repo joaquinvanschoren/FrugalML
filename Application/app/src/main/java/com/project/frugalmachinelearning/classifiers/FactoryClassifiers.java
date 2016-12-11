@@ -23,33 +23,37 @@ public class FactoryClassifiers {
     private static final String TAG = "Creating a model";
 
     public String getModelFile(String modelName) {
-        switch (modelName) {
-            case "A1DE":
-                return "a1denumeric";
-            case "Dagging":
-                return "daggingnumeric";
-            case "AdaBoostM1":
-                return "adaboostm1numeric";
-            default:
-                return null;
+        if(modelName.equals("HyperPipes")) {
+            return "hpnumeric";
+        } else if (modelName.equals("NaiveBayes")) {
+            return "nbnumeric";
+        } else if (modelName.equals("RandomForest")) {
+            return "rfnumeric";
+        } else if (modelName.equals("A1DE")) {
+            return "a1denumeric";
+        } else if (modelName.equals("Dagging")) {
+            return "daggingnumeric";
+        } else if (modelName.equals("AdaBoostM1")) {
+            return "adaboostm1numeric";
         }
+
+        else
+            return null;
     }
 
     public AbstractClassifier getModel(String modelName, InputStream ins) {
         try {
-            AbstractClassifier model;
-            switch (modelName) {
-                case "A1DE":
-                    model = (A1DE) new ObjectInputStream(ins).readObject();
-                    break;
-                case "Dagging":
-                    model = (Dagging) new ObjectInputStream(ins).readObject();
-                    break;
-                case "AdaBoostM1":
-                    model = (AdaBoostM1) new ObjectInputStream(ins).readObject();
-                    break;
-                default:
-                    model = null;
+            AbstractClassifier model = null;
+            if (modelName.equals("NaiveBayes")) {
+                model = (NaiveBayes) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("RandomForest")) {
+                model = (RandomForest) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("A1DE")) {
+                model = (A1DE) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("Dagging")) {
+                model = (Dagging) new ObjectInputStream(ins).readObject();
+            } else if (modelName.equals("AdaBoostM1")) {
+                model = (AdaBoostM1) new ObjectInputStream(ins).readObject();
             }
 
             return model;
@@ -63,4 +67,5 @@ public class FactoryClassifiers {
 
         return null;
     }
+
 }

@@ -1,4 +1,4 @@
-package com.project.frugalmachinelearning.gui;
+package com.project.frugalmachinelearning.external;
 
 import android.content.res.Resources;
 import android.view.GestureDetector;
@@ -15,7 +15,7 @@ import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu;
 import com.oguzdev.circularfloatingactionmenu.library.SubActionButton;
 import com.project.frugalmachinelearning.MainActivity;
 import com.project.frugalmachinelearning.R;
-import com.project.frugalmachinelearning.tools.MyGestureDetector;
+import com.project.frugalmachinelearning.tools.FloatingActionButtonFlexibleActions;
 
 /**
  * Created by Mikhail on 20.11.2016.
@@ -24,7 +24,7 @@ import com.project.frugalmachinelearning.tools.MyGestureDetector;
  */
 public class CircleMenu {
 
-    FlexibleActions leftCenterButton;
+    FloatingActionButtonFlexibleActions leftCenterButton;
 
     public void createCircleMenu(final MainActivity activity, final ImageButton bStop, final ImageButton bPause, final TextView mGenericActivity) {
 
@@ -57,10 +57,10 @@ public class CircleMenu {
                 redActionButtonContentMargin,
                 redActionButtonContentMargin);
 
-        leftCenterButton = new FlexibleActions.Builder(activity)
+        leftCenterButton = new FloatingActionButtonFlexibleActions.Builder(activity)
                 .setContentView(fabIconStar, fabIconStarParams)
                 .setBackgroundDrawable(R.drawable.button_action_red_selector)
-                .setPosition(FlexibleActions.POSITION_CENTER)
+                .setPosition(FloatingActionButtonFlexibleActions.POSITION_CENTER)
                 .setLayoutParams(starParams)
                 .build();
 
@@ -230,7 +230,7 @@ public class CircleMenu {
 
     }
 
-    public FlexibleActions getLeftCenterButton() {
+    public FloatingActionButtonFlexibleActions getLeftCenterButton() {
         return leftCenterButton;
     }
 }

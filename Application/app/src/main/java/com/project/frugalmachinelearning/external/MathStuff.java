@@ -1,11 +1,13 @@
-package com.project.frugalmachinelearning.tools;
+package com.project.frugalmachinelearning.external;
+
+import java.util.Arrays;
 
 /**
  * Created by Mikhail on 07.06.2016.
  */
-public class MathInstruments {
+public class MathStuff {
 
-    public MathInstruments()
+    public MathStuff()
     {
 
     }

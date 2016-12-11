@@ -2,16 +2,16 @@ package com.project.frugalmachinelearning.tools;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
+import android.util.Log;
 
-import com.project.frugalmachinelearning.structures.StorageCurrentData;
-import com.project.frugalmachinelearning.structures.StorageData;
+import com.project.frugalmachinelearning.external.MathStuff;
 
 /**
  * Created by Mikhail on 20.11.2016.
  */
-public abstract class StorageDataActions {
+public class StorageDataActions {
 
-    public static final MathInstruments MATH_STUFF = new MathInstruments();
+    public static final MathStuff MATH_STUFF = new MathStuff();
 
     public static void sensorsFeaturesToArrays(StorageData measurements, StorageCurrentData newMeasurement, int pos) {
         measurements.accelXArray[pos] = newMeasurement.accelX;
@@ -141,7 +141,7 @@ public abstract class StorageDataActions {
         measurements.heartRateValStd = MATH_STUFF.getStdDev(measurements.heartRateValArray);
     }
 
-    public static StringBuilder arraysToString(int pos, int performingActivity, StorageData measurements) {
+    static public StringBuilder arraysToString(int pos, int performingActivity, StorageData measurements) {
         StringBuilder allSensorsData = new StringBuilder();
         long currentTime = System.currentTimeMillis();
 

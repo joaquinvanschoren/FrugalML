@@ -62,7 +62,7 @@ public class InitialActivity extends Activity {
         startActivity(callMainIntent);
     }
 
-    private String getBackgroundHexColor(View element) {
+    public String getBackgroundHexColor(View element) {
         int color = Color.TRANSPARENT;
         Drawable background = element.getBackground();
         if (background instanceof ColorDrawable)

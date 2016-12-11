@@ -1,4 +1,6 @@
-package com.project.frugalmachinelearning.structures;
+package com.project.frugalmachinelearning.external;
+
+import com.project.frugalmachinelearning.tools.StorageData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +11,7 @@ import weka.core.DenseInstance;
 /**
  * Created by Mikhail on 20.11.2016.
  */
-public abstract class InstanceBuilder {
+public class InstanceBuilder {
 
     public static DenseInstance getInstance(int numOfAttributes, boolean computeComplexFeatures, StorageData measurements, int appState) {
         double[] attributeValues = new double[numOfAttributes];

@@ -1,4 +1,4 @@
-package com.project.frugalmachinelearning.classifiers;
+package com.project.frugalmachinelearning.external;
 
 /**
  * Created by Mikhail on 21.11.2016.

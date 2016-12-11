@@ -1,4 +1,4 @@
-package com.project.frugalmachinelearning.gui;
+package com.project.frugalmachinelearning.tools;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -15,7 +15,7 @@ import com.project.frugalmachinelearning.R;
 /**
  * Created by Mikhail on 20.11.2016.
  */
-public abstract class Dialogs {
+public class Dialogs {
 
     public static void showCustomDialog(final MainActivity activity) {
         final Dialog dialog = new Dialog(activity);
